@@ -1,5 +1,21 @@
 # Release Notes
 
+## Версия: февраль 2026 (обновление 8.9) — DRY-рефакторинг selection-модуля
+
+### Рефакторинг domain/selection
+- **`base.js`**: извлечены общие компараторы `compareByValueDensity` и `compareByPriority`, а также хелпер `buildSelectionResult` — устранено дублирование кода в трёх алгоритмах.
+- **`matrix.js`** — inline-компараторы Q1/Q3/Q4 заменены на `compareByPriority`, return-блок — на `buildSelectionResult`.
+- **`hybrid.js`** — Q1/Q2 используют `compareByValueDensity`, Q3/Q4 — `compareByPriority`, return — `buildSelectionResult`.
+- **`valueDensity.js`** — sort использует `compareByValueDensity`, return — `buildSelectionResult`.
+- **`config.js`**: добавлена константа `EXCLUSION_REASON_ALGORITHM` (`'Исключена алгоритмом'`).
+- **`selectionController.js`**: magic string заменён на `EXCLUSION_REASON_ALGORITHM`.
+
+### Тестирование
+- **Юнит-тесты**: 780 → **789** (+9 тестов).
+- `base.test.js`: добавлены тесты для `compareByValueDensity` (3), `compareByPriority` (3), `buildSelectionResult` (3).
+
+---
+
 ## Версия: февраль 2026 (обновление 8.8) — ESLint, доступность, PWA
 
 ### ESLint

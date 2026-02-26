@@ -5,7 +5,10 @@
 // и отбираются жадным алгоритмом. Самые «эффективные» задачи (много ценности
 // за малые трудозатраты) попадают в спринт первыми.
 
-import { prepareTasks, calculateMedians, categorizeIntoQuadrants, selectTasksUniform } from './base.js';
+import {
+    prepareTasks, calculateMedians, categorizeIntoQuadrants,
+    selectTasksUniform, compareByValueDensity, buildSelectionResult
+} from './base.js';
 
 /**
  * Алгоритм отбора «Value Density».
@@ -30,31 +33,14 @@ export function selectTasksValueDensity(tasks, capacityByRole) {
     const prepared = prepareTasks(tasks);
 
     // Сортируем по убыванию valueDensity (наиболее «эффективные» задачи — первыми)
-    prepared.sort((a, b) => {
-        if (b.valueDensity !== a.valueDensity) return b.valueDensity - a.valueDensity;
-        return b.id - a.id; // детерминированный порядок при одинаковой плотности
-    });
+    prepared.sort(compareByValueDensity);
 
     // Жадный отбор в порядке убывания плотности ценности
     const selectionResult = selectTasksUniform(prepared, capacityByRole);
 
     // Квадранты вычисляются для визуализации в отчёте (не влияют на отбор)
-    const { medianPriority, medianEffort } = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medianPriority, medianEffort);
+    const medians = calculateMedians(prepared);
+    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
 
-    return {
-        ...selectionResult,
-        quadrants,
-        medians: { medianPriority, medianEffort },
-        stats: {
-            ...selectionResult.stats,
-            quadrantsSummary: {
-                q1: quadrants.q1.length,
-                q2: quadrants.q2.length,
-                q3: quadrants.q3.length,
-                q4: quadrants.q4.length
-            }
-        },
-        algorithm: 'value-density'
-    };
+    return buildSelectionResult(selectionResult, quadrants, medians, 'value-density');
 }

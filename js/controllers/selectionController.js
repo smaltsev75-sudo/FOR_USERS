@@ -10,7 +10,7 @@ import {
     setSelectionLoadingState
 } from './selection/selectionHelpers.js';
 import { LruCache } from '../utils/lruCache.js';
-import { ALGORITHM_KEYS } from '../domain/selection/config.js';
+import { ALGORITHM_KEYS, EXCLUSION_REASON_ALGORITHM } from '../domain/selection/config.js';
 import { renderSelectionReport } from '../ui/selectionReport.js';
 import { renderRecommendations } from '../ui/selectionRecommendations.js';
 import { hideModal } from '../ui/modalManager.js';
@@ -168,7 +168,7 @@ export class SelectionController {
             return {
                 ...task,
                 excluded: isSelected ? 0 : 1,
-                exclusionReason: isSelected ? '' : (task.exclusionReason || 'Исключена алгоритмом')
+                exclusionReason: isSelected ? '' : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM)
             };
         });
 

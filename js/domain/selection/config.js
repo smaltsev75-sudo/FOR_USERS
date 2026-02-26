@@ -25,3 +25,6 @@ export const ALGORITHM_KEYS = [
     SELECTION_CONFIG.ALGORITHMS.VALUE_DENSITY,
     SELECTION_CONFIG.ALGORITHMS.HYBRID
 ];
+
+/** Причина исключения задачи алгоритмом автоотбора. */
+export const EXCLUSION_REASON_ALGORITHM = 'Исключена алгоритмом';

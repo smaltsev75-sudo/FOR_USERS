@@ -201,6 +201,52 @@ export function selectTasksUniform(sortedTasks, capacityByRole) {
 }
 
 /**
+ * Компаратор: сортировка по valueDensity ↓, при равенстве — по id ↓.
+ * Используется в алгоритмах Value Density и Hybrid (Q1, Q2).
+ */
+export function compareByValueDensity(a, b) {
+    if (b.valueDensity !== a.valueDensity) return b.valueDensity - a.valueDensity;
+    return b.id - a.id;
+}
+
+/**
+ * Компаратор: сортировка по priorityScore ↓, при равенстве — по id ↓.
+ * Используется в алгоритмах Matrix (Q1, Q3, Q4) и Hybrid (Q3, Q4).
+ */
+export function compareByPriority(a, b) {
+    if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+    return b.id - a.id;
+}
+
+/**
+ * Формирует стандартный результат алгоритма отбора.
+ * Объединяет результаты selectTasksUniform с квадрантами, медианами и метаинформацией.
+ *
+ * @param {Object} selectionResult — результат selectTasksUniform
+ * @param {Object} quadrants — квадранты { q1, q2, q3, q4 }
+ * @param {{medianPriority: number, medianEffort: number}} medians — медианы
+ * @param {string} algorithmName — имя алгоритма ('matrix' | 'value-density' | 'hybrid')
+ * @returns {Object} полный результат алгоритма
+ */
+export function buildSelectionResult(selectionResult, quadrants, medians, algorithmName) {
+    return {
+        ...selectionResult,
+        quadrants,
+        medians,
+        stats: {
+            ...selectionResult.stats,
+            quadrantsSummary: {
+                q1: quadrants.q1.length,
+                q2: quadrants.q2.length,
+                q3: quadrants.q3.length,
+                q4: quadrants.q4.length
+            }
+        },
+        algorithm: algorithmName
+    };
+}
+
+/**
  * Вычисляет загрузку каждой роли: абсолютную, процентную и статус.
  */
 function calculateRoleUsage(loadByRole, capacityByRole) {

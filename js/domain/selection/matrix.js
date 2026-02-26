@@ -5,7 +5,10 @@
 // и трудозатрат, затем отбираются в порядке Q1 → Q2 → Q3 → Q4.
 // Внутри квадрантов сортировка по приоритету (Q1, Q3, Q4) или трудозатратам (Q2).
 
-import { prepareTasks, calculateMedians, categorizeIntoQuadrants, selectTasksUniform } from './base.js';
+import {
+    prepareTasks, calculateMedians, categorizeIntoQuadrants,
+    selectTasksUniform, compareByPriority, buildSelectionResult
+} from './base.js';
 
 /**
  * Алгоритм отбора «Priority-Effort Matrix».
@@ -26,14 +29,11 @@ import { prepareTasks, calculateMedians, categorizeIntoQuadrants, selectTasksUni
  */
 export function selectTasksMatrix(tasks, capacityByRole) {
     const prepared = prepareTasks(tasks);
-    const { medianPriority, medianEffort } = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medianPriority, medianEffort);
+    const medians = calculateMedians(prepared);
+    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
 
     // Q1: сортировка по убыванию приоритета (самые ценные и лёгкие — первыми)
-    const q1 = [...quadrants.q1].sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return b.id - a.id; // детерминированный порядок при одинаковом приоритете
-    });
+    const q1 = [...quadrants.q1].sort(compareByPriority);
     // Q2: сортировка по возрастанию трудозатрат (среди важных берём менее тяжёлые)
     const q2 = [...quadrants.q2].sort((a, b) => {
         if (a.effort !== b.effort) return a.effort - b.effort;
@@ -41,33 +41,13 @@ export function selectTasksMatrix(tasks, capacityByRole) {
         return b.id - a.id;
     });
     // Q3: заполнители — по приоритету
-    const q3 = [...quadrants.q3].sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return b.id - a.id;
-    });
+    const q3 = [...quadrants.q3].sort(compareByPriority);
     // Q4: наименее приоритетные — тоже по приоритету
-    const q4 = [...quadrants.q4].sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return b.id - a.id;
-    });
+    const q4 = [...quadrants.q4].sort(compareByPriority);
 
     // Объединяем в порядке приоритета квадрантов и заполняем спринт жадным алгоритмом
     const sortedTasks = [...q1, ...q2, ...q3, ...q4];
     const selectionResult = selectTasksUniform(sortedTasks, capacityByRole);
 
-    return {
-        ...selectionResult,
-        quadrants,
-        medians: { medianPriority, medianEffort },
-        stats: {
-            ...selectionResult.stats,
-            quadrantsSummary: {
-                q1: quadrants.q1.length,
-                q2: quadrants.q2.length,
-                q3: quadrants.q3.length,
-                q4: quadrants.q4.length
-            }
-        },
-        algorithm: 'matrix'
-    };
+    return buildSelectionResult(selectionResult, quadrants, medians, 'matrix');
 }

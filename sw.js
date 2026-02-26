@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.16';
+const CACHE_VERSION = 'sp-v8.17';
 
 const ASSETS_TO_CACHE = [
     '/',

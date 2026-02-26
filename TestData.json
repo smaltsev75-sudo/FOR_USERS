@@ -1,0 +1,1624 @@
+{
+  "version": 12,
+  "config": {
+    "product": "Тест алгоритмов отбора",
+    "days": 10,
+    "startDate": "16.02.2026",
+    "endDate": "25.02.2026",
+    "availCoef": 93.5,
+    "alert": 3
+  },
+  "roles": [
+    { "id": "uiux", "name": "UI/UX", "fte": 100, "off": 0 },
+    { "id": "ca", "name": "CA", "fte": 100, "off": 0 },
+    { "id": "fe", "name": "FE", "fte": 100, "off": 0 },
+    { "id": "be", "name": "BE", "fte": 100, "off": 0 },
+    { "id": "qa", "name": "QA", "fte": 100, "off": 0 }
+  ],
+  "tasks": [
+    {
+      "id": 1001,
+      "title": "[КРИТИЧЕСКИЙ] Исправление уязвимости безопасности в авторизации",
+      "jira": "https://jira.example.com/SEC-101",
+      "type": "bug",
+      "comment": "Критическая уязвимость, требует немедленного исправления",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 4, "be": 8, "qa": 3 },
+      "priorityScore": 9.8,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 8, "value": 16 },
+        "4": { "score": 10, "value": 10 }
+      }
+    },
+    {
+      "id": 1002,
+      "title": "Редизайн главной страницы для повышения конверсии",
+      "jira": "https://jira.example.com/UI-203",
+      "type": "us",
+      "comment": "A/B тестирование показало +15% конверсии",
+      "excluded": 0,
+      "est": { "uiux": 40, "ca": 10, "fe": 60, "be": 5, "qa": 15 },
+      "priorityScore": 8.7,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 10, "value": 30 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1003,
+      "title": "Интеграция с новой платёжной системой",
+      "jira": "https://jira.example.com/PAY-156",
+      "type": "us",
+      "comment": "Ключевой партнёр, запуск через месяц",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 15, "fe": 20, "be": 40, "qa": 25 },
+      "priorityScore": 9.2,
+      "criteriaEvaluations": {
+        "1": { "score": 10, "value": 40 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 9, "value": 18 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1004,
+      "title": "Оптимизация скорости загрузки страниц",
+      "jira": "https://jira.example.com/PERF-89",
+      "type": "tech",
+      "comment": "Core Web Vitals ниже нормы",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 30, "be": 20, "qa": 10 },
+      "priorityScore": 7.5,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1005,
+      "title": "Добавление тёмной темы",
+      "jira": "https://jira.example.com/UI-167",
+      "type": "us",
+      "comment": "Пользователи активно просят",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 0, "fe": 20, "be": 0, "qa": 8 },
+      "priorityScore": 5.2,
+      "criteriaEvaluations": {
+        "1": { "score": 4, "value": 16 },
+        "2": { "score": 9, "value": 27 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 2, "value": 2 }
+      }
+    },
+    {
+      "id": 1006,
+      "title": "Исправление бага с отображением цен в мобильной версии",
+      "jira": "https://jira.example.com/BUG-342",
+      "type": "bug",
+      "comment": "Цены отображаются некорректно на iOS",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 0, "fe": 5, "be": 2, "qa": 3 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1007,
+      "title": "Рефакторинг модуля корзины",
+      "jira": "https://jira.example.com/TECH-234",
+      "type": "tech",
+      "comment": "Устаревший код, сложно поддерживать",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 25, "be": 30, "qa": 15 },
+      "priorityScore": 6.4,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1008,
+      "title": "A/B тестирование новой формы оформления заказа",
+      "jira": "https://jira.example.com/EXP-45",
+      "type": "us",
+      "comment": "Гипотеза: упрощение формы увеличит конверсию",
+      "excluded": 0,
+      "est": { "uiux": 20, "ca": 10, "fe": 25, "be": 15, "qa": 20 },
+      "priorityScore": 8.3,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1009,
+      "title": "Настройка мониторинга и алертов",
+      "jira": "https://jira.example.com/OPS-78",
+      "type": "tech",
+      "comment": "Не хватает метрик для отслеживания проблем",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 5, "be": 15, "qa": 5 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1010,
+      "title": "Улучшение SEO-оптимизации",
+      "jira": "https://jira.example.com/SEO-23",
+      "type": "us",
+      "comment": "Падение трафика из поисковиков",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 10, "be": 5, "qa": 5 },
+      "priorityScore": 7.2,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1011,
+      "title": "Добавление поддержки PWA",
+      "jira": "https://jira.example.com/FE-267",
+      "type": "us",
+      "comment": "Возможность установки на телефон",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 35, "be": 5, "qa": 10 },
+      "priorityScore": 6.1,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 2, "value": 2 }
+      }
+    },
+    {
+      "id": 1012,
+      "title": "Интеграция с CRM-системой",
+      "jira": "https://jira.example.com/INT-189",
+      "type": "us",
+      "comment": "Запрос от отдела продаж",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 15, "fe": 5, "be": 30, "qa": 15 },
+      "priorityScore": 7.6,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 8, "value": 16 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1013,
+      "title": "Исправление бага с дублированием заказов",
+      "jira": "https://jira.example.com/BUG-401",
+      "type": "bug",
+      "comment": "Редкий, но критичный баг",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 8, "be": 15, "qa": 10 },
+      "priorityScore": 8.9,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 9, "value": 9 }
+      }
+    },
+    {
+      "id": 1014,
+      "title": "Обновление библиотек и зависимостей",
+      "jira": "https://jira.example.com/TECH-256",
+      "type": "tech",
+      "comment": "CVE-2024-1234, срочное обновление",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 10, "be": 15, "qa": 8 },
+      "priorityScore": 8.2,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1015,
+      "title": "Улучшение доступности для людей с инвалидностью",
+      "jira": "https://jira.example.com/A11Y-12",
+      "type": "us",
+      "comment": "Юридические требования",
+      "excluded": 0,
+      "est": { "uiux": 20, "ca": 5, "fe": 15, "be": 0, "qa": 10 },
+      "priorityScore": 7.4,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 9, "value": 27 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1016,
+      "title": "Разработка мобильного приложения (MVP)",
+      "jira": "https://jira.example.com/MOBILE-1",
+      "type": "us",
+      "comment": "Стратегическое направление",
+      "excluded": 0,
+      "est": { "uiux": 80, "ca": 40, "fe": 120, "be": 80, "qa": 60 },
+      "priorityScore": 9.5,
+      "criteriaEvaluations": {
+        "1": { "score": 10, "value": 40 },
+        "2": { "score": 9, "value": 27 },
+        "3": { "score": 10, "value": 20 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1017,
+      "title": "Настройка CI/CD пайплайна",
+      "jira": "https://jira.example.com/DEVOPS-34",
+      "type": "tech",
+      "comment": "Автоматизация развёртывания",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 5, "be": 20, "qa": 10 },
+      "priorityScore": 7.9,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1018,
+      "title": "Добавление мультиязычности (i18n)",
+      "jira": "https://jira.example.com/FE-278",
+      "type": "us",
+      "comment": "Выход на международный рынок",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 20, "fe": 40, "be": 10, "qa": 25 },
+      "priorityScore": 8.5,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 8, "value": 16 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1019,
+      "title": "Исправление бага с валютой",
+      "jira": "https://jira.example.com/BUG-378",
+      "type": "bug",
+      "comment": "Неверный курс при конвертации",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 3, "be": 5, "qa": 3 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1020,
+      "title": "Оптимизация запросов к базе данных",
+      "jira": "https://jira.example.com/DB-89",
+      "type": "tech",
+      "comment": "Медленные страницы",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 0, "be": 25, "qa": 5 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1021,
+      "title": "Добавление чартов и аналитики",
+      "jira": "https://jira.example.com/AN-67",
+      "type": "us",
+      "comment": "Для отдела маркетинга",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 10, "fe": 30, "be": 15, "qa": 15 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1022,
+      "title": "Рефакторинг легаси-кода",
+      "jira": "https://jira.example.com/TECH-301",
+      "type": "tech",
+      "comment": "Старый модуль, сложно добавлять фичи",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 30, "be": 25, "qa": 15 },
+      "priorityScore": 5.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1023,
+      "title": "Интеграция с соцсетями",
+      "jira": "https://jira.example.com/SOC-45",
+      "type": "us",
+      "comment": "Вход через VK, Google",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 5, "fe": 15, "be": 20, "qa": 10 },
+      "priorityScore": 7.3,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1024,
+      "title": "Исправление бага с корзиной",
+      "jira": "https://jira.example.com/BUG-412",
+      "type": "bug",
+      "comment": "Товар не добавляется",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 5, "be": 2, "qa": 3 },
+      "priorityScore": 8.4,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 9, "value": 9 }
+      }
+    },
+    {
+      "id": 1025,
+      "title": "Добавление push-уведомлений",
+      "jira": "https://jira.example.com/NOT-23",
+      "type": "us",
+      "comment": "Для мобильной версии",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 20, "be": 25, "qa": 10 },
+      "priorityScore": 6.2,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1026,
+      "title": "Оптимизация изображений",
+      "jira": "https://jira.example.com/PERF-102",
+      "type": "tech",
+      "comment": "Сжатие, webp, lazy loading",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 15, "be": 0, "qa": 5 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1027,
+      "title": "Интеграция с 1С",
+      "jira": "https://jira.example.com/ERP-67",
+      "type": "us",
+      "comment": "Обмен данными",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 20, "fe": 5, "be": 40, "qa": 15 },
+      "priorityScore": 8.1,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 8, "value": 16 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1028,
+      "title": "Исправление бага с куки",
+      "jira": "https://jira.example.com/BUG-421",
+      "type": "bug",
+      "comment": "Не сохраняется сессия",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 5, "qa": 2 },
+      "priorityScore": 7.9,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 9, "value": 9 }
+      }
+    },
+    {
+      "id": 1029,
+      "title": "Добавление чата поддержки",
+      "jira": "https://jira.example.com/SUP-34",
+      "type": "us",
+      "comment": "Онлайн-консультант",
+      "excluded": 0,
+      "est": { "uiux": 10, "ca": 5, "fe": 25, "be": 30, "qa": 15 },
+      "priorityScore": 7.5,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1030,
+      "title": "Рефакторинг стилей (CSS)",
+      "jira": "https://jira.example.com/TECH-345",
+      "type": "tech",
+      "comment": "Удаление дубликатов",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 0, "fe": 10, "be": 0, "qa": 5 },
+      "priorityScore": 4.8,
+      "criteriaEvaluations": {
+        "1": { "score": 4, "value": 16 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 2, "value": 2 }
+      }
+    },
+    {
+      "id": 1031,
+      "title": "Добавление фильтров в каталог",
+      "jira": "https://jira.example.com/CAT-89",
+      "type": "us",
+      "comment": "По цене, бренду, размеру",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 5, "fe": 30, "be": 10, "qa": 15 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1032,
+      "title": "Исправление бага с модальным окном",
+      "jira": "https://jira.example.com/BUG-435",
+      "type": "bug",
+      "comment": "Не закрывается на мобильных",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 0, "fe": 3, "be": 0, "qa": 2 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1033,
+      "title": "Интеграция с Google Analytics 4",
+      "jira": "https://jira.example.com/AN-78",
+      "type": "us",
+      "comment": "Обновление с UA",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 5, "be": 2, "qa": 3 },
+      "priorityScore": 6.5,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1034,
+      "title": "Добавление кэширования на клиенте",
+      "jira": "https://jira.example.com/PERF-112",
+      "type": "tech",
+      "comment": "Service Worker",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 25, "be": 5, "qa": 8 },
+      "priorityScore": 7.2,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1035,
+      "title": "Исправление бага с регистрацией",
+      "jira": "https://jira.example.com/BUG-452",
+      "type": "bug",
+      "comment": "Не приходит письмо",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 3, "be": 5, "qa": 3 },
+      "priorityScore": 8.2,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1036,
+      "title": "Добавление поиска по сайту",
+      "jira": "https://jira.example.com/SEARCH-12",
+      "type": "us",
+      "comment": "С автодополнением",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 5, "fe": 40, "be": 25, "qa": 15 },
+      "priorityScore": 7.9,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1037,
+      "title": "Рефакторинг API (REST -> GraphQL)",
+      "jira": "https://jira.example.com/TECH-378",
+      "type": "tech",
+      "comment": "Новая архитектура",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 10, "fe": 15, "be": 60, "qa": 25 },
+      "priorityScore": 7.4,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1038,
+      "title": "Исправление бага с отображением дат",
+      "jira": "https://jira.example.com/BUG-467",
+      "type": "bug",
+      "comment": "Неверный часовой пояс",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 3, "qa": 2 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1039,
+      "title": "Добавление карты магазинов",
+      "jira": "https://jira.example.com/GEO-23",
+      "type": "us",
+      "comment": "Яндекс.Карты",
+      "excluded": 0,
+      "est": { "uiux": 10, "ca": 5, "fe": 20, "be": 10, "qa": 8 },
+      "priorityScore": 6.4,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1040,
+      "title": "Оптимизация для слабых устройств",
+      "jira": "https://jira.example.com/PERF-134",
+      "type": "tech",
+      "comment": "Уменьшение размера JS",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 20, "be": 0, "qa": 5 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1041,
+      "title": "Исправление бага с оплатой",
+      "jira": "https://jira.example.com/BUG-489",
+      "type": "bug",
+      "comment": "Ошибка при оплате картой",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 5, "be": 8, "qa": 5 },
+      "priorityScore": 8.7,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1042,
+      "title": "Добавление системы лояльности",
+      "jira": "https://jira.example.com/LOY-5",
+      "type": "us",
+      "comment": "Бонусы, кешбэк",
+      "excluded": 0,
+      "est": { "uiux": 20, "ca": 15, "fe": 30, "be": 40, "qa": 25 },
+      "priorityScore": 8.3,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1043,
+      "title": "Рефакторинг редьюсеров",
+      "jira": "https://jira.example.com/TECH-401",
+      "type": "tech",
+      "comment": "Упрощение логики",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 15, "be": 5, "qa": 5 },
+      "priorityScore": 5.7,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1044,
+      "title": "Интеграция с Dodo IS",
+      "jira": "https://jira.example.com/INT-234",
+      "type": "us",
+      "comment": "Для ресторанов",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 15, "fe": 20, "be": 35, "qa": 15 },
+      "priorityScore": 7.6,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1045,
+      "title": "Исправление бага с отображением цен",
+      "jira": "https://jira.example.com/BUG-501",
+      "type": "bug",
+      "comment": "Цены с копейками",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 0, "qa": 2 },
+      "priorityScore": 6.5,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1046,
+      "title": "Добавление виджета отзывов",
+      "jira": "https://jira.example.com/REV-12",
+      "type": "us",
+      "comment": "С рейтингом",
+      "excluded": 0,
+      "est": { "uiux": 10, "ca": 5, "fe": 15, "be": 10, "qa": 8 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1047,
+      "title": "Настройка логирования ошибок",
+      "jira": "https://jira.example.com/OPS-89",
+      "type": "tech",
+      "comment": "Sentry",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 5, "qa": 2 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1048,
+      "title": "Исправление бага с фильтрами",
+      "jira": "https://jira.example.com/BUG-523",
+      "type": "bug",
+      "comment": "Не работают одновременно",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 5, "be": 2, "qa": 3 },
+      "priorityScore": 7.4,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1049,
+      "title": "Добавление сравнения товаров",
+      "jira": "https://jira.example.com/CAT-102",
+      "type": "us",
+      "comment": "До 5 товаров",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 5, "fe": 25, "be": 15, "qa": 12 },
+      "priorityScore": 7.2,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1050,
+      "title": "Рефакторинг тестов",
+      "jira": "https://jira.example.com/TEST-45",
+      "type": "tech",
+      "comment": "Повышение покрытия",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 5, "be": 5, "qa": 10 },
+      "priorityScore": 6.3,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1051,
+      "title": "Интеграция с email-рассылками",
+      "jira": "https://jira.example.com/MKT-67",
+      "type": "us",
+      "comment": "SendPulse",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 10, "fe": 5, "be": 15, "qa": 8 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1052,
+      "title": "Исправление бага с кэшированием",
+      "jira": "https://jira.example.com/BUG-534",
+      "type": "bug",
+      "comment": "Старые данные",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 3, "be": 5, "qa": 2 },
+      "priorityScore": 7.6,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1053,
+      "title": "Добавление подсказок в формах",
+      "jira": "https://jira.example.com/UI-289",
+      "type": "us",
+      "comment": "Улучшение UX",
+      "excluded": 0,
+      "est": { "uiux": 8, "ca": 2, "fe": 5, "be": 0, "qa": 3 },
+      "priorityScore": 6.7,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 9, "value": 27 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1054,
+      "title": "Оптимизация сборки Webpack",
+      "jira": "https://jira.example.com/TECH-423",
+      "type": "tech",
+      "comment": "Уменьшение времени сборки",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 20, "be": 0, "qa": 2 },
+      "priorityScore": 6.2,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1055,
+      "title": "Исправление бага с мобильным меню",
+      "jira": "https://jira.example.com/BUG-548",
+      "type": "bug",
+      "comment": "Не открывается",
+      "excluded": 0,
+      "est": { "uiux": 1, "ca": 0, "fe": 2, "be": 0, "qa": 1 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1056,
+      "title": "Добавление истории заказов",
+      "jira": "https://jira.example.com/PROF-34",
+      "type": "us",
+      "comment": "В личном кабинете",
+      "excluded": 0,
+      "est": { "uiux": 10, "ca": 5, "fe": 15, "be": 10, "qa": 8 },
+      "priorityScore": 7.3,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1057,
+      "title": "Рефакторинг middleware",
+      "jira": "https://jira.example.com/TECH-445",
+      "type": "tech",
+      "comment": "Упрощение",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 5, "be": 5, "qa": 2 },
+      "priorityScore": 5.5,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1058,
+      "title": "Интеграция с доставкой",
+      "jira": "https://jira.example.com/DEL-23",
+      "type": "us",
+      "comment": "СДЭК, Почта",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 10, "fe": 15, "be": 25, "qa": 10 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1059,
+      "title": "Исправление бага с отзывами",
+      "jira": "https://jira.example.com/BUG-567",
+      "type": "bug",
+      "comment": "Не грузятся",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 1, "qa": 2 },
+      "priorityScore": 7.2,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1060,
+      "title": "Добавление избранного",
+      "jira": "https://jira.example.com/CAT-145",
+      "type": "us",
+      "comment": "Список желаний",
+      "excluded": 0,
+      "est": { "uiux": 8, "ca": 2, "fe": 15, "be": 10, "qa": 8 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1061,
+      "title": "Оптимизация шрифтов",
+      "jira": "https://jira.example.com/PERF-156",
+      "type": "tech",
+      "comment": "Переменные шрифты",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 5, "be": 0, "qa": 2 },
+      "priorityScore": 5.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1062,
+      "title": "Исправление бага с пагинацией",
+      "jira": "https://jira.example.com/BUG-589",
+      "type": "bug",
+      "comment": "Сбрасывается",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 3, "be": 0, "qa": 2 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1063,
+      "title": "Добавление купонов",
+      "jira": "https://jira.example.com/PROMO-23",
+      "type": "us",
+      "comment": "Промокоды",
+      "excluded": 0,
+      "est": { "uiux": 8, "ca": 5, "fe": 12, "be": 10, "qa": 8 },
+      "priorityScore": 7.4,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1064,
+      "title": "Рефакторинг API-клиента",
+      "jira": "https://jira.example.com/TECH-467",
+      "type": "tech",
+      "comment": "Унификация",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 10, "be": 10, "qa": 5 },
+      "priorityScore": 6.1,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1065,
+      "title": "Интеграция с call-трекингом",
+      "jira": "https://jira.example.com/MKT-89",
+      "type": "us",
+      "comment": "Звонки",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 5, "fe": 5, "be": 10, "qa": 5 },
+      "priorityScore": 6.5,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1066,
+      "title": "Исправление бага с купонами",
+      "jira": "https://jira.example.com/BUG-612",
+      "type": "bug",
+      "comment": "Не применяются",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 2, "qa": 2 },
+      "priorityScore": 7.3,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1067,
+      "title": "Добавление SPA навигации",
+      "jira": "https://jira.example.com/FE-312",
+      "type": "us",
+      "comment": "Без перезагрузки",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 30, "be": 5, "qa": 10 },
+      "priorityScore": 7.6,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1068,
+      "title": "Оптимизация изображений в админке",
+      "jira": "https://jira.example.com/ADMIN-45",
+      "type": "tech",
+      "comment": "Загрузка",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 0, "fe": 10, "be": 5, "qa": 5 },
+      "priorityScore": 5.8,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1069,
+      "title": "Исправление бага с админкой",
+      "jira": "https://jira.example.com/BUG-634",
+      "type": "bug",
+      "comment": "Не сохраняет",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 1, "fe": 2, "be": 2, "qa": 2 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1070,
+      "title": "Добавление экспорта отчётов",
+      "jira": "https://jira.example.com/REP-12",
+      "type": "us",
+      "comment": "Excel, CSV",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 5, "fe": 15, "be": 20, "qa": 10 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1071,
+      "title": "Рефакторинг валидации форм",
+      "jira": "https://jira.example.com/TECH-489",
+      "type": "tech",
+      "comment": "Улучшение",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 5, "be": 0, "qa": 3 },
+      "priorityScore": 6.4,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1072,
+      "title": "Интеграция с Telegram",
+      "jira": "https://jira.example.com/SOC-78",
+      "type": "us",
+      "comment": "Бот",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 5, "fe": 10, "be": 15, "qa": 8 },
+      "priorityScore": 6.7,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1073,
+      "title": "Исправление бага с Telegram",
+      "jira": "https://jira.example.com/BUG-654",
+      "type": "bug",
+      "comment": "Не приходят уведомления",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 1, "be": 2, "qa": 1 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1074,
+      "title": "Добавление мультиаккаунта",
+      "jira": "https://jira.example.com/AUTH-34",
+      "type": "us",
+      "comment": "Несколько организаций",
+      "excluded": 0,
+      "est": { "uiux": 10, "ca": 10, "fe": 20, "be": 30, "qa": 15 },
+      "priorityScore": 7.5,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1075,
+      "title": "Оптимизация API запросов",
+      "jira": "https://jira.example.com/PERF-178",
+      "type": "tech",
+      "comment": "Партицирование",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 0, "be": 25, "qa": 5 },
+      "priorityScore": 7.2,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1076,
+      "title": "Исправление бага с отображением",
+      "jira": "https://jira.example.com/BUG-678",
+      "type": "bug",
+      "comment": "В Safari",
+      "excluded": 0,
+      "est": { "uiux": 1, "ca": 0, "fe": 2, "be": 0, "qa": 1 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 7, "value": 7 }
+      }
+    },
+    {
+      "id": 1077,
+      "title": "Добавление реферальной программы",
+      "jira": "https://jira.example.com/MKT-102",
+      "type": "us",
+      "comment": "Приведи друга",
+      "excluded": 0,
+      "est": { "uiux": 12, "ca": 8, "fe": 15, "be": 20, "qa": 10 },
+      "priorityScore": 7.3,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1078,
+      "title": "Рефакторинг компонентов",
+      "jira": "https://jira.example.com/TECH-512",
+      "type": "tech",
+      "comment": "UI-kit",
+      "excluded": 0,
+      "est": { "uiux": 20, "ca": 0, "fe": 30, "be": 0, "qa": 10 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 7, "value": 21 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1079,
+      "title": "Интеграция с WhatsApp",
+      "jira": "https://jira.example.com/SOC-89",
+      "type": "us",
+      "comment": "Уведомления",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 5, "fe": 5, "be": 10, "qa": 5 },
+      "priorityScore": 6.2,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1080,
+      "title": "Исправление бага с WhatsApp",
+      "jira": "https://jira.example.com/BUG-701",
+      "type": "bug",
+      "comment": "Ссылки",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 1, "be": 0, "qa": 1 },
+      "priorityScore": 6.5,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1081,
+      "title": "Добавление видео-отзывов",
+      "jira": "https://jira.example.com/REV-34",
+      "type": "us",
+      "comment": "YouTube",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 10, "be": 5, "qa": 5 },
+      "priorityScore": 6.4,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1082,
+      "title": "Оптимизация мобильной версии",
+      "jira": "https://jira.example.com/MOBILE-45",
+      "type": "tech",
+      "comment": "Touch events",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 0, "fe": 15, "be": 0, "qa": 5 },
+      "priorityScore": 7.5,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 8, "value": 24 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1083,
+      "title": "Исправление бага с видео",
+      "jira": "https://jira.example.com/BUG-723",
+      "type": "bug",
+      "comment": "Не грузится",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 0, "qa": 1 },
+      "priorityScore": 6.8,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1084,
+      "title": "Добавление капчи",
+      "jira": "https://jira.example.com/SEC-145",
+      "type": "us",
+      "comment": "Защита от ботов",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 2, "fe": 5, "be": 5, "qa": 3 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1085,
+      "title": "Рефакторинг авторизации",
+      "jira": "https://jira.example.com/TECH-534",
+      "type": "tech",
+      "comment": "JWT",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 5, "be": 20, "qa": 8 },
+      "priorityScore": 7.8,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1086,
+      "title": "Интеграция с Dadata",
+      "jira": "https://jira.example.com/FORM-23",
+      "type": "us",
+      "comment": "Подсказки адресов",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 2, "fe": 5, "be": 5, "qa": 3 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1087,
+      "title": "Исправление бага с Dadata",
+      "jira": "https://jira.example.com/BUG-745",
+      "type": "bug",
+      "comment": "Не работает",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 1, "be": 1, "qa": 1 },
+      "priorityScore": 6.7,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1088,
+      "title": "Добавление подписки",
+      "jira": "https://jira.example.com/SUB-12",
+      "type": "us",
+      "comment": "Регулярные платежи",
+      "excluded": 0,
+      "est": { "uiux": 15, "ca": 10, "fe": 25, "be": 35, "qa": 20 },
+      "priorityScore": 8.2,
+      "criteriaEvaluations": {
+        "1": { "score": 9, "value": 36 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 8, "value": 16 },
+        "4": { "score": 5, "value": 5 }
+      }
+    },
+    {
+      "id": 1089,
+      "title": "Оптимизация подписок",
+      "jira": "https://jira.example.com/SUB-23",
+      "type": "tech",
+      "comment": "Управление",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 5, "be": 10, "qa": 5 },
+      "priorityScore": 7.1,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1090,
+      "title": "Исправление бага с подпиской",
+      "jira": "https://jira.example.com/BUG-767",
+      "type": "bug",
+      "comment": "Списания",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 1, "fe": 1, "be": 2, "qa": 1 },
+      "priorityScore": 7.9,
+      "criteriaEvaluations": {
+        "1": { "score": 7, "value": 28 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 6, "value": 12 },
+        "4": { "score": 8, "value": 8 }
+      }
+    },
+    {
+      "id": 1091,
+      "title": "Добавление мультиязычности в админку",
+      "jira": "https://jira.example.com/ADMIN-78",
+      "type": "us",
+      "comment": "Английский",
+      "excluded": 0,
+      "est": { "uiux": 5, "ca": 5, "fe": 10, "be": 5, "qa": 5 },
+      "priorityScore": 6.3,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1092,
+      "title": "Рефакторинг API документации",
+      "jira": "https://jira.example.com/TECH-556",
+      "type": "tech",
+      "comment": "Swagger",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 0, "be": 5, "qa": 2 },
+      "priorityScore": 5.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1093,
+      "title": "Интеграция с Yandex Metrika",
+      "jira": "https://jira.example.com/AN-112",
+      "type": "us",
+      "comment": "Цели",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 2, "fe": 2, "be": 0, "qa": 1 },
+      "priorityScore": 6.6,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1094,
+      "title": "Исправление бага с метрикой",
+      "jira": "https://jira.example.com/BUG-789",
+      "type": "bug",
+      "comment": "Дубли",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 1, "be": 0, "qa": 1 },
+      "priorityScore": 6.4,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1095,
+      "title": "Добавление прогресс-баров",
+      "jira": "https://jira.example.com/UI-345",
+      "type": "us",
+      "comment": "Загрузка",
+      "excluded": 0,
+      "est": { "uiux": 3, "ca": 0, "fe": 5, "be": 0, "qa": 2 },
+      "priorityScore": 5.7,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 3, "value": 6 },
+        "4": { "score": 2, "value": 2 }
+      }
+    },
+    {
+      "id": 1096,
+      "title": "Оптимизация скриптов",
+      "jira": "https://jira.example.com/PERF-201",
+      "type": "tech",
+      "comment": "Минификация",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 5, "be": 0, "qa": 1 },
+      "priorityScore": 6.2,
+      "criteriaEvaluations": {
+        "1": { "score": 6, "value": 24 },
+        "2": { "score": 4, "value": 12 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 4, "value": 4 }
+      }
+    },
+    {
+      "id": 1097,
+      "title": "Исправление бага со скриптами",
+      "jira": "https://jira.example.com/BUG-801",
+      "type": "bug",
+      "comment": "Конфликты",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 0, "qa": 1 },
+      "priorityScore": 6.9,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 6, "value": 18 },
+        "3": { "score": 5, "value": 10 },
+        "4": { "score": 6, "value": 6 }
+      }
+    },
+    {
+      "id": 1098,
+      "title": "Добавление сниппетов",
+      "jira": "https://jira.example.com/UI-367",
+      "type": "us",
+      "comment": "Для соцсетей",
+      "excluded": 0,
+      "est": { "uiux": 2, "ca": 0, "fe": 3, "be": 0, "qa": 1 },
+      "priorityScore": 5.8,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 5, "value": 15 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1099,
+      "title": "Рефакторинг конфигов",
+      "jira": "https://jira.example.com/TECH-578",
+      "type": "tech",
+      "comment": "Окружения",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 0, "fe": 2, "be": 2, "qa": 1 },
+      "priorityScore": 5.5,
+      "criteriaEvaluations": {
+        "1": { "score": 5, "value": 20 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 4, "value": 8 },
+        "4": { "score": 3, "value": 3 }
+      }
+    },
+    {
+      "id": 1100,
+      "title": "Интеграция с онлайн-кассами",
+      "jira": "https://jira.example.com/PAY-201",
+      "type": "us",
+      "comment": "54-ФЗ",
+      "excluded": 0,
+      "est": { "uiux": 0, "ca": 5, "fe": 2, "be": 15, "qa": 8 },
+      "priorityScore": 7.4,
+      "criteriaEvaluations": {
+        "1": { "score": 8, "value": 32 },
+        "2": { "score": 3, "value": 9 },
+        "3": { "score": 7, "value": 14 },
+        "4": { "score": 5, "value": 5 }
+      }
+    }
+  ],
+  "numberFormatSettings": {
+    "decimalSeparator": ","
+  },
+  "activeTab": "planning"
+}

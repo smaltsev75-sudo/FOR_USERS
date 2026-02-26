@@ -8,7 +8,11 @@
 // Это обеспечивает баланс: важные задачи выбираются эффективно,
 // а менее важные — по приоритету.
 
-import { prepareTasks, calculateMedians, categorizeIntoQuadrants, selectTasksUniform } from './base.js';
+import {
+    prepareTasks, calculateMedians, categorizeIntoQuadrants,
+    selectTasksUniform, compareByValueDensity, compareByPriority,
+    buildSelectionResult
+} from './base.js';
 
 /**
  * Гибридный алгоритм отбора (Hybrid).
@@ -32,46 +36,20 @@ import { prepareTasks, calculateMedians, categorizeIntoQuadrants, selectTasksUni
  */
 export function selectTasksHybrid(tasks, capacityByRole) {
     const prepared = prepareTasks(tasks);
-    const { medianPriority, medianEffort } = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medianPriority, medianEffort);
+    const medians = calculateMedians(prepared);
+    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
 
     // Q1: лёгкие победы — по valueDensity для максимальной эффективности
-    const q1 = [...quadrants.q1].sort((a, b) => {
-        if (b.valueDensity !== a.valueDensity) return b.valueDensity - a.valueDensity;
-        return b.id - a.id;
-    });
+    const q1 = [...quadrants.q1].sort(compareByValueDensity);
     // Q2: стратегические — тоже по valueDensity (берём самые «выгодные» тяжёлые задачи)
-    const q2 = [...quadrants.q2].sort((a, b) => {
-        if (b.valueDensity !== a.valueDensity) return b.valueDensity - a.valueDensity;
-        return b.id - a.id;
-    });
+    const q2 = [...quadrants.q2].sort(compareByValueDensity);
     // Q3: заполнители — по приоритету (valueDensity здесь менее информативен)
-    const q3 = [...quadrants.q3].sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return b.id - a.id;
-    });
+    const q3 = [...quadrants.q3].sort(compareByPriority);
     // Q4: кандидаты на перенос — по приоритету
-    const q4 = [...quadrants.q4].sort((a, b) => {
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return b.id - a.id;
-    });
+    const q4 = [...quadrants.q4].sort(compareByPriority);
 
     const sortedTasks = [...q1, ...q2, ...q3, ...q4];
     const selectionResult = selectTasksUniform(sortedTasks, capacityByRole);
 
-    return {
-        ...selectionResult,
-        quadrants,
-        medians: { medianPriority, medianEffort },
-        stats: {
-            ...selectionResult.stats,
-            quadrantsSummary: {
-                q1: quadrants.q1.length,
-                q2: quadrants.q2.length,
-                q3: quadrants.q3.length,
-                q4: quadrants.q4.length
-            }
-        },
-        algorithm: 'hybrid'
-    };
+    return buildSelectionResult(selectionResult, quadrants, medians, 'hybrid');
 }
