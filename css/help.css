@@ -1,0 +1,94 @@
+/* ---------- help.css ---------- */
+/* Стили справки (HelpController) */
+
+.help-content {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 15px;
+    color: var(--text);
+}
+
+.help-content h1 {
+    font-size: 1.8rem;
+    color: var(--accent);
+    margin-top: 1rem;
+}
+
+.help-content h2 {
+    font-size: 1.4rem;
+    color: var(--text);
+    margin-top: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+}
+
+.help-content h3 {
+    font-size: 1.2rem;
+    color: var(--text);
+}
+
+.help-content h1,
+.help-content h2,
+.help-content h3,
+.help-content h4 {
+    scroll-margin-top: 20px;
+}
+
+.help-content a {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.help-content a:hover {
+    text-decoration: underline;
+}
+
+.help-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.help-content th,
+.help-content td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: left;
+}
+
+.help-content th {
+    background: var(--accent-bg-subtle);
+}
+
+.help-content code {
+    background: var(--code-bg);
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.help-content pre {
+    background: var(--code-bg);
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.help-content ul,
+.help-content ol {
+    margin: 10px 0;
+}
+
+.help-content li {
+    margin: 5px 0;
+}
+
+.help-content hr {
+    border: 1px solid var(--border);
+}
+
+/* Подсветка якоря при переходе по оглавлению */
+.toc-highlight {
+    background-color: var(--accent-bg-strong);
+    transition: background-color 0.3s ease;
+}

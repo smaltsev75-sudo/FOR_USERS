@@ -1,0 +1,71 @@
+/* ---------- buttons.css ---------- */
+/* Стили кнопок, извлечённые из components.css */
+
+.export-btn {
+   background: var(--button-bg);
+   border: 1px solid var(--border-light);
+   color: var(--text);
+   padding: 8px 14px;
+   border-radius: 8px;
+   font-size: 0.85rem;
+   font-weight: 500;
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   white-space: nowrap;
+   justify-content: center;
+}
+
+.export-btn:hover {
+   background: var(--button-hover);
+   border-color: var(--accent);
+   color: var(--accent);
+   transform: translateY(-1px);
+   box-shadow: 0 4px 8px var(--shadow-md);
+}
+
+.export-btn.primary {
+   background: var(--accent);
+   border-color: var(--accent);
+   color: var(--accent-text);
+   font-weight: 600;
+}
+
+.export-btn.primary:hover {
+   background: var(--accent-hover);
+   border-color: var(--accent-hover);
+   color: var(--accent-text);
+}
+
+.export-btn.danger {
+   color: var(--danger);
+   border-color: var(--danger);
+}
+
+.export-btn.danger:hover {
+   background: var(--danger-bg-subtle);
+   color: var(--danger-hover);
+   border-color: var(--danger-hover);
+}
+
+.theme-toggle-btn:hover {
+   color: var(--accent);
+   border-color: var(--accent);
+}
+
+.print-btn:hover {
+   color: var(--print);
+   border-color: var(--print);
+}
+
+.save-btn:hover {
+   color: var(--success);
+   border-color: var(--success);
+}
+
+.load-btn:hover {
+   color: var(--accent);
+   border-color: var(--accent);
+}

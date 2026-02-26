@@ -1,0 +1,224 @@
+/* ---------- responsive.css ---------- */
+/* Адаптивные стили для различных разрешений экрана */
+
+/* ---------- Общая адаптивность ---------- */
+@media (max-width: 1200px) {
+    .dash-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .availability-info {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .availability-info {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .res-grid-header,
+    .role-res-row,
+    .role-total-row {
+        grid-template-columns: 70px 1fr 60px 60px;
+    }
+
+    .task-row {
+        flex-wrap: wrap;
+    }
+
+    .task-estimates {
+        order: 1;
+        width: 100%;
+        margin-top: 8px;
+        justify-content: flex-start;
+        overflow-x: auto;
+    }
+
+    .criteria-row {
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .priority-score-container {
+        margin-left: 0;
+        margin-top: 12px;
+        width: 100%;
+        white-space: normal;
+        flex-shrink: 1;
+        text-align: left;
+    }
+
+    .criteria-eval-item {
+        min-width: 120px;
+    }
+
+    .criteria-eval-abbreviation {
+        display: none;
+    }
+
+    .mobile-criteria-abbreviation {
+        display: block;
+    }
+
+    .criteria-name-container {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .task-order-number {
+        min-width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-left {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .list-header-search {
+        width: 100%;
+    }
+
+    .task-list-actions {
+        width: 100%;
+    }
+
+    .actions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+        overflow-x: hidden;
+    }
+
+    .est-label-row,
+    .task-create-estimates {
+        grid-template-columns: repeat(5, 1fr) 80px;
+        /* 5 ролей + Effort */
+        gap: 5px;
+    }
+
+    .est-label-row div:last-child,
+    .task-create-estimates div:last-child {
+        display: none;
+        /* скрываем пустую седьмую колонку */
+    }
+
+    .task-create-estimates .total-display {
+        width: 100%;
+    }
+
+    .tabs-container {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        justify-content: center;
+        border-bottom: none;
+        border-left: 3px solid transparent;
+        padding: 12px;
+    }
+
+    .tab-btn.active {
+        border-bottom: none;
+        border-left: 3px solid var(--accent);
+    }
+
+    .criteria-row {
+        gap: 5px;
+    }
+
+    .criteria-eval-item {
+        min-width: 110px;
+        gap: 4px;
+        padding: 4px 6px;
+    }
+
+    .criteria-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .criteria-controls-icons {
+        align-self: flex-end;
+    }
+
+    .task-order-number {
+        min-width: 22px;
+        height: 22px;
+        font-size: 0.75rem;
+    }
+
+    /* Дополнительная настройка для очень узких экранов */
+    .priority-score-container {
+        margin-left: 0;
+        margin-top: 12px;
+        width: 100%;
+        white-space: normal;
+        flex-shrink: 1;
+        text-align: left;
+    }
+}
+
+/* ---------- Адаптивность для блока трудозатрат (оценки по ролям + Effort) ---------- */
+@media (max-width: 900px) {
+    .task-estimates {
+        flex-wrap: wrap;
+        /* разрешаем перенос оценок */
+        gap: 8px;
+        /* увеличиваем отступы для читаемости */
+        justify-content: flex-start;
+    }
+
+    .est-box {
+        min-width: 45px;
+        /* чуть шире для комфорта */
+        max-width: none;
+        /* убираем ограничение максимальной ширины */
+    }
+
+    .est-box-total {
+        min-width: 80px;
+        /* Effort тоже может быть шире */
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 600px) {
+    .task-estimates {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .est-box {
+        min-width: 40px;
+        flex: 1 0 auto;
+        /* позволяем боксам растягиваться */
+    }
+
+    .est-box-total {
+        width: 100%;
+        /* Effort занимает всю ширину */
+        min-width: 0;
+        margin-top: 8px;
+        order: 999;
+    }
+}

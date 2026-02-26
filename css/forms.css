@@ -1,0 +1,40 @@
+/* ---------- forms.css ---------- */
+/* Общие стили полей ввода, извлечённые из components.css */
+
+.number-input,
+.role-res-row input,
+.role-res-row select,
+.task-create-main input,
+.task-create-main select,
+.modal-form input,
+.modal-form select,
+.modal-form textarea,
+.availability-info input,
+.list-header-search input,
+.list-header-search select {
+   background: var(--bg-main);
+   border: 1px solid var(--border);
+   color: var(--text);
+   padding: 8px 12px;
+   border-radius: 8px;
+   font-size: 0.85rem;
+   transition: all 0.2s ease;
+   box-shadow: inset 0 2px 4px var(--inset-shadow);
+   text-align: center;
+}
+
+.number-input:focus,
+.role-res-row input:focus,
+.role-res-row select:focus,
+.task-create-main input:focus,
+.task-create-main select:focus,
+.modal-form input:focus,
+.modal-form select:focus,
+.modal-form textarea:focus,
+.availability-info input:focus,
+.list-header-search input:focus,
+.list-header-search select:focus {
+   border-color: var(--accent);
+   box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
+   outline: none;
+}

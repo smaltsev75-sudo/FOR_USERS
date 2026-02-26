@@ -1,0 +1,851 @@
+/* ---------- components.css ---------- */
+/* Переменные темы определены в base.css */
+
+/* ---------- Общие элементы ---------- */
+.panel {
+    background: var(--bg-card);
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px var(--shadow-sm);
+}
+
+.header-title {
+    margin: 0;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-hint {
+    color: var(--text-muted);
+    cursor: help;
+    margin-left: 4px;
+}
+
+.center-align {
+    text-align: center;
+}
+
+.number-display {
+    text-align: right !important;
+}
+
+/* Кнопки → см. buttons.css */
+
+/* ---------- Табы ---------- */
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+    background: var(--overlay-light);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+}
+
+/* ---------- Панель управления (заголовок, поиск, кнопки) ---------- */
+.list-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--overlay-subtle);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.header-left {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.header-excluded {
+    font-size: 0.9rem;
+    color: var(--excluded);
+    font-weight: 500;
+}
+
+.header-excluded span {
+    color: inherit;
+}
+
+.header-included {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.header-included span {
+    color: inherit;
+}
+
+/* Header counter color classes — used instead of inline styles to support CSS variables in axe-core */
+.header-color-accent {
+    color: var(--accent);
+}
+
+.header-color-excluded {
+    color: var(--excluded);
+}
+
+.header-color-us {
+    color: var(--us-color);
+}
+
+.header-color-bug {
+    color: var(--bug-color);
+}
+
+.header-color-tech {
+    color: var(--tech-color);
+}
+
+/* Блок поиска и фильтра — вертикальное расположение */
+.list-header-search {
+    flex: 1 1 300px;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Единый стиль для input и select — одинаковая ширина и высота */
+.list-header-search input,
+.list-header-search select {
+    width: 100% !important;
+    box-sizing: border-box;
+    height: 38px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px var(--inset-shadow);
+}
+
+/* Кастомная стрелка для select */
+.list-header-search select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding-right: 30px;
+}
+
+.list-header-search input:focus,
+.list-header-search select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
+    outline: none;
+}
+
+/* Блок кнопок */
+.task-list-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 8px;
+}
+
+.actions-grid button {
+    white-space: nowrap;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+/* ---------- Таблица загрузки команды ---------- */
+.res-grid-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 70px 70px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 8px;
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent);
+    border-radius: 6px 6px 0 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.res-grid-header>span:nth-child(3),
+.res-grid-header>span:nth-child(4) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.res-grid-header>span:first-child,
+.role-res-row>span:first-child,
+.role-total-row>span:first-child {
+    padding-left: 6px;
+}
+
+.role-res-row,
+.role-total-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 70px 70px;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 8px;
+}
+
+.role-res-row {
+    border-bottom: 1px solid var(--row-divider);
+    padding: 8px 0;
+}
+
+.role-res-row:last-child {
+    border-bottom: none;
+}
+
+.role-res-row>div:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.role-load-numbers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+}
+
+.progress-bg {
+    height: 8px;
+    background: var(--progress-track);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.role-res-row .input-fte,
+.role-res-row .input-off {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.role-name-cell {
+    font-weight: bold;
+    padding-left: 10px;
+}
+
+.role-inline-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1px;
+}
+
+.role-input-cell {
+    text-align: center;
+    width: 100%;
+    min-height: 30px;
+    align-self: center;
+}
+
+.role-total-row {
+    margin-top: 8px;
+    padding: 8px;
+    border-top: 2px solid var(--accent);
+    background: var(--accent-bg-subtle);
+    font-weight: bold;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.role-total-row>div:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+}
+
+.role-total-numbers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* ---------- Таблица распределения работ (полностью синхронизирована с грид-таблицей) ---------- */
+.table-dash {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-dash th,
+.table-dash td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.table-dash th {
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+}
+
+.table-dash th,
+.table-dash td {
+    text-align: right;
+}
+
+.table-dash th:first-child,
+.table-dash td:first-child {
+    text-align: left;
+}
+
+.total-row {
+    font-weight: bold;
+    border-top: 2px solid var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.total-row td {
+    padding: 8px 12px;
+    text-align: right;
+}
+
+.total-row td:first-child {
+    text-align: left;
+}
+
+/* Поля ввода → см. forms.css */
+
+/* ---------- Карточка задачи ---------- */
+.task-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    transition: all 0.2s;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.task-item.removing {
+    animation: slideOut 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+.task-item.excluded {
+    opacity: 0.7;
+    border-style: dashed;
+    background: var(--excluded-bg);
+}
+
+.task-item.type-us {
+    border-left: 6px solid var(--us-color);
+}
+
+.task-item.type-bug {
+    border-left: 6px solid var(--bug-color);
+}
+
+.task-item.type-tech {
+    border-left: 6px solid var(--tech-color);
+}
+
+.task-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.drag-handle {
+    color: var(--text-muted);
+    cursor: move;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.task-order-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+    border-radius: 6px;
+    border: 1px solid var(--accent-border-faint);
+    flex-shrink: 0;
+}
+
+.task-item.excluded .task-order-number {
+    color: var(--excluded);
+    background: var(--excluded-bg);
+    border-color: var(--excluded-border);
+}
+
+.task-type-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.task-type-indicator.type-us {
+    background: var(--us-color);
+    color: #000;
+}
+
+.task-type-indicator.type-bug {
+    background: var(--bug-color);
+    color: #fff;
+}
+
+.task-type-indicator.type-tech {
+    background: var(--tech-color);
+    color: #fff;
+}
+
+.task-content {
+    flex: 1 1 200px;
+    min-width: 150px;
+}
+
+.task-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.task-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.task-jira-link {
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    font-weight: 500;
+    padding: 2px 4px;
+    background: var(--accent-bg-faint);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.task-jira-link:hover {
+    background: var(--accent-bg-subtle);
+}
+
+.task-comment {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: normal;
+    word-break: break-word;
+    font-style: italic;
+    border-top: 1px dashed var(--border);
+    padding-top: 4px;
+}
+
+.task-comment:empty {
+    display: none;
+}
+
+/* Блок оценок по ролям */
+.task-estimates {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.est-box {
+    min-width: 40px;
+    max-width: 55px;
+    padding: 0;
+    text-align: center;
+}
+
+.est-role-label {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.est-input-container input {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 3px 2px;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    height: 24px;
+}
+
+.est-input-container input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.est-box-total {
+    padding: 2px 8px;
+    min-width: 65px;
+    background: var(--success-bg-faint);
+    border: 1px solid var(--success-border-faint);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-effort-value {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--success);
+    white-space: nowrap;
+}
+
+.task-btn-group {
+    display: flex;
+    gap: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.task-action-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.task-action-btn:hover {
+    background: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px var(--shadow-md);
+}
+
+.btn-edit:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.btn-delete:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-bg-subtle);
+}
+
+.btn-exclude:hover:not(.excluded) {
+    color: var(--warning);
+    border-color: var(--warning);
+    background: var(--warning-bg-subtle);
+}
+
+.btn-exclude.excluded {
+    color: var(--excluded);
+    border-color: var(--excluded);
+    background: var(--excluded-bg);
+    position: relative;
+}
+
+.btn-exclude.excluded::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    width: 18px;
+    height: 2px;
+    background-color: var(--excluded);
+    pointer-events: none;
+}
+
+.btn-exclude.excluded:hover {
+    color: var(--success);
+    border-color: var(--success);
+    background: var(--success-bg-subtle);
+}
+
+.criteria-evaluation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+}
+
+.criteria-eval-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--overlay-faint);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+}
+
+.criteria-eval-abbreviation {
+    font-weight: bold;
+    font-size: 0.7rem;
+    color: var(--accent);
+    min-width: 30px;
+}
+
+.criteria-eval-weight {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: right;
+}
+
+.criteria-eval-score select {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 1px 2px;
+    font-size: 0.65rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.criteria-eval-score select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.criteria-eval-value {
+    font-weight: bold;
+    font-size: 0.7rem;
+    color: var(--success);
+    min-width: 30px;
+    text-align: right;
+}
+
+.priority-score-container {
+    background: var(--accent-bg-light);
+    border-radius: 6px;
+    border: 1px solid var(--accent-border);
+    font-weight: bold;
+    font-size: 0.75rem;
+    color: var(--priority-score-color);
+    padding: 4px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Индикатор перегрузки */
+.overload-tag {
+    background: var(--danger);
+    color: white;
+    font-size: 0.5rem;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    max-width: 100%;
+    box-sizing: border-box;
+    line-height: 1.2;
+    box-shadow: 0 1px 2px var(--danger-shadow);
+}
+
+.overload-percent {
+    font-size: 0.45rem;
+    opacity: 0.9;
+}
+
+
+
+
+
+.btn-reset-criteria,
+.btn-add-criteria-small {
+    background: var(--button-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.btn-reset-criteria:hover {
+    background: var(--warning);
+    color: #000;
+    border-color: var(--warning);
+    transform: translateY(-1px);
+}
+
+.btn-add-criteria-small:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.criteria-list {
+    margin-top: 20px;
+}
+
+.criteria-item {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 6px var(--shadow-sm);
+}
+
+.criteria-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.criteria-name-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.criteria-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.criteria-abbreviation {
+    background: #7c3aed;
+    color: white;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.criteria-weight {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.criteria-controls-icons {
+    display: flex;
+    gap: 8px;
+}
+
+.criteria-icon-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}

@@ -1,0 +1,122 @@
+/* ---------- modals.css ---------- */
+/* Стили модальных окон, извлечённые из components.css */
+
+.modal-overlay {
+   display: none;
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background: var(--modal-overlay-bg);
+   align-items: center;
+   justify-content: center;
+   z-index: 2000;
+}
+
+.modal-content {
+   background: var(--bg-card);
+   border-radius: 10px;
+   padding: 20px;
+   max-width: 520px;
+   max-height: 90vh;
+   overflow-y: auto;
+   border: 1px solid var(--border);
+   box-shadow: 0 10px 30px var(--shadow-xl);
+}
+
+.modal-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 20px;
+   border-bottom: 1px solid var(--border);
+   padding-bottom: 10px;
+}
+
+.modal-form {
+   display: flex;
+   flex-direction: column;
+   gap: 15px;
+}
+
+.modal-form label {
+   font-size: 0.8rem;
+   color: var(--text-muted);
+   margin-bottom: 5px;
+   display: block;
+   font-weight: 500;
+}
+
+.modal-form input,
+.modal-form select,
+.modal-form textarea {
+   background: var(--bg-main);
+   border: 1px solid var(--border);
+   color: var(--text);
+   padding: 8px 10px;
+   border-radius: 6px;
+   font-size: 0.8rem;
+   width: 100%;
+   box-sizing: border-box;
+}
+
+.modal-form input:focus,
+.modal-form select:focus,
+.modal-form textarea:focus {
+   outline: none;
+   border-color: var(--accent);
+   box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.modal-buttons-center,
+.form-actions {
+   display: flex;
+   justify-content: center;
+   gap: 12px;
+   margin-top: 25px;
+}
+
+.confirm-buttons {
+   display: flex;
+   justify-content: center;
+   gap: 20px;
+   margin-top: 25px;
+}
+
+.confirm-btn {
+   padding: 10px 25px;
+   border: none;
+   border-radius: 6px;
+   cursor: pointer;
+   font-size: 0.85rem;
+   font-weight: bold;
+   transition: all 0.2s;
+}
+
+.confirm-yes {
+   background: var(--danger);
+   color: white;
+}
+
+.confirm-yes:hover {
+   background: var(--danger-hover);
+   transform: translateY(-1px);
+   box-shadow: 0 4px 8px var(--danger-shadow);
+}
+
+.confirm-no {
+   background: var(--button-bg);
+   color: var(--text);
+   border: 1px solid var(--border);
+}
+
+.confirm-no:hover {
+   background: var(--button-hover);
+   transform: translateY(-1px);
+}
+
+.error {
+   border-color: var(--danger) !important;
+   box-shadow: 0 0 0 2px var(--danger-bg-light) !important;
+}

@@ -1,0 +1,193 @@
+/* ---------- create-task-modal.css ---------- */
+/* Стили для модального окна создания задачи, кнопка OK, выделение задачи */
+
+#createTaskModal .est-label-row,
+#createTaskModal .task-create-estimates {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) 80px;
+    gap: 8px;
+}
+
+#createTaskModal .est-label-row div,
+#createTaskModal .task-create-estimates input,
+#createTaskModal .task-create-estimates .total-display {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 500px) {
+
+    #createTaskModal .est-label-row,
+    #createTaskModal .task-create-estimates {
+        grid-template-columns: repeat(5, 1fr) 80px;
+    }
+
+    #createTaskModal .est-label-row div:last-child,
+    #createTaskModal .task-create-estimates div:last-child {
+        display: none;
+    }
+}
+
+/* ---------- Заголовки блоков с value справа ---------- */
+#createTaskModal .criteria-header,
+#createTaskModal .hours-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+#createTaskModal .criteria-header label,
+#createTaskModal .hours-header label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+#createTaskModal .criteria-header .criteria-header-value,
+#createTaskModal .hours-header .criteria-header-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+#createTaskModal .criteria-header .criteria-header-value {
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+#createTaskModal .hours-header .criteria-header-value {
+    color: var(--success);
+    background: var(--success-bg-subtle);
+}
+
+/* ---------- Сетка для критериев в модальном окне ---------- */
+#createTaskModal .criteria-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 4px;
+}
+
+#createTaskModal .criteria-label-row,
+#createTaskModal .criteria-select-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+#createTaskModal .criteria-label-cell {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: left;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#createTaskModal .criteria-label-cell .criteria-weight {
+    font-size: 0.7rem;
+    color: var(--text);
+    background-color: var(--bg-main);
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+    font-weight: 700;
+    border: 1px solid var(--accent);
+    box-shadow: 0 1px 2px var(--shadow-md);
+}
+
+#createTaskModal .criteria-select-cell {
+    text-align: left;
+}
+
+#createTaskModal .criteria-select-cell select {
+    width: 100%;
+    min-width: 50px;
+    padding: 4px 2px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+#createTaskModal .criteria-select-cell select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+#createTaskModal .criteria-label-row .criteria-label-cell:last-child {
+    display: none;
+    /* скрываем пустую ячейку в строке заголовков */
+}
+
+#createTaskModal .criteria-select-cell.priority-score-cell .priority-score-container {
+    background: var(--accent-bg-medium);
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--accent);
+    padding: 4px 8px;
+    display: inline-block;
+    width: auto;
+    min-width: 110px;
+    text-align: right;
+    box-sizing: border-box;
+}
+
+/* Адаптация для узких экранов в модалке */
+@media (max-width: 600px) {
+
+    #createTaskModal .criteria-label-row,
+    #createTaskModal .criteria-select-row {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 4px;
+    }
+
+    #createTaskModal .criteria-label-cell {
+        font-size: 0.7rem;
+    }
+
+    #createTaskModal .criteria-select-cell select {
+        font-size: 0.65rem;
+        padding: 2px;
+    }
+
+    #createTaskModal .criteria-select-cell.priority-score-cell .priority-score-container {
+        font-size: 0.7rem;
+        padding: 2px 4px;
+        min-width: 90px;
+    }
+}
+
+/* ---------- Кнопка OK ---------- */
+#okMessageBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-align: center;
+}
+
+/* ---------- Выделение выбранной задачи ---------- */
+.task-item.selected-task {
+    border: 3px solid var(--accent) !important;
+    background-color: var(--accent-bg-highlight) !important;
+    box-shadow: 0 0 20px var(--accent-glow) !important;
+    border-radius: 8px;
+    position: relative;
+    z-index: 10;
+}

@@ -1,0 +1,147 @@
+/* ---------- selection-report.css ---------- */
+/* Стили отчёта автоотбора и рекомендаций, извлечённые из components.css */
+
+/* Таблица сравнения алгоритмов */
+.comparison-table {
+   width: 100%;
+   border-collapse: collapse;
+   margin-bottom: 20px;
+   font-size: 0.75rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+   padding: 10px 8px;
+   text-align: center;
+   border-bottom: 1px solid var(--border);
+}
+
+.comparison-table th {
+   background: var(--accent-bg-subtle);
+   color: var(--accent);
+   font-weight: 600;
+   border-bottom: 2px solid var(--accent);
+}
+
+.comparison-table td:first-child,
+.comparison-table th:first-child {
+   text-align: left;
+}
+
+.best-value {
+   display: inline-block;
+   background: var(--best-value-bg);
+   border-radius: 20px;
+   padding: 2px 10px;
+   font-weight: 600;
+   color: inherit;
+   line-height: 1.4;
+}
+
+/* Окно рекомендаций */
+#recommendationsContent {
+   overflow-x: hidden;
+   word-break: break-word;
+}
+
+.rec-card {
+   max-width: 100%;
+   box-sizing: border-box;
+}
+
+.recommendations-container {
+   display: flex;
+   flex-direction: column;
+   gap: 24px;
+}
+
+.rec-section-title {
+   font-weight: bold;
+   font-size: 0.9rem;
+   color: var(--accent);
+   padding-bottom: 4px;
+   border-bottom: 1px solid var(--border);
+}
+
+.rec-card {
+   background: var(--bg-card);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   padding: 12px;
+   transition: all 0.2s;
+}
+
+.rec-card:hover {
+   border-color: var(--accent);
+   box-shadow: 0 4px 8px var(--accent-shadow);
+}
+
+.rec-card-header {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-bottom: 8px;
+   flex-wrap: wrap;
+}
+
+.rec-card-title {
+   font-weight: 600;
+   font-size: 0.85rem;
+   color: var(--text);
+   flex: 1;
+}
+
+.rec-card-severity {
+   font-size: 0.7rem;
+   padding: 2px 8px;
+   border-radius: 12px;
+   background: var(--overlay-medium);
+   white-space: nowrap;
+}
+
+.severity-high {
+   background: var(--danger-bg-light);
+   color: var(--danger);
+}
+
+.severity-medium {
+   background: var(--warning-bg-light);
+   color: var(--warning);
+}
+
+.severity-low {
+   background: var(--accent-bg-strong);
+   color: var(--accent);
+}
+
+.severity-info {
+   background: var(--success-bg-subtle);
+   color: var(--success);
+}
+
+.rec-card-suggestion {
+   font-size: 0.75rem;
+   color: var(--text-muted);
+   font-style: italic;
+   border-top: 1px dashed var(--border);
+   padding-top: 6px;
+   margin-top: 6px;
+}
+
+.algorithms-grid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+}
+
+.algorithm-column {
+   background: var(--overlay-subtle);
+   border-radius: 8px;
+   padding: 12px;
+}
+
+.general-recommendations .rec-cards {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}

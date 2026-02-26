@@ -1,0 +1,476 @@
+/* ---------- task-card.css ---------- */
+/* КОМПАКТНАЯ КАРТОЧКА ЗАДАЧИ — ПРИЖАТЫЕ ОЦЕНКИ, БЕЗ СЪЕЗЖАНИЙ */
+
+.task-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    transition: all 0.2s;
+}
+
+.task-item.excluded {
+    opacity: 0.7;
+    border-style: dashed;
+    background: var(--excluded-bg);
+}
+
+.task-item.type-us {
+    border-left: 6px solid var(--us-color);
+}
+
+.task-item.type-bug {
+    border-left: 6px solid var(--bug-color);
+}
+
+.task-item.type-tech {
+    border-left: 6px solid var(--tech-color);
+}
+
+.task-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+    /* запрещаем перенос строк */
+}
+
+.drag-handle {
+    color: var(--text-muted);
+    cursor: move;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.task-order-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+    border-radius: 6px;
+    border: 1px solid var(--accent-border-faint);
+    flex-shrink: 0;
+}
+
+.task-item.excluded .task-order-number {
+    color: var(--excluded);
+    background: var(--excluded-bg);
+    border-color: var(--excluded-border);
+}
+
+.task-type-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.task-type-indicator.type-us {
+    background: var(--us-color);
+    color: #000;
+}
+
+.task-type-indicator.type-bug {
+    background: var(--bug-color);
+    color: #fff;
+}
+
+.task-type-indicator.type-tech {
+    background: var(--tech-color);
+    color: #fff;
+}
+
+.task-content {
+    flex: 1 1 200px;
+    min-width: 150px;
+}
+
+.task-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.task-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+    flex: 1;
+    /* заголовок занимает всё свободное место */
+}
+
+.task-jira-link {
+    flex-shrink: 0;
+    /* ссылка не сжимается */
+}
+
+.task-jira-link:hover {
+    background: var(--accent-bg-subtle);
+}
+
+.task-comment {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: normal;
+    word-break: break-word;
+    font-style: italic;
+    border-top: 1px dashed var(--border);
+    padding-top: 4px;
+}
+
+.task-comment:empty {
+    display: none;
+}
+
+/* Блок оценок по ролям — всегда справа, не переносится */
+.task-estimates {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.est-box {
+    min-width: 40px;
+    max-width: 55px;
+    padding: 0;
+    text-align: center;
+}
+
+.est-role-label {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.est-input-container input {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 3px 2px;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    height: 24px;
+}
+
+.est-input-container input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.est-box-total {
+    padding: 2px 8px;
+    min-width: 65px;
+    background: var(--success-bg-faint);
+    border: 1px solid var(--success-border-faint);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-effort-value {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--success);
+    white-space: nowrap;
+}
+
+/* Кнопки */
+.task-btn-group {
+    display: flex;
+    gap: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.task-action-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.task-action-btn:hover {
+    background: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px var(--shadow-md);
+}
+
+.btn-edit:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.btn-delete:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-bg-subtle);
+}
+
+.btn-exclude:hover:not(.excluded) {
+    color: var(--warning);
+    border-color: var(--warning);
+    background: var(--warning-bg-subtle);
+}
+
+.btn-exclude.excluded {
+    color: var(--excluded);
+    border-color: var(--excluded);
+    background: var(--excluded-bg);
+    position: relative;
+}
+
+.btn-exclude.excluded::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    width: 18px;
+    height: 2px;
+    background-color: var(--excluded);
+    pointer-events: none;
+}
+
+.btn-exclude.excluded:hover {
+    color: var(--success);
+    border-color: var(--success);
+    background: var(--success-bg-subtle);
+}
+
+/* Строка критериев */
+.criteria-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.criteria-evaluation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+}
+
+.criteria-eval-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--overlay-faint);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+}
+
+.criteria-eval-abbreviation {
+    font-weight: bold;
+    font-size: 0.7rem;
+    color: var(--accent);
+    min-width: 30px;
+}
+
+.criteria-eval-weight {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: right;
+}
+
+.criteria-eval-score select {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 1px 2px;
+    font-size: 0.65rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.criteria-eval-score select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.criteria-eval-value {
+    font-weight: bold;
+    font-size: 0.7rem;
+    color: var(--success);
+    min-width: 30px;
+    text-align: right;
+}
+
+.priority-score-container {
+    background: var(--accent-bg-light);
+    border-radius: 6px;
+    border: 1px solid var(--accent-border);
+    font-weight: bold;
+    font-size: 0.75rem;
+    color: var(--priority-score-color);
+    padding: 4px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 900px) {
+    .task-row {
+        flex-wrap: wrap;
+    }
+
+    .task-estimates {
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    .task-btn-group {
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+}
+
+/* ---------- ИНДИКАТОР ПЕРЕГРУЗКИ — МИНИМАЛЬНЫЙ, ПО ШИРИНЕ ПОЛЯ ---------- */
+.overload-tag {
+    background: var(--danger) !important;
+    color: white !important;
+    font-size: 0.5rem !important;
+    /* мелкий шрифт */
+    font-weight: 600 !important;
+    padding: 1px 4px !important;
+    /* минимальные отступы */
+    border-radius: 3px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    max-width: 100% !important;
+    /* не шире родителя */
+    box-sizing: border-box !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 1px 2px var(--danger-shadow) !important;
+}
+
+.overload-percent {
+    font-size: 0.45rem !important;
+    opacity: 0.9 !important;
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.task-item {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.task-item.removing {
+    animation: slideOut 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+.task-item.excluded {
+    opacity: 0.7;
+    transition: opacity 0.3s ease, border-color 0.3s ease;
+}
+
+.task-action-btn {
+    transition: all 0.2s ease;
+}
+
+.task-action-btn:active {
+    transform: scale(0.95);
+}
+
+.task-item.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+    box-shadow: 0 10px 20px var(--shadow-lg);
+    transition: all 0.2s ease;
+}
+
+.task-item.drag-over {
+    border: 2px dashed var(--accent);
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}

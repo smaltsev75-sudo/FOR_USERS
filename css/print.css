@@ -1,0 +1,301 @@
+/* print.css */
+@media print {
+    /* ---------- Скрываем всё лишнее ---------- */
+    .export-btn,
+    .task-action-btn,
+    .task-btn-group,
+    .actions-grid,
+    .list-header-actions,
+    .modal-overlay,
+    .tab-btn,
+    .header-container .export-buttons,
+    .list-header .task-list-actions,
+    .drag-handle,
+    .btn-edit,
+    .btn-delete,
+    .btn-exclude,
+    .scale-toggle,
+    .criteria-icon-btn,
+    .btn-reset-criteria,
+    .btn-add-criteria-small,
+    #addTaskBtn,
+    #sortByPriorityBtn,
+    #deleteAllTasksBtn,
+    #autoSelectBtn,
+    #loadDataBtn,
+    #saveDataBtn,
+    #helpBtn,
+    .print-btn,
+    .info-hint,
+    .overload-tag,
+    .task-estimates .est-input-container input,
+    .list-header-search,
+    .criteria-eval-item,
+    .criteria-eval-abbreviation,
+    .mobile-criteria-abbreviation,
+    .criteria-eval-weight,
+    .criteria-eval-score,
+    .criteria-eval-value,
+    .est-box .est-role-label,
+    .est-box .overload-placeholder,
+    .est-box:not(.est-box-total) {
+        display: none !important;
+    }
+
+    /* ---------- Общие настройки ---------- */
+    * {
+        background: white !important;
+        color: black !important;
+        border-color: #ccc !important;
+        box-shadow: none !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+    }
+
+    body {
+        margin: 0.5in;
+        padding: 0;
+    }
+
+    /* ---------- ПАНЕЛЬ ПАРАМЕТРОВ СПРИНТА ---------- */
+    .availability-info {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #000;
+        padding: 10px;
+        background: #f9f9f9 !important;
+    }
+
+    .availability-info > div {
+        display: flex !important;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .availability-info label {
+        font-weight: bold;
+        font-size: 10pt;
+        white-space: nowrap;
+    }
+
+    .availability-info input,
+    .availability-info select {
+        border: 1px solid #ccc !important;
+        background: white !important;
+        padding: 3px 5px !important;
+        font-size: 10pt;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* ---------- БЛОК ИНФОРМАЦИИ О ЗАДАЧАХ (В ОДНУ СТРОКУ, С ИЗМЕНЁННЫМ ПОРЯДКОМ) ---------- */
+    .header-left {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100%;
+        margin-bottom: 20px;
+        padding: 8px 10px;
+        border: 1px solid #000;
+        background: #f0f0f0 !important;
+        box-sizing: border-box;
+    }
+
+    /* Меняем местами: сначала включённые, потом исключённые */
+    .header-excluded {
+        order: 2;
+        font-size: 12pt !important;
+        color: black !important;
+        white-space: nowrap;
+        margin-left: auto; /* при необходимости можно добавить отступ */
+    }
+
+    .header-included {
+        order: 1;
+        font-size: 12pt !important;
+        color: black !important;
+        white-space: nowrap;
+    }
+
+    /* ---------- ДВЕ ТАБЛИЦЫ НА ОДНОМ ЛИСТЕ ---------- */
+    .dash-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+    }
+
+    /* ---------- Таблица загрузки команды ---------- */
+    .res-grid-header {
+        display: grid !important;
+        grid-template-columns: 80px 1fr 70px 70px !important;
+        gap: 5px !important;
+        padding: 8px 0 !important;
+        font-weight: bold;
+        border-bottom: 2px solid #000;
+        background: #eee !important;
+    }
+
+    .role-res-row,
+    .role-total-row {
+        display: grid !important;
+        grid-template-columns: 80px 1fr 70px 70px !important;
+        gap: 5px !important;
+        padding: 6px 0 !important;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .role-total-row {
+        border-top: 2px solid #000;
+        font-weight: bold;
+        background: #f5f5f5 !important;
+        margin-top: 8px;
+    }
+
+    .progress-bg {
+        background: #eee !important;
+        border: 1px solid #000;
+        height: 8px;
+    }
+    
+    .progress-fill {
+        background: #000 !important;
+        opacity: 0.5;
+    }
+
+    /* ---------- Таблица распределения работ ---------- */
+    .table-dash {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .table-dash th,
+    .table-dash td {
+        border: 1px solid #000;
+        padding: 6px;
+        text-align: right;
+    }
+    
+    .table-dash th:first-child,
+    .table-dash td:first-child {
+        text-align: left;
+    }
+    
+    .table-dash th {
+        background: #eee !important;
+        font-weight: bold;
+        border-bottom: 2px solid #000;
+    }
+    
+    .total-row {
+        font-weight: bold;
+        border-top: 2px solid #000;
+        background: #f5f5f5 !important;
+    }
+
+    /* ---------- КАРТОЧКА ЗАДАЧИ ---------- */
+    .task-item {
+        page-break-inside: avoid;
+        border: 1px solid #000;
+        margin-bottom: 12px;
+        padding: 10px;
+        background: white !important;
+    }
+
+    /* Строка 1: номер, тип, название */
+    .task-row {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .task-order-number {
+        min-width: 24px;
+        height: 24px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 1px solid #000;
+        background: #eee !important;
+    }
+
+    .task-type-indicator {
+        width: 40px;
+        height: 24px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 1px solid #000;
+        background: #eee !important;
+    }
+
+    /* Заменяем иконки текстом */
+
+    .task-type-indicator i,
+    .task-type-indicator .fas,
+    .task-type-indicator .fa {
+        display: none !important;
+    }
+
+    .task-title {
+        font-weight: bold;
+        font-size: 11pt;
+        flex: 1;
+    }
+
+    /* Строка 2: URL (слева, с отступом) */
+    .task-jira-link {
+        display: block !important;
+        color: black !important;
+        text-decoration: underline;
+        font-size: 9pt;
+        margin-left: 72px;
+        margin-bottom: 5px;
+        word-break: break-all;
+    }
+    
+    .task-jira-link:after {
+        content: " (" attr(href) ")";
+        font-size: 8pt;
+        color: #333;
+    }
+
+    /* Строка 3: Priority Score и Effort в одной строке, прижаты к правому краю */
+    .task-metrics-row {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 20px;
+        margin-top: 5px;
+        font-size: 10pt;
+    }
+
+    .priority-score-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        color: black !important;
+        font-weight: normal !important;
+    }
+
+    .est-box-total {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        color: black !important;
+    }
+
+    .est-box-total .task-effort-value {
+        color: black !important;
+        font-weight: normal !important;
+    }
+}

@@ -1,0 +1,254 @@
+/* ---------- criteria.css ---------- */
+/* Стили вкладки критериев оценки, извлечённые из components.css */
+
+.criteria-header-buttons {
+   display: flex;
+   gap: 10px;
+}
+
+.btn-reset-criteria,
+.btn-add-criteria-small {
+   background: var(--button-bg);
+   border: 1px solid var(--border-light);
+   color: var(--text);
+   border-radius: 6px;
+   padding: 8px 12px;
+   cursor: pointer;
+   font-size: 0.75rem;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   transition: all 0.2s ease;
+   font-weight: 500;
+}
+
+.btn-reset-criteria:hover {
+   background: var(--warning);
+   color: #000;
+   border-color: var(--warning);
+   transform: translateY(-1px);
+}
+
+.btn-add-criteria-small:hover {
+   background: var(--accent);
+   color: #000;
+   border-color: var(--accent);
+   transform: translateY(-1px);
+}
+
+.criteria-list {
+   margin-top: 20px;
+}
+
+.criteria-item {
+   background: var(--bg-main);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   padding: 16px;
+   margin-bottom: 16px;
+   box-shadow: 0 3px 6px var(--shadow-sm);
+}
+
+.criteria-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: flex-start;
+   margin-bottom: 12px;
+}
+
+.criteria-name-container {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 10px;
+}
+
+.criteria-name {
+   font-weight: bold;
+   font-size: 0.9rem;
+   color: var(--text);
+}
+
+.criteria-abbreviation {
+   background: #7c3aed;
+   color: white;
+   border-radius: 6px;
+   padding: 4px 8px;
+   font-size: 0.8rem;
+   font-weight: bold;
+}
+
+.criteria-weight {
+   background: var(--accent);
+   color: var(--accent-text);
+   border-radius: 6px;
+   padding: 4px 8px;
+   font-size: 0.8rem;
+   font-weight: bold;
+}
+
+.criteria-controls-icons {
+   display: flex;
+   gap: 8px;
+}
+
+.criteria-icon-btn {
+   background: var(--button-bg);
+   border: 1px solid var(--border-light);
+   color: var(--text);
+   cursor: pointer;
+   font-size: 0.9rem;
+   width: 32px;
+   height: 32px;
+   border-radius: 6px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: all 0.2s ease;
+}
+
+.criteria-icon-btn:hover {
+   background: var(--button-hover);
+   transform: translateY(-1px);
+   box-shadow: 0 3px 6px var(--shadow-md);
+}
+
+.btn-edit-criteria-icon:hover {
+   color: var(--accent);
+   border-color: var(--accent);
+   background: var(--accent-bg-subtle);
+}
+
+.btn-delete-criteria-icon:hover {
+   color: var(--danger);
+   border-color: var(--danger);
+   background: var(--danger-bg-subtle);
+}
+
+.criteria-rationale {
+   display: block !important;
+   font-size: 0.8rem !important;
+   color: var(--text-muted) !important;
+   line-height: 1.5 !important;
+   margin-bottom: 16px !important;
+   padding: 10px !important;
+   background: var(--overlay-light) !important;
+   border-radius: 6px !important;
+   border: 1px solid var(--border) !important;
+}
+
+.criteria-scale-container {
+   margin-top: 16px;
+}
+
+.scale-toggle {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   color: var(--text-muted);
+   cursor: pointer;
+   font-size: 0.8rem;
+   margin-bottom: 10px;
+   padding: 6px;
+   border-radius: 6px;
+   transition: all 0.2s;
+   background: var(--button-bg);
+   border: 1px solid var(--border);
+   width: fit-content;
+}
+
+.scale-toggle:hover {
+   background: var(--button-hover);
+   color: var(--text);
+   border-color: var(--border-light);
+}
+
+.scale-toggle-icon {
+   transition: transform 0.2s;
+}
+
+.scale-toggle-icon.collapsed {
+   transform: rotate(-90deg);
+}
+
+.criteria-scale {
+   display: none;
+   flex-direction: column;
+   gap: 8px;
+   padding: 12px;
+   background: var(--overlay-light);
+   border-radius: 8px;
+   border: 1px solid var(--border);
+   max-height: 350px;
+   overflow-y: auto;
+}
+
+.criteria-scale.expanded {
+   display: flex;
+}
+
+.scale-item {
+   display: flex;
+   align-items: flex-start;
+   gap: 12px;
+   padding: 8px;
+   background: var(--scale-item-bg);
+   border-radius: 6px;
+   border: 1px solid var(--scale-item-border);
+}
+
+.scale-score {
+   font-weight: bold;
+   color: var(--accent);
+   font-size: 0.8rem;
+   min-width: 28px;
+   flex-shrink: 0;
+   background: var(--accent-bg-subtle);
+   border-radius: 4px;
+   padding: 4px;
+   text-align: center;
+}
+
+.scale-description {
+   font-size: 0.8rem;
+   color: var(--text);
+   flex-grow: 1;
+   padding: 4px;
+   min-height: 24px;
+}
+
+.scale-description:empty::before {
+   content: "нет описания";
+   color: var(--text-muted);
+   font-style: italic;
+}
+
+.total-weight {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 12px;
+   background: var(--success-bg-light);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   font-size: 0.9rem;
+   font-weight: 500;
+}
+
+.top-total-weight {
+   margin-bottom: 20px;
+}
+
+.bottom-total-weight {
+   margin-top: 20px;
+}
+
+.weight-valid {
+   color: var(--success);
+   font-weight: bold;
+}
+
+.weight-invalid {
+   color: var(--danger);
+   font-weight: bold;
+}
