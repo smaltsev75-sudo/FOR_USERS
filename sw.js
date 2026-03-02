@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.17';
+const CACHE_VERSION = 'sp-v8.18';
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -82,6 +82,7 @@ const ASSETS_TO_CACHE = [
     '/js/ui/roleList.js',
     '/js/ui/selectionRecommendations.js',
     '/js/ui/selectionReport.js',
+    '/js/ui/snackbar.js',
     '/js/ui/taskList.js',
     '/js/ui/utils.js',
     // JS — utils
