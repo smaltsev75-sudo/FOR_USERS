@@ -2,7 +2,7 @@
 
 import { messageService } from '../services/message.js';
 import { createDefaultConfig } from '../domain/config.js';
-import { addDays, formatDate, parseDate } from '../utils/date.js';
+import { addWorkingDays, countWorkingDays, formatDate, parseDate } from '../utils/date.js';
 
 export class ConfigController {
     /**
@@ -231,17 +231,27 @@ export class ConfigController {
 
     /**
      * Обработка ручного изменения даты окончания спринта.
+     * При изменении даты окончания пересчитывается количество рабочих дней.
      */
     handleEndDateChange(e) {
         const newEndDate = e.target.value;
-        const { endDate: currentEnd } = this.store.getState().config ?? {};
+        const { endDate: currentEnd, startDate } = this.store.getState().config ?? {};
         if (currentEnd === newEndDate) return;
         if (newEndDate && !parseDate(newEndDate)) {
             messageService.showMessage('Дата окончания должна быть в формате дд.мм.гггг');
             e.target.value = currentEnd || '';
             return;
         }
-        this.store.setConfig({ endDate: newEndDate });
+        const nextConfig = { endDate: newEndDate };
+        // Пересчитываем количество рабочих дней если задана дата начала
+        if (startDate && newEndDate) {
+            const parsedStart = parseDate(startDate);
+            const parsedEnd = parseDate(newEndDate);
+            if (parsedStart && parsedEnd && parsedEnd >= parsedStart) {
+                nextConfig.days = countWorkingDays(parsedStart, parsedEnd);
+            }
+        }
+        this.store.setConfig(nextConfig);
     }
 
     /**
@@ -304,6 +314,6 @@ export class ConfigController {
         if (!startDate || !days) return '';
         const parsed = parseDate(startDate);
         if (!parsed) return '';
-        return formatDate(addDays(parsed, days - 1));
+        return formatDate(addWorkingDays(parsed, days - 1));
     }
 }

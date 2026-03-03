@@ -64,7 +64,8 @@ export class FileController {
                 this.criteriaManager.getCriteria(),
                 this.nfs.decimalSeparator
             );
-            const filename = 'sprint-plan-' + new Date().toISOString().slice(0, 10) + '.json';
+            const product = state.config?.product ? state.config.product + '-' : '';
+            const filename = product + 'sprint-plan-' + new Date().toISOString().slice(0, 10) + '.json';
             storageService.saveFile(data, filename);
         } catch (error) {
             messageService.showMessage('Не удалось сохранить файл: ' + error.message);
