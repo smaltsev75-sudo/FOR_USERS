@@ -9,6 +9,7 @@ export function createDefaultConfig() {
     return {
         product: APP_CONFIG.SPRINT.DEFAULT_PRODUCT,
         days: APP_CONFIG.SPRINT.DEFAULT_DAYS,
+        holidays: APP_CONFIG.SPRINT.DEFAULT_HOLIDAYS,
         startDate,
         endDate,
         availCoef: APP_CONFIG.SPRINT.DEFAULT_AVAIL_COEF,
@@ -16,17 +17,33 @@ export function createDefaultConfig() {
     };
 }
 
-export function calculateEndDateFromStartDateAndDays(startDateStr, days) {
+/**
+ * Рассчитывает дату окончания спринта.
+ * @param {string} startDateStr - дата начала в формате дд.мм.гггг
+ * @param {number} days - эффективные рабочие дни (без праздников)
+ * @param {number} [holidays=0] - количество праздничных дней в периоде
+ * @returns {string} дата окончания в формате дд.мм.гггг
+ */
+export function calculateEndDateFromStartDateAndDays(startDateStr, days, holidays = 0) {
     const startDate = parseDate(startDateStr);
     if (!startDate) return '';
-    return formatDate(addWorkingDays(startDate, days - 1));
+    const totalWorkingDays = days + holidays;
+    if (totalWorkingDays <= 0) return '';
+    return formatDate(addWorkingDays(startDate, totalWorkingDays - 1));
 }
 
-export function calculateDaysFromDates(startDateStr, endDateStr) {
+/**
+ * Рассчитывает количество эффективных рабочих дней между датами.
+ * @param {string} startDateStr - дата начала
+ * @param {string} endDateStr - дата окончания
+ * @param {number} [holidays=0] - количество праздничных дней в периоде
+ * @returns {number} количество рабочих дней минус праздники (не менее 0)
+ */
+export function calculateDaysFromDates(startDateStr, endDateStr, holidays = 0) {
     const start = parseDate(startDateStr);
     const end = parseDate(endDateStr);
     if (!start || !end) return 0;
-    return countWorkingDays(start, end);
+    return Math.max(0, countWorkingDays(start, end) - holidays);
 }
 
 export function validateDays(days) {

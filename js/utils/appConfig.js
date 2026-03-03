@@ -7,6 +7,7 @@ export const APP_CONFIG = {
     SPRINT: {
         DEFAULT_PRODUCT: 'SberUnity',        // Название продукта по умолчанию
         DEFAULT_DAYS: 10,                     // Длительность спринта в днях
+        DEFAULT_HOLIDAYS: 0,                  // Праздничные дни в спринте
         DEFAULT_AVAIL_COEF: 93.5,              // Коэффициент доступности команды (в процентах)
         DEFAULT_ALERT_THRESHOLD: 3,            // Порог срабатывания визуального алерта (в процентах)
     },

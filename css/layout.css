@@ -32,8 +32,13 @@
 
 .availability-info {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
+}
+
+.availability-info.config-row-2 {
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 12px;
 }
 
 .availability-info>div {

@@ -20,6 +20,8 @@ export class ConfigController {
         this.handleDaysChange = this.handleDaysChange.bind(this);
         this.handleStartDateChange = this.handleStartDateChange.bind(this);
         this.handleEndDateChange = this.handleEndDateChange.bind(this);
+        this.handleHolidaysInput = this.handleHolidaysInput.bind(this);
+        this.handleHolidaysChange = this.handleHolidaysChange.bind(this);
         this.handleAvailCoefInput = this.handleAvailCoefInput.bind(this);
         this.handleAvailCoefChange = this.handleAvailCoefChange.bind(this);
         this.handleAlertChange = this.handleAlertChange.bind(this);
@@ -53,12 +55,12 @@ export class ConfigController {
     }
 
     applyDays(days) {
-        const { days: currentDays, startDate, endDate } = this.store.getState().config ?? {};
+        const { days: currentDays, startDate, endDate, holidays = 0 } = this.store.getState().config ?? {};
         if (currentDays === days) return false;
 
         const nextConfig = { days };
         if (startDate) {
-            const calculatedEndDate = this.calculateEndDate(startDate, days);
+            const calculatedEndDate = this.calculateEndDate(startDate, days + holidays);
             if (calculatedEndDate !== endDate) {
                 nextConfig.endDate = calculatedEndDate;
             }
@@ -105,6 +107,13 @@ export class ConfigController {
             endDateInput.addEventListener('change', (e) => this.handleEndDateChange(e));
         }
 
+        // Праздничные дни
+        const holidaysInput = document.getElementById('cfgHolidays');
+        if (holidaysInput) {
+            holidaysInput.addEventListener('input', (e) => this.handleHolidaysInput(e));
+            holidaysInput.addEventListener('blur', (e) => this.handleHolidaysChange(e));
+        }
+
         // Коэффициент доступности
         const availCoefInput = document.getElementById('cfgAvailCoef');
         if (availCoefInput) {
@@ -133,6 +142,7 @@ export class ConfigController {
         const {
             product = '',
             days = 10,
+            holidays = 0,
             startDate = '',
             endDate = '',
             availCoef = 93.5,
@@ -153,6 +163,9 @@ export class ConfigController {
         const daysInput = document.getElementById('cfgDays');
         syncInputValue(daysInput, String(days));
 
+        const holidaysInput = document.getElementById('cfgHolidays');
+        syncInputValue(holidaysInput, String(holidays));
+
         const startDateInput = document.getElementById('cfgStartDate');
         syncInputValue(startDateInput, startDate);
 
@@ -170,6 +183,7 @@ export class ConfigController {
         return [
             config.product ?? '',
             config.days ?? '',
+            config.holidays ?? '',
             config.startDate ?? '',
             config.endDate ?? '',
             config.availCoef ?? '',
@@ -218,14 +232,14 @@ export class ConfigController {
      */
     handleStartDateChange(e) {
         const newStartDate = e.target.value;
-        const { startDate: currentStart, days } = this.store.getState().config ?? {};
+        const { startDate: currentStart, days, holidays = 0 } = this.store.getState().config ?? {};
         if (currentStart === newStartDate) return;
         if (newStartDate && !parseDate(newStartDate)) {
             messageService.showMessage('Дата начала должна быть в формате дд.мм.гггг');
             e.target.value = currentStart || '';
             return;
         }
-        const newEndDate = days ? this.calculateEndDate(newStartDate, days) : '';
+        const newEndDate = days ? this.calculateEndDate(newStartDate, days + holidays) : '';
         this.store.setConfig({ startDate: newStartDate, endDate: newEndDate });
     }
 
@@ -242,16 +256,60 @@ export class ConfigController {
             e.target.value = currentEnd || '';
             return;
         }
+        const { holidays = 0 } = this.store.getState().config ?? {};
         const nextConfig = { endDate: newEndDate };
         // Пересчитываем количество рабочих дней если задана дата начала
         if (startDate && newEndDate) {
             const parsedStart = parseDate(startDate);
             const parsedEnd = parseDate(newEndDate);
             if (parsedStart && parsedEnd && parsedEnd >= parsedStart) {
-                nextConfig.days = countWorkingDays(parsedStart, parsedEnd);
+                nextConfig.days = Math.max(0, countWorkingDays(parsedStart, parsedEnd) - holidays);
             }
         }
         this.store.setConfig(nextConfig);
+    }
+
+    /**
+     * Обработка ввода количества праздничных дней (в реальном времени).
+     */
+    handleHolidaysInput(e) {
+        const raw = e.target.value?.trim();
+        if (!raw) return;
+        const holidays = this.nfs.parseInteger(raw);
+        if (holidays < 0) return;
+        this.applyHolidays(holidays);
+    }
+
+    /**
+     * Обработка окончательного изменения количества праздничных дней (blur).
+     */
+    handleHolidaysChange(e) {
+        const holidays = this.nfs.parseInteger(e.target.value);
+        if (holidays < 0) {
+            messageService.showMessage('Количество праздничных дней не может быть отрицательным');
+            e.target.value = this.store.getState().config?.holidays ?? 0;
+            return;
+        }
+        this.applyHolidays(holidays);
+    }
+
+    /**
+     * Применяет новое количество праздничных дней и пересчитывает дни спринта.
+     */
+    applyHolidays(holidays) {
+        const { holidays: currentHolidays, startDate, endDate } = this.store.getState().config ?? {};
+        if (currentHolidays === holidays) return false;
+        const nextConfig = { holidays };
+        // Пересчитываем дни спринта если заданы обе даты
+        if (startDate && endDate) {
+            const parsedStart = parseDate(startDate);
+            const parsedEnd = parseDate(endDate);
+            if (parsedStart && parsedEnd && parsedEnd >= parsedStart) {
+                nextConfig.days = Math.max(0, countWorkingDays(parsedStart, parsedEnd) - holidays);
+            }
+        }
+        this.store.setConfig(nextConfig);
+        return true;
     }
 
     /**

@@ -64,6 +64,7 @@ function normalizeConfig(config = {}, defaults) {
         ...defaults,
         ...config,
         days: normalizeInteger(config.days, defaults.days, 1),
+        holidays: normalizeInteger(config.holidays, defaults.holidays ?? 0, 0),
         availCoef: normalizeNumber(config.availCoef, defaults.availCoef, 0, 100),
         alert: normalizeInteger(config.alert, defaults.alert, 0),
         product: String(config.product ?? defaults.product),

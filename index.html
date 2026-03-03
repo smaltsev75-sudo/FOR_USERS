@@ -80,21 +80,28 @@
         <!-- ВКЛАДКА ПЛАНИРОВАНИЯ -->
         <div id="planningTabContent" class="tab-content">
             <!-- Параметры спринта -->
-            <div class="panel availability-info">
-                <div><label for="cfgProduct">Продукт</label><input type="text" id="cfgProduct" value="SberUnity"
-                        maxlength="100"></div>
-                <div><label for="cfgDays">Дни спринта</label><input type="number" id="cfgDays" value="10" min="1"
-                        step="1"></div>
-                <div><label for="cfgStartDate">Начало</label><input type="text" id="cfgStartDate"
-                        class="date-input center-align" placeholder="дд.мм.гггг"></div>
-                <div><label for="cfgEndDate">Окончание</label><input type="text" id="cfgEndDate"
-                        class="date-input center-align" placeholder="дд.мм.гггг"></div>
-                <div><label for="cfgAvailCoef">Коэфф.доступности % <span class="info-hint"
-                            title="Учитывает риски (болезни, переключения между задачами и т.д.). По умолчанию 93.5%">ⓘ</span></label><input
-                        type="text" id="cfgAvailCoef" class="number-input" value="93,5"></div>
-                <div><label for="cfgAlert">Порог алерта % <span class="info-hint"
-                            title="Визуальное предупреждение: если загрузка команды превышает 100% + данный порог, появляется красная подсветка. ⚠️ Не влияет на алгоритмы отбора — они всегда работают со строгими ограничениями ёмкости.">ⓘ</span></label><input
-                        type="text" id="cfgAlert" class="number-input" value="3,0"></div>
+            <div class="panel">
+                <div class="availability-info">
+                    <div><label for="cfgProduct">Продукт</label><input type="text" id="cfgProduct" value="SberUnity"
+                            maxlength="100"></div>
+                    <div><label for="cfgDays">Дни спринта</label><input type="number" id="cfgDays" value="10" min="1"
+                            step="1"></div>
+                    <div><label for="cfgStartDate">Начало</label><input type="text" id="cfgStartDate"
+                            class="date-input center-align" placeholder="дд.мм.гггг"></div>
+                    <div><label for="cfgEndDate">Окончание</label><input type="text" id="cfgEndDate"
+                            class="date-input center-align" placeholder="дд.мм.гггг"></div>
+                    <div><label for="cfgHolidays">Праздники (дн) <span class="info-hint"
+                                title="Нерабочие праздничные дни в периоде спринта. Вычитаются из рабочих дней при расчёте «Дни спринта».">ⓘ</span></label><input
+                            type="number" id="cfgHolidays" value="0" min="0" step="1"></div>
+                </div>
+                <div class="availability-info config-row-2">
+                    <div><label for="cfgAvailCoef">Коэфф.доступности % <span class="info-hint"
+                                title="Учитывает риски (болезни, переключения между задачами и т.д.). По умолчанию 93.5%">ⓘ</span></label><input
+                            type="text" id="cfgAvailCoef" class="number-input" value="93,5"></div>
+                    <div><label for="cfgAlert">Порог алерта % <span class="info-hint"
+                                title="Визуальное предупреждение: если загрузка команды превышает 100% + данный порог, появляется красная подсветка. ⚠️ Не влияет на алгоритмы отбора — они всегда работают со строгими ограничениями ёмкости.">ⓘ</span></label><input
+                            type="text" id="cfgAlert" class="number-input" value="3,0"></div>
+                </div>
             </div>
 
             <!-- Дэшборд: загрузка команды + распределение по типам -->

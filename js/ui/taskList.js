@@ -248,7 +248,9 @@ function createTaskElement(task, taskEvaluations, index, roles, criteria, config
     const jiraLink = el.querySelector('.task-jira-link');
     if (task.jira) {
         jiraLink.href = task.jira;
-        jiraLink.textContent = '🔗';
+        // Извлекаем ключ задачи: всё после последнего "/"
+        const jiraKey = task.jira.split('/').pop() || '🔗';
+        jiraLink.textContent = jiraKey;
         jiraLink.title = task.jira;
     } else {
         jiraLink.style.display = 'none';
