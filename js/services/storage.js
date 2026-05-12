@@ -51,7 +51,7 @@ export const storageService = {
                     try {
                         const data = JSON.parse(e.target.result);
                         resolve(data);
-                    } catch (err) {
+                    } catch (_err) {
                         reject(new Error('Ошибка чтения файла'));
                     }
                 };

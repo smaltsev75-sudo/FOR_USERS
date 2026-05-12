@@ -3,10 +3,39 @@ import { escapeHtml } from '../utils/escapeHtml.js';
 import { calculateAvailability } from '../domain/role.js';
 import { calculateTaskTotal } from '../domain/task.js';
 import { calculatePriorityScore } from '../domain/criteria.js';
+import { createTaskRowVM, getPriorityLevel, getPriorityLabel } from './createTaskRowVM.js';
+import { icon } from '../utils/icons.js';
+
+const ROLE_ICON_MAP = {
+    uiux: 'rolePalette',
+    ca: 'roleSearch',
+    fe: 'roleCode',
+    be: 'roleServer',
+    qa: 'roleBugShield'
+};
+
+function buildTypeBadgeHtml(vm) {
+    const typeIconMap = { us: 'bookOpen', bug: 'alertCircle', tech: 'roleCode' };
+    const iconName = typeIconMap[vm.type] || 'bookOpen';
+    return `<span class="task-type-badge type-${vm.type}" title="${escapeHtml(vm.typeLabel)}" aria-label="${escapeHtml(vm.typeLabel)}">${icon(iconName)}<span class="task-type-badge-text">${escapeHtml(vm.typeLabel)}</span></span>`;
+}
+
+function buildStatusBadgeHtml(vm) {
+    if (vm.excluded) {
+        return `<span class="task-status-badge status-excluded" title="Задача исключена из спринта">Исключена</span>`;
+    }
+    return `<span class="task-status-badge status-active" title="В работе">В работе</span>`;
+}
+
+function buildPriorityBadgeHtml(level, label, score) {
+    return `<span class="task-priority-badge priority-${level}" title="Приоритет: ${escapeHtml(label)} (${score})" aria-label="Приоритет ${escapeHtml(label)}">${icon('alertCircle')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
+}
 
 let lastHandledAddedTaskId = null;
 
-function filterTasks(tasks, taskFilter) {
+const VALID_DENSITIES = ['compact', 'comfortable', 'cozy'];
+
+export function filterTasks(tasks, taskFilter) {
     let filtered = [...tasks];
     const searchTerm = (taskFilter?.search || '').toLowerCase().trim();
     if (searchTerm) {
@@ -50,10 +79,37 @@ function highlightNewTask(state, taskListEl) {
     doHighlight();
 }
 
+export function resolveDensity(uiState) {
+    const value = uiState && uiState.density;
+    return VALID_DENSITIES.includes(value) ? value : 'comfortable';
+}
+
 export function renderTaskList(state, nfs, taskController = null) {
     const taskListEl = document.getElementById('taskList');
     if (!taskListEl) return;
+
+    // v8.27.2: snapshot prior priority-score значений для pulse-анимации
+    // изменившихся чисел после re-render. Хранится по task.id.
+    const previousScores = new Map();
+    taskListEl.querySelectorAll('.task-item').forEach((item) => {
+        const valueEl = item.querySelector('.priority-score-value');
+        const id = item.dataset.id;
+        if (valueEl && id) previousScores.set(id, valueEl.textContent);
+    });
+
+    // v8.27.2: запоминаем focused stepper (если был внутри #taskList), чтобы
+    // вернуть фокус после replaceChildren — иначе пользователь, нажимающий
+    // ArrowUp/Down подряд, видит сброс фокуса после первого изменения.
+    let focusedStepperKey = null;
+    const active = document.activeElement;
+    if (active && taskListEl.contains(active) && active.classList.contains('criteria-eval-stepper')) {
+        focusedStepperKey = `${active.dataset.id}::${active.dataset.criterionId}`;
+    }
+
     taskListEl.replaceChildren();
+
+    // Density: устанавливаем data-density на контейнере для CSS-каскада
+    taskListEl.dataset.density = resolveDensity(state.ui);
 
     const filteredTasks = filterTasks(state.tasks, state.taskFilter);
 
@@ -121,6 +177,44 @@ export function renderTaskList(state, nfs, taskController = null) {
 
     highlightNewTask(state, taskListEl);
     updateOverloadIndicators(state, nfs);
+    pulseChangedPriorityScores(taskListEl, previousScores);
+    restoreStepperFocus(taskListEl, focusedStepperKey);
+}
+
+/**
+ * v8.27.2: восстанавливает фокус на step-spinbutton после re-render.
+ * Без этого подряд нажатия ArrowUp/ArrowDown теряют фокус после первого
+ * (replaceChildren сносит focused-узел).
+ */
+function restoreStepperFocus(taskListEl, key) {
+    if (!key) return;
+    const [taskId, criterionId] = key.split('::');
+    const stepper = taskListEl.querySelector(
+        `.criteria-eval-stepper[data-id="${taskId}"][data-criterion-id="${criterionId}"]`
+    );
+    if (stepper && typeof stepper.focus === 'function') {
+        stepper.focus({ preventScroll: true });
+    }
+}
+
+/**
+ * v8.27.2: добавляет .priority-score-value--pulsed классу .priority-score-value
+ * у задач, чьё значение изменилось с прошлого render'а. Класс снимается через
+ * 350ms — соответствует CSS-transition в task-card.css.
+ * @param {HTMLElement} taskListEl
+ * @param {Map<string,string>} previousScores — map taskId → previous textContent
+ */
+function pulseChangedPriorityScores(taskListEl, previousScores) {
+    if (previousScores.size === 0) return;
+    taskListEl.querySelectorAll('.task-item').forEach((item) => {
+        const id = item.dataset.id;
+        const valueEl = item.querySelector('.priority-score-value');
+        if (!id || !valueEl) return;
+        const prev = previousScores.get(id);
+        if (prev === undefined || prev === valueEl.textContent) return;
+        valueEl.classList.add('priority-score-value--pulsed');
+        setTimeout(() => valueEl.classList.remove('priority-score-value--pulsed'), 350);
+    });
 }
 
 /**
@@ -132,26 +226,47 @@ export function renderTaskList(state, nfs, taskController = null) {
  * @returns {string}
  */
 function buildEstimatesHtml(task, roles, nfs, taskTotal) {
-    let html = '';
+    const maxVal = Math.max(1, ...roles.map(r => Number(task.est[r.id]) || 0));
+    let chips = '';
     roles.forEach(role => {
-        const val = task.est[role.id] || 0;
-        html += `
-            <div class="est-box">
-                <div class="est-role-label">${escapeHtml(role.name)}</div>
+        const val = Number(task.est[role.id]) || 0;
+        const barPct = maxVal > 0 ? Math.min(100, (val / maxVal) * 100) : 0;
+        const iconName = ROLE_ICON_MAP[role.id] || 'rolePalette';
+        const filled = val > 0 ? 'est-box--filled' : 'est-box--empty';
+        chips += `
+            <div class="est-box ${filled}">
+                <div class="est-box-header">
+                    <span class="est-role-icon" aria-hidden="true">${icon(iconName)}</span>
+                    <span class="est-role-label">${escapeHtml(role.name)}</span>
+                </div>
+                <div class="est-box-bar" aria-hidden="true">
+                    <span class="est-box-bar-fill" style="width: ${barPct}%"></span>
+                </div>
                 <div class="est-input-container">
-                    <input type="text" class="number-input" value="${nfs.formatNumber(val)}" data-action="updateEst" data-id="${task.id}" data-role="${role.id}" ${task.excluded ? 'disabled' : ''}>
+                    <input type="text" class="number-input" value="${nfs.formatNumber(val)}"
+                           data-action="updateEst" data-id="${task.id}" data-role="${role.id}"
+                           aria-label="${escapeHtml(role.name)} часы" ${task.excluded ? 'disabled' : ''}>
+                    <span class="est-box-suffix">ч</span>
                 </div>
                 <div class="overload-placeholder" data-role="${role.id}"></div>
             </div>
         `;
     });
-    html += `
-        <div class="est-box est-box-total" data-effort="${nfs.formatNumber(taskTotal)}" style="text-align: right; padding-right: 5px;">
-            <div class="task-effort-value">Effort: ${nfs.formatNumber(taskTotal)}</div>
+    const totalHtml = `
+        <div class="est-box est-box-total" data-effort="${nfs.formatNumber(taskTotal)}">
+            <span class="est-box-total-icon" aria-hidden="true">${icon('gauge')}</span>
+            <span class="est-box-total-label">Σ Effort</span>
+            <span class="task-effort-value">${nfs.formatNumber(taskTotal)} ч</span>
             <div class="overload-placeholder" data-role="total"></div>
         </div>
     `;
-    return html;
+    return `
+        <div class="task-estimates-label">Оценка трудозатрат</div>
+        <div class="task-estimates-grid">
+            <div class="task-estimates-roles">${chips}</div>
+            ${totalHtml}
+        </div>
+    `;
 }
 
 /**
@@ -163,66 +278,134 @@ function buildEstimatesHtml(task, roles, nfs, taskTotal) {
  * @param {number} priorityScore
  * @returns {string}
  */
+/**
+ * v8.27.2: маппит score 0-10 в один из трёх уровней «силы» (low/mid/high).
+ * Используется для цвета stepper'а, заливки contribution-бара, opacity бейджа.
+ * Граница 0-3 / 4-7 / 8-10 — по брифу UX-редизайна.
+ * @param {number} score
+ * @returns {'low'|'mid'|'high'|'zero'}
+ */
+function getCriteriaScoreLevel(score) {
+    if (score <= 0) return 'zero';
+    if (score <= 3) return 'low';
+    if (score <= 7) return 'mid';
+    return 'high';
+}
+
 function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) {
     if (criteria.length === 0 || task.excluded) return '';
 
+    // v8.27.2: <select> заменён на stepper [−] N [+] + spinbutton-фокусируемый
+    // дисплей. Контракт события — CustomEvent('criteria-score-change') с
+    // detail { taskId, criterionId, score }. Контроллер слушает на #taskList.
     let criteriaRows = '';
     criteria.forEach((criterion, idx) => {
         const evaluation = taskEvaluations[criterion.id] || { score: 0, value: 0 };
         const score = parseInt(evaluation.score) || 0;
         const value = (score * criterion.weight) / 10;
+        const maxValue = criterion.weight; // максимальный вклад при score=10
+        const contributionPct = maxValue > 0 ? (value / maxValue) * 100 : 0;
+        const level = getCriteriaScoreLevel(score);
         const mobileAbbreviation = `k-${idx + 1}`;
+        const minDisabled = score <= 0;
+        const maxDisabled = score >= 10;
+        const criterionNameSafe = escapeHtml(criterion.name);
         criteriaRows += `
-            <div class="criteria-eval-item" data-criterion-id="${criterion.id}">
-                <div class="criteria-eval-abbreviation" title="${escapeHtml(criterion.name)}">${escapeHtml(criterion.abbreviation)}</div>
-                <div class="mobile-criteria-abbreviation" title="${escapeHtml(criterion.name)}">${mobileAbbreviation}</div>
-                <div class="criteria-eval-weight">${criterion.weight}%</div>
-                <div class="criteria-eval-score">
-                    <select class="criteria-score-select" data-id="${task.id}" data-criterion-id="${criterion.id}" aria-label="${escapeHtml(criterion.name)} оценка">
-                        ${Array.from({ length: 11 }, (_, i) => `<option value="${i}" ${i === score ? 'selected' : ''}>${i}</option>`).join('')}
-                    </select>
+            <div class="criteria-eval-item" data-criterion-id="${criterion.id}" data-score-level="${level}">
+                <div class="criteria-eval-head">
+                    <span class="criteria-eval-abbreviation" title="${criterionNameSafe}">${escapeHtml(criterion.abbreviation)}</span>
+                    <span class="mobile-criteria-abbreviation" title="${criterionNameSafe}">${mobileAbbreviation}</span>
+                    <span class="criteria-eval-weight" title="Вес критерия">${criterion.weight}%</span>
+                    <span class="criteria-eval-contribution" title="Вклад в Priority Score (score × weight / 10)">+${nfs.formatNumber(value, 1)}</span>
                 </div>
-                <div class="criteria-eval-value">${nfs.formatNumber(value, 1)}</div>
+                <div class="criteria-eval-stepper"
+                     role="spinbutton"
+                     aria-valuemin="0" aria-valuemax="10" aria-valuenow="${score}"
+                     aria-label="${criterionNameSafe} оценка"
+                     data-id="${task.id}"
+                     data-criterion-id="${criterion.id}"
+                     tabindex="0">
+                    <button type="button" class="criteria-eval-step criteria-eval-step--minus"
+                            data-action="decrement" aria-label="Уменьшить" tabindex="-1"
+                            ${minDisabled ? 'disabled' : ''}>−</button>
+                    <span class="criteria-eval-score criteria-score-input" data-id="${task.id}" data-criterion-id="${criterion.id}">${score}</span>
+                    <button type="button" class="criteria-eval-step criteria-eval-step--plus"
+                            data-action="increment" aria-label="Увеличить" tabindex="-1"
+                            ${maxDisabled ? 'disabled' : ''}>+</button>
+                </div>
+                <div class="criteria-eval-bar" aria-hidden="true">
+                    <span class="criteria-eval-bar-fill" style="width: ${contributionPct.toFixed(1)}%"></span>
+                </div>
             </div>
         `;
     });
 
+    const level = getPriorityLevel(priorityScore);
+    const label = getPriorityLabel(level);
+
     return `
         <div class="criteria-row">
-            <div class="criteria-evaluation">${criteriaRows}</div>
-            <div class="priority-score-container">Priority Score: ${nfs.formatNumber(priorityScore, 1)}</div>
+            <div class="criteria-section-label">Метрики приоритета</div>
+            <div class="criteria-row-body">
+                <div class="criteria-evaluation">${criteriaRows}</div>
+                <div class="priority-score-container priority-score-${level}" title="Приоритет: ${escapeHtml(label)} (${nfs.formatNumber(priorityScore, 1)})">
+                    <span class="priority-score-icon" aria-hidden="true">${icon('barChart')}</span>
+                    <span class="priority-score-meta">
+                        <span class="priority-score-label">Priority Score</span>
+                    </span>
+                    <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore, 1)}">${nfs.formatNumber(priorityScore, 1)}</span>
+                </div>
+            </div>
         </div>
     `;
 }
 
 /**
- * Creates a task card DOM element.
+ * Creates a task card DOM element using VM.
+ * Exported for reuse by alternate views (e.g. quadrant-grouped view).
  */
-function createTaskElement(task, taskEvaluations, index, roles, criteria, config, nfs, taskTotal, priorityScore, availMap, taskController) {
+export function createTaskElement(task, taskEvaluations, index, roles, criteria, config, nfs, taskTotal, priorityScore, _availMap, _taskController) {
+    const vm = createTaskRowVM(task, criteria, roles);
+
     const el = document.createElement('div');
-    el.className = `task-item type-${task.type}${task.excluded ? ' excluded' : ''}`;
+    el.className = `task-item type-${vm.type}${vm.excluded ? ' excluded' : ''}`;
     el.style.animation = 'fadeIn 0.3s ease-out';
     el.draggable = false; // управляется динамически через TaskDragController (mousedown на .drag-handle)
     el.tabIndex = 0;
     el.dataset.index = index;
-    el.dataset.id = task.id;
+    el.dataset.id = vm.id;
 
     const estimatesHtml = buildEstimatesHtml(task, roles, nfs, taskTotal);
     const criteriaEvaluationHtml = buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore);
 
-    const excludeIcon = task.excluded ? '🙈' : '👁';
-    let excludeTitle = task.excluded ? 'Включить задачу в спринт' : 'Исключить задачу из спринта';
-    if (task.excluded && task.exclusionReason) excludeTitle = ` ${task.exclusionReason}. Нажмите, чтобы включить`;
-    const excludeClass = `task-action-btn btn-exclude ${task.excluded ? 'excluded' : ''}`;
+    let excludeTitle = vm.excluded ? 'Включить задачу в спринт' : 'Исключить задачу из спринта';
+    if (vm.excluded && vm.exclusionReason) excludeTitle = ` ${vm.exclusionReason}. Нажмите, чтобы включить`;
+    const excludeClass = `task-action-btn btn-exclude ${vm.excluded ? 'excluded' : ''}`;
+    const excludeIconHtml = vm.excluded ? icon('eyeOff') : icon('eye');
+    const editIconHtml = icon('pencil');
+    const deleteIconHtml = icon('trash');
+    const dragIconHtml = icon('gripVertical');
     const printEffort = `<span class="print-only-effort" style="display:none;">Effort: ${nfs.formatNumber(taskTotal)}</span>`;
 
-    const typeIndicator = task.type === 'us' ? 'U' : task.type === 'bug' ? 'B' : 'T';
+    const priorityLevel = getPriorityLevel(priorityScore);
+    const priorityLabel = getPriorityLabel(priorityLevel);
+    const typeBadgeHtml = buildTypeBadgeHtml(vm);
+    const statusBadgeHtml = buildStatusBadgeHtml(vm);
+    const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel, nfs.formatNumber(priorityScore, 1));
+
+    if (vm.excluded) el.classList.add('excluded');
+    el.classList.add(`priority-${priorityLevel}`);
 
     el.innerHTML = `
-        <div class="task-row">
-            <div class="drag-handle" aria-hidden="true">↕</div>
+        <div class="task-row task-row--header">
+            <div class="drag-handle" aria-hidden="true">${dragIconHtml}</div>
             <div class="task-order-number">${index + 1}</div>
-            <div class="task-type-indicator type-${task.type}">${typeIndicator}</div>
+            <div class="task-type-indicator type-${vm.type}" aria-hidden="true">${escapeHtml(vm.typeLetter)}</div>
+            <div class="task-meta-badges">
+                ${statusBadgeHtml}
+                ${typeBadgeHtml}
+                ${priorityBadgeHtml}
+            </div>
             <div class="task-content">
                 <div class="task-title-row">
                     <a class="task-jira-link" target="_blank" rel="noopener noreferrer"></a>
@@ -230,36 +413,34 @@ function createTaskElement(task, taskEvaluations, index, roles, criteria, config
                 </div>
                 <div class="task-comment"></div>
             </div>
-            <div class="task-estimates">${estimatesHtml}</div>
             <div class="task-btn-group">
-                <button class="task-action-btn btn-edit" title="Редактировать задачу спринта" data-action="edit" data-id="${task.id}" aria-label="Редактировать">✎</button>
-                <button class="${excludeClass}" title="${excludeTitle}" data-action="toggleExclude" data-id="${task.id}" aria-label="Включить или исключить">${excludeIcon}</button>
-                <button class="task-action-btn btn-delete" title="Удалить задачу спринта" data-action="delete" data-id="${task.id}" aria-label="Удалить">🗑</button>
+                <button class="task-action-btn btn-edit" title="Редактировать задачу спринта" data-action="edit" data-id="${vm.id}" aria-label="Редактировать">${editIconHtml}</button>
+                <button class="${excludeClass}" title="${escapeHtml(excludeTitle)}" data-action="toggleExclude" data-id="${vm.id}" aria-label="Включить или исключить">${excludeIconHtml}</button>
+                <button class="task-action-btn btn-delete" title="Удалить задачу спринта" data-action="delete" data-id="${vm.id}" aria-label="Удалить">${deleteIconHtml}</button>
             </div>
         </div>
+        <div class="task-estimates">${estimatesHtml}</div>
         ${criteriaEvaluationHtml}
     ` + printEffort;
 
     // Use textContent for XSS safety
     const titleEl = el.querySelector('.task-title');
-    titleEl.textContent = task.title;
-    titleEl.title = task.title;
+    titleEl.textContent = vm.title;
+    titleEl.title = vm.title;
 
     const jiraLink = el.querySelector('.task-jira-link');
-    if (task.jira) {
-        jiraLink.href = task.jira;
-        // Извлекаем ключ задачи: всё после последнего "/"
-        const jiraKey = task.jira.split('/').pop() || '🔗';
-        jiraLink.textContent = jiraKey;
-        jiraLink.title = task.jira;
+    if (vm.jira && vm.jiraKey) {
+        jiraLink.href = vm.jira;
+        jiraLink.textContent = vm.jiraKey;
+        jiraLink.title = vm.jira;
     } else {
         jiraLink.style.display = 'none';
     }
 
     const commentEl = el.querySelector('.task-comment');
-    if (task.comment) {
-        commentEl.textContent = task.comment;
-        commentEl.title = task.comment;
+    if (vm.comment) {
+        commentEl.textContent = vm.comment;
+        commentEl.title = vm.comment;
     } else {
         commentEl.style.display = 'none';
     }

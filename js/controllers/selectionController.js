@@ -57,15 +57,10 @@ export class SelectionController {
                     this.closeReport();
                 } else if (target.id === 'showRecommendationsBtn') {
                     this.showRecommendations();
-                } else if (target.classList.contains('accordion-header')) {
-                    const content = target.nextElementSibling;
-                    if (content && content.classList.contains('accordion-content')) {
-                        const isHidden = content.style.display === 'none';
-                        content.style.display = isHidden ? 'block' : 'none';
-                        const icon = target.querySelector('.accordion-icon');
-                        if (icon) icon.textContent = isHidden ? '▼' : '▶';
-                    }
                 }
+                // .accordion-header обрабатывается локальным listener'ом,
+                // навешенным в renderSelectionReport — здесь делегация
+                // больше не нужна (дублировала бы toggle при bubbling).
             });
         }
     }
@@ -174,6 +169,10 @@ export class SelectionController {
 
         this.store.setTaskFilter({ search: '', type: '' });
         this.store.setTasks(fixTaskOrder(updatedTasks));
+        // Запоминаем последний применённый алгоритм — переживёт F5.
+        if (typeof this.store.setUiState === 'function') {
+            this.store.setUiState({ activeAlgorithm: algorithmKey });
+        }
         this.invalidateAlgorithmsCache();
 
         this.closeReport();

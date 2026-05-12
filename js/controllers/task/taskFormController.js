@@ -41,15 +41,110 @@ export class TaskFormController {
 
     openCreateModal() {
         const modal = document.getElementById('createTaskModal');
-        if (modal) {
-            this.clearAddForm();
-            this.populateCreateCriteriaSelects();
-            showModal(modal);
-            const firstInput = modal.querySelector('input:not([type="hidden"]), select');
-            if (firstInput) {
-                firstInput.focus();
+        if (!modal) return;
+        this.editId = null;
+        this.clearAddForm();
+        this.populateCreateCriteriaSelects();
+        this._wireSegmentedType(modal);
+        this._wirePresetChips(modal);
+        this._setModalMode(modal, 'create');
+        showModal(modal);
+        const firstInput = modal.querySelector('input:not([type="hidden"]), select');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }
+
+    /**
+     * Переключает текст заголовка/primary-кнопки между create и edit.
+     * Обе подписи лежат в data-create-text / data-edit-text атрибутах
+     * самой кнопки и заголовка — JS только копирует нужный вариант
+     * в textContent. Это держит копирайтинг рядом с разметкой.
+     * @private
+     */
+    _setModalMode(modal, mode) {
+        const title = modal.querySelector('#createTaskModalTitle');
+        const saveBtn = modal.querySelector('#saveCreateBtn');
+        const attr = mode === 'edit' ? 'data-edit-text' : 'data-create-text';
+        if (title && title.getAttribute(attr)) {
+            title.textContent = title.getAttribute(attr);
+        }
+        if (saveBtn && saveBtn.getAttribute(attr)) {
+            saveBtn.textContent = saveBtn.getAttribute(attr);
+            // Обновляем title/aria-label под текущий режим
+            if (mode === 'edit') {
+                saveBtn.setAttribute('title', 'Сохранить — Ctrl+S');
+                saveBtn.setAttribute('aria-label', 'Сохранить (горячая клавиша Ctrl+S)');
+            } else {
+                saveBtn.setAttribute('title', 'Создать задачу — Ctrl+Enter');
+                saveBtn.setAttribute('aria-label', 'Создать задачу (горячая клавиша Ctrl+Enter)');
             }
         }
+        modal.dataset.mode = mode;
+    }
+
+    /**
+     * Idempotent: устанавливает делегированный click-listener на segmented
+     * control «Тип задачи». Кнопки обновляют скрытый <input id="newType">,
+     * чтобы существующий контракт чтения через getElementById('newType').value
+     * сохранился (его читают и тесты, и handleAddTask).
+     * @private
+     */
+    _wireSegmentedType(modal) {
+        const seg = modal.querySelector('#newTypeSegmented');
+        if (!seg || seg.dataset.wired === '1') return;
+        seg.dataset.wired = '1';
+        seg.addEventListener('click', (e) => {
+            const btn = e.target.closest('.cf-seg-btn[data-type]');
+            if (!btn || !seg.contains(btn)) return;
+            this._setTypeSegment(seg, btn.dataset.type);
+        });
+        // Клавиатурная навигация: ←/→ перемещают активную кнопку.
+        seg.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const buttons = Array.from(seg.querySelectorAll('.cf-seg-btn[data-type]'));
+            const current = buttons.findIndex(b => b.getAttribute('aria-checked') === 'true');
+            const dir = e.key === 'ArrowRight' ? 1 : -1;
+            const next = (current + dir + buttons.length) % buttons.length;
+            this._setTypeSegment(seg, buttons[next].dataset.type);
+            buttons[next].focus();
+            e.preventDefault();
+        });
+    }
+
+    _setTypeSegment(seg, type) {
+        const buttons = seg.querySelectorAll('.cf-seg-btn[data-type]');
+        buttons.forEach(b => {
+            const active = b.dataset.type === type;
+            b.setAttribute('aria-checked', active ? 'true' : 'false');
+            b.dataset.active = active ? 'true' : 'false';
+        });
+        const hidden = document.getElementById('newType');
+        if (hidden) hidden.value = type;
+    }
+
+    /**
+     * Idempotent: вешает делегированные click-listeners на preset-чипы
+     * в карточках ролей. Клик по «4» → input.value = «4», dispatch input
+     * event, чтобы updateCreateFormTotal пересчитал Effort.
+     * @private
+     */
+    _wirePresetChips(modal) {
+        const roots = modal.querySelectorAll('.cf-role__presets[data-target]');
+        roots.forEach(root => {
+            if (root.dataset.wired === '1') return;
+            root.dataset.wired = '1';
+            root.addEventListener('click', (e) => {
+                const chip = e.target.closest('.cf-preset[data-value]');
+                if (!chip || !root.contains(chip)) return;
+                const targetId = root.dataset.target;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                input.value = chip.dataset.value;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.focus();
+            });
+        });
     }
 
     closeCreateModal() {
@@ -127,10 +222,17 @@ export class TaskFormController {
         const ids = ['newTitle', 'newJira', 'newComment', ...ROLES.map(r => `h_${r.id}`)];
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = '';
+            if (el) {
+                el.value = '';
+                el.classList.remove('error');
+                el.removeAttribute('aria-invalid');
+            }
         });
         const typeEl = document.getElementById('newType');
         if (typeEl) typeEl.value = 'us';
+        // Sync visible segmented control with the reset hidden input value.
+        const seg = document.getElementById('newTypeSegmented');
+        if (seg) this._setTypeSegment(seg, 'us');
 
         const criteria = this.store.getState().criteria;
         criteria.forEach(c => {
@@ -139,6 +241,7 @@ export class TaskFormController {
         });
         this.updateCreateFormPriorityScore();
         this.updateCreateFormTotal();
+        this.updateCommentCounter(0, 255);
     }
 
     handleAddTask() {
@@ -205,14 +308,16 @@ export class TaskFormController {
     }
 
     /**
-     * Validates the title field.
-     * @param {'create'|'edit'} [mode='create'] - which form is active
+     * Validates the title field. v8.27: edit-mode также читает из newTitle —
+     * единая форма, поле одно физически. Mode сохранён для совместимости
+     * сигнатуры с прежним API.
+     * @param {'create'|'edit'} [_mode='create']
      * @param {number|null} [excludeId=null] - task id to exclude from uniqueness check
      * @returns {string|null}
      */
-    _validateTitleField(mode = 'create', excludeId = null) {
+    _validateTitleField(_mode = 'create', excludeId = null) {
         return this._validateField(
-            mode === 'edit' ? 'editTitle' : 'newTitle',
+            'newTitle',
             validateTitle,
             isTitleUnique,
             'Название должно быть уникальным',
@@ -221,14 +326,14 @@ export class TaskFormController {
     }
 
     /**
-     * Validates the Jira URL field.
-     * @param {'create'|'edit'} [mode='create'] - which form is active
+     * Validates the Jira URL field. См. _validateTitleField — единый ID.
+     * @param {'create'|'edit'} [_mode='create']
      * @param {number|null} [excludeId=null] - task id to exclude from uniqueness check
      * @returns {string|null}
      */
-    _validateJiraField(mode = 'create', excludeId = null) {
+    _validateJiraField(_mode = 'create', excludeId = null) {
         return this._validateField(
-            mode === 'edit' ? 'editJira' : 'newJira',
+            'newJira',
             validateJiraUrl,
             isJiraUrlUnique,
             'URL должен быть уникальным',
@@ -242,24 +347,101 @@ export class TaskFormController {
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === taskId);
         if (!task) return;
+        const modal = document.getElementById('createTaskModal');
+        if (!modal) return;
+
         this.editId = taskId;
-        document.getElementById('editTitle').value = task.title;
-        document.getElementById('editJira').value = task.jira || '';
-        document.getElementById('editType').value = task.type;
-        document.getElementById('editComment').value = task.comment || '';
-        document.getElementById('editCommentCounter').textContent = (task.comment ? task.comment.length : 0) + '/255';
-        const modal = document.getElementById('editModal');
+        this.clearAddForm();              // resets all create-form fields + clears errors
+        this.populateCreateCriteriaSelects();
+        this._wireSegmentedType(modal);
+        this._wirePresetChips(modal);
+
+        // Populate create-form fields from the task — reusing every input
+        // means there's no field-by-field divergence to maintain.
+        const titleEl = document.getElementById('newTitle');
+        const jiraEl = document.getElementById('newJira');
+        const typeEl = document.getElementById('newType');
+        const commentEl = document.getElementById('newComment');
+        if (titleEl) titleEl.value = task.title || '';
+        if (jiraEl) jiraEl.value = task.jira || '';
+        if (typeEl) typeEl.value = task.type || 'us';
+
+        const seg = document.getElementById('newTypeSegmented');
+        if (seg) this._setTypeSegment(seg, task.type || 'us');
+
+        if (commentEl) commentEl.value = task.comment || '';
+        this.updateCommentCounter((task.comment || '').length, 255);
+
+        // Hours estimates → h_* inputs.
+        // Domain хранит трудозатраты в task.est (см. js/domain/task.js:50).
+        // Раньше читалось task.estimates — несоответствие появилось при v8.27
+        // unified form refactor; поля оставались пусты при редактировании.
+        const estimates = task.est || {};
+        ROLES.forEach(role => {
+            const input = document.getElementById(`h_${role.id}`);
+            if (input) {
+                const v = estimates[role.id];
+                input.value = (v !== null && v !== undefined && v !== 0) ? this.nfs.formatNumber(v, 1) : '';
+            }
+        });
+
+        // Criteria evaluations → criteria_${id} selects
+        const criteria = state.criteria || [];
+        const evals = task.criteriaEvaluations || {};
+        criteria.forEach(c => {
+            const select = document.getElementById(`criteria_${c.id}`);
+            if (select) {
+                const score = evals[c.id]?.score;
+                select.value = String(Number.isFinite(score) ? score : 0);
+            }
+        });
+
+        // Refresh derived headers (Priority Score / Effort) from new values
+        this.updateCreateFormPriorityScore();
+        this.updateCreateFormTotal();
+
+        this._setModalMode(modal, 'edit');
         showModal(modal);
         setTimeout(() => {
-            const titleInput = document.getElementById('editTitle');
-            if (titleInput) titleInput.focus();
+            if (titleEl) titleEl.focus();
         }, 50);
+    }
+
+    /**
+     * Обновляет character counter под textarea: текст «Осталось: N» +
+     * прогресс-бар, цвет которого плавно переходит зелёный → жёлтый →
+     * красный по мере приближения к лимиту.
+     * v8.27: единая форма create+edit → counter навешен на newComment'е
+     * (id newCommentCounter / newCommentCounterBar). Старый editCommentCounter
+     * поддержан как fallback для тестовых mock'ов.
+     * @param {number} used - текущая длина текста
+     * @param {number} max - максимум (255)
+     */
+    updateCommentCounter(used, max) {
+        const counterText = document.getElementById('newCommentCounter')
+            || document.getElementById('editCommentCounter');
+        const bar = document.getElementById('newCommentCounterBar')
+            || document.getElementById('editCommentCounterBar');
+        const remaining = Math.max(0, max - used);
+        const pct = Math.min(100, Math.max(0, (used / max) * 100));
+        if (counterText) counterText.textContent = `Осталось: ${remaining}`;
+        if (bar) {
+            bar.style.setProperty('--fill', `${pct.toFixed(1)}%`);
+            // Цвет: зелёный <70% → жёлтый 70-90% → красный >90%
+            let color = 'var(--success)';
+            if (pct >= 90) color = 'var(--danger)';
+            else if (pct >= 70) color = 'var(--warning)';
+            bar.style.setProperty('--color', color);
+        }
     }
 
     closeEditModal() {
         this.editId = null;
-        const modal = document.getElementById('editModal');
-        if (modal) hideModal(modal);
+        const modal = document.getElementById('createTaskModal');
+        if (modal) {
+            this._setModalMode(modal, 'create');
+            hideModal(modal);
+        }
     }
 
     handleSaveEdit() {
@@ -267,19 +449,33 @@ export class TaskFormController {
         const task = this.store.getState().tasks.find(t => t.id === this.editId);
         if (!task) return;
 
+        // Edit-mode reuses the create form fields (newTitle/newJira/etc).
+        // Validators historically used 'edit' DOM IDs; we point them to the
+        // create-form IDs by mapping mode → IDs in _validateField.
         const title = this._validateTitleField('edit', this.editId);
         if (!title) return;
 
         const jira = this._validateJiraField('edit', this.editId);
         if (!jira) return;
 
-        const type = document.getElementById('editType').value;
-        const comment = document.getElementById('editComment').value.trim();
+        const typeEl = document.getElementById('newType');
+        const commentEl = document.getElementById('newComment');
+        const type = typeEl ? typeEl.value : 'us';
+        const comment = commentEl ? commentEl.value.trim() : '';
+        const estimates = readCreateTaskEstimates(this.nfs);
+        const criteriaEvaluations = collectCriteriaEvaluations(
+            this.store.getState().criteria
+        );
 
-        this.store.updateTask(this.editId, { title, jira, type, comment });
+        this.store.updateTask(this.editId, {
+            title, jira, type, comment, estimates, criteriaEvaluations
+        });
         this._invalidateCaches();
+        const editedId = this.editId;
         this.closeEditModal();
 
-        if (this._onTaskEdited) this._onTaskEdited(this.editId, { title, jira, type, comment });
+        if (this._onTaskEdited) {
+            this._onTaskEdited(editedId, { title, jira, type, comment, estimates, criteriaEvaluations });
+        }
     }
 }

@@ -100,9 +100,13 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
 
     if (totalCapacity > 0) {
         const totalPercentage = (totalLoad / totalCapacity) * 100;
+        // v8.29.2: добавляем сырое поле `percentage` в team-* рекомендации,
+        // чтобы UI мог схлопывать дубли по type и склеивать проценты от
+        // разных алгоритмов в диапазон (см. ui/selectionRecommendations.js).
         if (totalPercentage < SELECTION_CONFIG.TEAM_UNDERLOAD_THRESHOLD * 100) {
             recommendations.push({
                 type: 'team-underload',
+                percentage: totalPercentage,
                 message: `Общая загрузка команды низкая (${totalPercentage.toFixed(1)}%). Рекомендуется добавить больше задач.`,
                 severity: 'medium',
                 suggestion: 'Просмотрите задачи из всех квадрантов, включая Q3 и Q4'
@@ -110,6 +114,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
         } else if (totalPercentage > SELECTION_CONFIG.TEAM_OVERLOAD_THRESHOLD * 100) {
             recommendations.push({
                 type: 'team-overload',
+                percentage: totalPercentage,
                 message: `Общая загрузка команды высокая (${totalPercentage.toFixed(1)}%). Рассмотрите возможность переноса части задач.`,
                 severity: 'high',
                 suggestion: 'Перенесите задачи с низким приоритетом на следующий спринт'
@@ -117,6 +122,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
         } else if (totalPercentage >= 90 && totalPercentage <= 95) {
             recommendations.push({
                 type: 'team-optimal',
+                percentage: totalPercentage,
                 message: `Общая загрузка команды оптимальна (${totalPercentage.toFixed(1)}%)`,
                 severity: 'info',
                 suggestion: 'Текущая загрузка соответствует целевым показателям'

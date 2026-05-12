@@ -3,6 +3,7 @@
 // Использует три типа модалей: информация, HTML, подтверждение.
 
 import { showModal, hideModal } from '../ui/modalManager.js';
+import { sanitizeHtml } from '../utils/sanitize.js';
 
 export const messageService = {
     /**
@@ -19,38 +20,27 @@ export const messageService = {
         const closeHandler = () => hideModal(modal);
         const closeBtn = document.getElementById('closeMessageModalBtn');
         const okBtn = document.getElementById('okMessageBtn');
-        if (closeBtn) {
-            closeBtn.removeEventListener('click', closeHandler);
-            closeBtn.addEventListener('click', closeHandler, { once: true });
-        }
-        if (okBtn) {
-            okBtn.removeEventListener('click', closeHandler);
-            okBtn.addEventListener('click', closeHandler, { once: true });
-        }
+        if (closeBtn) closeBtn.addEventListener('click', closeHandler, { once: true });
+        if (okBtn) okBtn.addEventListener('click', closeHandler, { once: true });
     },
 
     /**
      * Показывает HTML-контент в модальном окне.
+     * Вход санитизируется через DOMPurify (или regex-фолбэк) для защиты от XSS.
      * @param {string} html — HTML-строка
      */
     showHTML(html) {
         const modal = document.getElementById('messageModal');
         const textEl = document.getElementById('messageText');
         if (!modal || !textEl) return;
-        textEl.innerHTML = html;
+        textEl.innerHTML = sanitizeHtml(html);
         showModal(modal);
 
         const closeHandler = () => hideModal(modal);
         const closeBtn = document.getElementById('closeMessageModalBtn');
         const okBtn = document.getElementById('okMessageBtn');
-        if (closeBtn) {
-            closeBtn.removeEventListener('click', closeHandler);
-            closeBtn.addEventListener('click', closeHandler, { once: true });
-        }
-        if (okBtn) {
-            okBtn.removeEventListener('click', closeHandler);
-            okBtn.addEventListener('click', closeHandler, { once: true });
-        }
+        if (closeBtn) closeBtn.addEventListener('click', closeHandler, { once: true });
+        if (okBtn) okBtn.addEventListener('click', closeHandler, { once: true });
     },
 
     /**

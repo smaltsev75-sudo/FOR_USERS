@@ -1,6 +1,5 @@
 // @ts-check
 // js/domain/task.js
-import { initializeCriteriaEvaluations } from './criteria.js';
 import { ROLES } from '../utils/constants.js';
 
 /**

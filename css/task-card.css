@@ -1,13 +1,83 @@
 /* ---------- task-card.css ---------- */
-/* КОМПАКТНАЯ КАРТОЧКА ЗАДАЧИ — ПРИЖАТЫЕ ОЦЕНКИ, БЕЗ СЪЕЗЖАНИЙ */
+/* КАРТОЧКА ЗАДАЧИ v8.22 — премиальный sandy-дизайн.
+   3 логических блока: header (приоритет/статус/title/btns) →
+   estimates (трудозатраты по ролям) → metrics (критерии + Priority Score).
+   Никакого чистого #FFFFFF — sandy/cream/latte palette. */
+
+/* Density tokens — управляются через #taskList[data-density="..."] */
+#taskList {
+    --task-row-padding-y: 10px;
+    --task-row-padding-x: 14px;
+    --task-row-margin: 8px;
+    --task-row-gap: 12px;
+    --task-row-title-size: 1rem;
+    --task-row-section-gap: 10px;
+    --task-row-comment-display: block;
+}
+
+#taskList[data-density="compact"] {
+    --task-row-padding-y: 6px;
+    --task-row-padding-x: 10px;
+    --task-row-margin: 4px;
+    --task-row-gap: 8px;
+    --task-row-title-size: 0.9rem;
+    --task-row-section-gap: 6px;
+    --task-row-comment-display: none;
+}
+
+#taskList[data-density="comfortable"] {
+    --task-row-padding-y: 10px;
+    --task-row-padding-x: 14px;
+    --task-row-margin: 8px;
+    --task-row-gap: 12px;
+    --task-row-title-size: 1rem;
+    --task-row-section-gap: 10px;
+    --task-row-comment-display: block;
+}
+
+#taskList[data-density="cozy"] {
+    --task-row-padding-y: 14px;
+    --task-row-padding-x: 18px;
+    --task-row-margin: 12px;
+    --task-row-gap: 14px;
+    --task-row-title-size: 1.05rem;
+    --task-row-section-gap: 14px;
+    --task-row-comment-display: block;
+}
 
 .task-item {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 6px;
-    padding: 8px 10px;
-    transition: all 0.2s;
+    border-left: 4px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: var(--task-row-margin, 8px);
+    padding: var(--task-row-padding-y) var(--task-row-padding-x);
+    box-shadow: 0 1px 2px var(--shadow-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease,
+                padding 0.15s ease, margin 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.task-item:hover {
+    box-shadow: 0 4px 10px var(--shadow-md);
+}
+
+/* Левая полоса = тип задачи (приглушённо). Тон приоритета задаётся через
+   .priority-* классы на самом .task-item ниже. */
+.task-item.type-us { border-left-color: var(--us-color); }
+.task-item.type-bug { border-left-color: var(--bug-color); }
+.task-item.type-tech { border-left-color: var(--tech-color); }
+
+/* Усиление левой полосы для критического приоритета */
+.task-item.priority-critical {
+    border-left-color: var(--danger);
+    box-shadow: 0 1px 2px var(--shadow-sm), inset 4px 0 0 -3px var(--danger-glow);
+}
+
+.task-item.priority-high {
+    border-left-color: var(--warning);
 }
 
 .task-item.excluded {
@@ -16,24 +86,80 @@
     background: var(--excluded-bg);
 }
 
-.task-item.type-us {
-    border-left: 6px solid var(--us-color);
+/* Compact density скрывает комментарий — экономит вертикаль */
+#taskList[data-density="compact"] .task-comment {
+    display: none !important;
 }
 
-.task-item.type-bug {
-    border-left: 6px solid var(--bug-color);
+/* Compact density скрывает est-role-label (надписи под полями оценок),
+   est-box-bar (полоса) и est-box-total-label (под итоговой суммой) */
+#taskList[data-density="compact"] .est-role-label,
+#taskList[data-density="compact"] .est-box-bar,
+#taskList[data-density="compact"] .est-box-total-label,
+#taskList[data-density="compact"] .priority-score-label,
+#taskList[data-density="compact"] .priority-score-sublabel {
+    display: none;
 }
 
-.task-item.type-tech {
-    border-left: 6px solid var(--tech-color);
+#taskList[data-density="compact"] .est-input-container {
+    min-height: 22px;
+}
+
+#taskList[data-density="compact"] .est-input-container input {
+    font-size: 0.8rem;
+}
+
+#taskList[data-density="compact"] .task-title {
+    font-size: 0.9rem;
+}
+
+#taskList[data-density="compact"] .task-estimates,
+#taskList[data-density="compact"] .criteria-row {
+    padding-top: 4px;
+}
+
+#taskList[data-density="compact"] .priority-score-container {
+    padding: 4px 10px;
+    min-width: 70px;
+}
+
+#taskList[data-density="compact"] .priority-score-value {
+    font-size: 1.05rem;
+}
+
+#taskList[data-density="compact"] .est-box-total {
+    padding: 4px 10px;
+    min-width: 80px;
+}
+
+#taskList[data-density="compact"] .task-effort-value {
+    font-size: 0.85rem;
+}
+
+#taskList[data-density="compact"] .criteria-row {
+    margin-top: 4px;
+    padding-top: 4px;
+}
+
+/* Compact mode: criteria-row полностью скрыт (collapsed), без hover-expand.
+   Hover/focus-within раньше раскрывал блок обратно — это фактически превращало
+   compact в comfortable при наведении мышью, что противоречило самому смыслу
+   режима. Чтобы редактировать критерии — переключиться в Стандартный. */
+#taskList[data-density="compact"] .criteria-row {
+    display: none;
 }
 
 .task-row {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    flex-wrap: nowrap;
-    /* запрещаем перенос строк */
+    align-items: center;
+    gap: var(--task-row-gap, 12px);
+    flex-wrap: wrap;
+    /* header-row может переносить badges на второй ряд на узких экранах */
+}
+
+.task-row--header {
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .drag-handle {
@@ -45,6 +171,13 @@
     justify-content: center;
     border-radius: 4px;
     flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 120ms ease;
+}
+
+.task-item:hover .drag-handle,
+.task-item:focus-within .drag-handle {
+    opacity: 1;
 }
 
 .task-order-number {
@@ -68,153 +201,414 @@
     border-color: var(--excluded-border);
 }
 
+/* Старый кружок-индикатор типа (буква B/U/T) — заменён на task-type-badge.
+   Скрываем визуально, оставляя в DOM для backward-compat e2e тестов. */
 .task-type-indicator {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ─── Бейджи в header-row ─────────────────────────────────────────── */
+
+.task-meta-badges {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 0.75rem;
+    gap: 6px;
     flex-shrink: 0;
-    margin-top: 2px;
 }
 
-.task-type-indicator.type-us {
-    background: var(--us-color);
-    color: #000;
+.task-status-badge,
+.task-type-badge,
+.task-priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    line-height: 1.2;
 }
 
-.task-type-indicator.type-bug {
-    background: var(--bug-color);
-    color: #fff;
+.task-status-badge .icon,
+.task-type-badge .icon,
+.task-priority-badge .icon {
+    width: 12px;
+    height: 12px;
 }
 
-.task-type-indicator.type-tech {
-    background: var(--tech-color);
-    color: #fff;
+.task-status-badge.status-active {
+    background: var(--success-bg-subtle);
+    color: var(--success);
+    border-color: var(--success-border-faint);
+}
+
+.task-status-badge.status-excluded {
+    background: var(--excluded-bg);
+    color: var(--excluded);
+    border-color: var(--excluded-border);
+}
+
+.task-type-badge {
+    background: var(--overlay-light);
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.task-type-badge.type-us {
+    color: var(--us-color);
+    border-color: var(--success-border-faint);
+    background: var(--success-bg-subtle);
+}
+
+.task-type-badge.type-bug {
+    color: var(--bug-color);
+    border-color: var(--danger-bg-light);
+    background: var(--danger-bg-subtle);
+}
+
+.task-type-badge.type-tech {
+    color: var(--tech-color);
+    background: var(--accent-bg-faint);
+    border-color: var(--accent-border-faint);
+}
+
+.task-priority-badge.priority-critical {
+    background: var(--danger-bg-subtle);
+    color: var(--danger);
+    border-color: var(--danger-bg-light);
+}
+
+.task-priority-badge.priority-high {
+    background: var(--warning-bg-subtle);
+    color: var(--warning);
+    border-color: var(--warning-bg-light);
+}
+
+.task-priority-badge.priority-medium {
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+    border-color: var(--accent-border-faint);
+}
+
+.task-priority-badge.priority-low {
+    background: var(--overlay-faint);
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+/* На узких viewports бейдж-text прячем — остаётся только иконка */
+@media (max-width: 720px) {
+    .task-type-badge-text,
+    .task-priority-badge-text {
+        display: none;
+    }
 }
 
 .task-content {
-    flex: 1 1 200px;
-    min-width: 150px;
+    flex: 1 1 280px;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .task-title-row {
     display: flex;
     align-items: baseline;
     gap: 8px;
-    margin-bottom: 2px;
+    flex-wrap: wrap;
 }
 
 .task-title {
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: var(--task-row-title-size, 1rem);
+    line-height: 1.35;
     color: var(--text);
     white-space: normal;
     word-break: break-word;
-    line-height: 1.3;
-    flex: 1;
-    /* заголовок занимает всё свободное место */
+    flex: 1 1 auto;
+    letter-spacing: -0.005em;
+}
+
+/* Tabular-nums для выровненных числовых колонок (effort, priority-score) */
+.task-effort-value,
+.priority-score-container,
+.criteria-eval-value,
+.criteria-eval-weight,
+.est-input-container input {
+    font-variant-numeric: tabular-nums;
 }
 
 .task-jira-link {
     flex-shrink: 0;
-    /* ссылка не сжимается */
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-bg-faint);
+    border: 1px solid var(--accent-border-faint);
+    padding: 1px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
 }
 
 .task-jira-link:hover {
     background: var(--accent-bg-subtle);
+    text-decoration: underline;
 }
 
 .task-comment {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    margin-top: 2px;
     white-space: normal;
     word-break: break-word;
     font-style: italic;
-    border-top: 1px dashed var(--border);
-    padding-top: 4px;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 
 .task-comment:empty {
     display: none;
 }
 
-/* Блок оценок по ролям — всегда справа, не переносится */
+/* ─── Блок оценок трудозатрат ────────────────────────────────────────
+   Компактный 1-row layout: label inline → chips → Σ total.
+   Каждый chip = иконка роли + label + input. Бар можно опционально
+   включить через is-density-cozy для глаз-разгрузки. */
 .task-estimates {
     display: flex;
-    gap: 4px;
-    margin-left: auto;
-    flex-shrink: 0;
     align-items: center;
+    gap: 8px;
+    padding: 6px 0 0;
+    border-top: 1px dashed var(--border);
+    margin: 0;
+    flex-wrap: wrap;
 }
 
+.task-estimates-label,
+.criteria-section-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+
+.task-estimates-grid {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.task-estimates-roles {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    min-width: 0;
+}
+
+.task-estimates-roles .est-box {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Compact chip: иконка + label + input в ОДНОЙ строке.
+   Bar и многострочный header удалены — экономим вертикаль. */
 .est-box {
-    min-width: 40px;
-    max-width: 55px;
-    padding: 0;
-    text-align: center;
+    background: var(--overlay-faint);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 26px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.est-box--filled {
+    background: var(--accent-bg-faint);
+}
+
+.est-box--empty .est-input-container input {
+    color: var(--text-muted);
+}
+
+/* Скрытая, но в DOM остаётся — нужна для backward-compat тестов */
+.est-box-header {
+    display: contents;
+}
+
+.est-role-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.est-role-icon .icon {
+    width: 12px;
+    height: 12px;
 }
 
 .est-role-label {
-    font-size: 0.55rem;
+    font-size: 0.6rem;
     color: var(--text-muted);
-    text-align: center;
-    margin-bottom: 0;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.04em;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    max-width: 50px;
 }
 
-.est-input-container input {
+/* Bar скрыт в compact (по умолчанию) — раскомментировать для cozy */
+.est-box-bar,
+.est-box-bar-fill {
+    display: none;
+}
+
+.est-input-container {
+    display: flex;
+    align-items: center;
+    gap: 2px;
     background: var(--bg-main);
     border: 1px solid var(--border);
-    color: var(--text);
-    padding: 3px 2px;
-    border-radius: 6px;
-    font-size: 0.6rem;
-    width: 100%;
-    text-align: center;
-    box-sizing: border-box;
-    height: 24px;
+    border-radius: 5px;
+    padding: 0 4px;
+    flex: 1 1 auto;
+    min-width: 36px;
+    min-height: 22px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.est-input-container input:focus {
-    outline: none;
+.est-input-container:hover {
+    border-color: var(--border-light);
+}
+
+.est-input-container:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg-strong);
 }
 
+.est-input-container input {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: 100%;
+    min-width: 0;
+    text-align: right;
+    box-sizing: border-box;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+}
+
+.est-input-container input:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.est-box-suffix {
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+}
+
+/* Итоговый бейдж Effort = sum(est). Компактный inline-pill. */
 .est-box-total {
-    padding: 2px 8px;
-    min-width: 65px;
-    background: var(--success-bg-faint);
-    border: 1px solid var(--success-border-faint);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
+    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    border: 1px solid var(--accent-border-faint);
+    border-radius: 7px;
+    padding: 3px 10px;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    flex-shrink: 0;
+    min-height: 26px;
+}
+
+.est-box-total-icon {
+    display: inline-flex;
+    color: var(--accent);
+}
+
+.est-box-total-icon .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.est-box-total-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .task-effort-value {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--success);
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--accent);
     white-space: nowrap;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Кнопки */
+/* Кнопки — hover-only actions (B5).
+   По умолчанию скрыты (opacity:0), показываются на :hover/:focus-within
+   родительского .task-item, либо когда любой из кнопок в фокусе. */
 .task-btn-group {
     display: flex;
     gap: 4px;
     margin-left: 6px;
     flex-shrink: 0;
     align-items: center;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    /* pointer-events:none не выставляем — kbd-фокус должен попадать в кнопки */
+}
+
+.task-item:hover .task-btn-group,
+.task-item:focus-within .task-btn-group,
+.task-btn-group:focus-within {
+    opacity: 1;
+}
+
+/* Touch-устройства (нет hover) — всегда показываем кнопки */
+@media (hover: none), (pointer: coarse) {
+    .task-btn-group {
+        opacity: 1;
+    }
+}
+
+/* Reduced-motion — мгновенный показ без анимации */
+@media (prefers-reduced-motion: reduce) {
+    .task-btn-group {
+        transition: none;
+    }
 }
 
 .task-action-btn {
@@ -281,100 +675,373 @@
     background: var(--success-bg-subtle);
 }
 
-/* Строка критериев */
+/* ─── Блок «Метрики приоритета» — компактный 1-row layout ──────── */
+
 .criteria-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
     gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.criteria-row-body {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
     flex-wrap: wrap;
 }
 
 .criteria-evaluation {
     display: flex;
+    flex: 1 1 auto;
     flex-wrap: wrap;
-    gap: 8px;
-    flex: 1;
+    gap: 4px;
+    min-width: 0;
 }
 
+/* ===== v8.27.2: Criteria evaluation redesign — Warm Sandy Theme ============
+   Stepper [-] N [+] вместо <select>, контрибьюшн-бар отображает вклад
+   (score × weight). Цвет/насыщенность — функция от score-level (zero/low/mid/high).
+   Контракт событий: см. taskController._dispatchCriteriaScore(). */
+
 .criteria-eval-item {
-    display: flex;
-    align-items: center;
+    /* Локальные токены, привязанные к уровню score: переопределяются через
+       data-score-level и плавно интерполируются color-mix'ом по border. */
+    --eval-accent: var(--text-muted);
+    --eval-bar-bg: var(--overlay-faint);
+    --eval-card-bg: var(--bg-card);
+
+    background: var(--eval-card-bg);
+    border: 1px solid color-mix(in srgb, var(--eval-accent) 35%, var(--border));
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 4px;
-    background: var(--overlay-faint);
-    padding: 2px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    font-size: 0.7rem;
+    min-width: 132px;
+    min-height: 26px;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.18s ease;
+}
+
+/* Цветовые «уровни» score: zero (0) → muted; low (1-3) → warm sand;
+   mid (4-7) → охра; high (8-10) → терракота. WCAG AA в обеих темах. */
+.criteria-eval-item[data-score-level="zero"] { --eval-accent: var(--text-muted); }
+.criteria-eval-item[data-score-level="low"]  { --eval-accent: var(--warning); }
+.criteria-eval-item[data-score-level="mid"]  { --eval-accent: var(--accent); }
+.criteria-eval-item[data-score-level="high"] { --eval-accent: var(--print); }
+
+.criteria-eval-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.1;
+    flex-wrap: nowrap;
 }
 
 .criteria-eval-abbreviation {
-    font-weight: bold;
-    font-size: 0.7rem;
-    color: var(--accent);
-    min-width: 30px;
+    font-weight: 800;
+    font-size: 0.72rem;
+    color: var(--eval-accent);
+    letter-spacing: 0.04em;
+    transition: color 0.25s ease;
 }
 
 .criteria-eval-weight {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-muted);
-    min-width: 28px;
-    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    background: var(--overlay-faint);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.4;
 }
 
-.criteria-eval-score select {
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-    padding: 1px 2px;
+.criteria-eval-contribution {
+    margin-left: auto;
     font-size: 0.65rem;
-    min-width: 40px;
-    text-align: center;
+    font-weight: 700;
+    color: var(--eval-accent);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.25s ease;
+    opacity: 0.85;
 }
+.criteria-eval-item[data-score-level="zero"] .criteria-eval-contribution { opacity: 0.45; }
 
-.criteria-eval-score select:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.criteria-eval-value {
-    font-weight: bold;
-    font-size: 0.7rem;
-    color: var(--success);
-    min-width: 30px;
-    text-align: right;
-}
-
-.priority-score-container {
-    background: var(--accent-bg-light);
+/* ── Stepper [-] N [+] ─────────────────────────────────────────────────── */
+.criteria-eval-stepper {
+    display: inline-grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    background: var(--eval-bar-bg);
     border-radius: 6px;
-    border: 1px solid var(--accent-border);
-    font-weight: bold;
-    font-size: 0.75rem;
-    color: var(--priority-score-color);
-    padding: 4px 12px;
+    padding: 1px;
+    cursor: default;
+    outline: none;
+    transition: box-shadow 0.18s ease;
+}
+
+.criteria-eval-stepper:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.criteria-eval-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.criteria-eval-step:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--eval-accent) 22%, transparent);
+    color: var(--eval-accent);
+}
+
+.criteria-eval-step:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.criteria-eval-step:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+}
+
+.criteria-eval-step:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.criteria-eval-score {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--eval-accent);
+    font-variant-numeric: tabular-nums;
+    padding: 2px 6px;
+    transition: color 0.25s ease;
+    user-select: none;
+}
+
+/* ── Contribution bar (фьюшн weight×score) ─────────────────────────────── */
+.criteria-eval-bar {
+    display: block;
+    height: 3px;
+    background: var(--eval-bar-bg);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.criteria-eval-bar-fill {
+    display: block;
+    height: 100%;
+    background: var(--eval-accent);
+    border-radius: 2px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Touch-устройства: увеличиваем step-кнопки до 44×44 (WCAG 2.5.5). */
+@media (hover: none), (pointer: coarse) {
+    .criteria-eval-step {
+        width: 32px;
+        height: 32px;
+        font-size: 1.05rem;
+    }
+}
+
+/* Reduced motion — убираем плавные ширины и цвета. */
+@media (prefers-reduced-motion: reduce) {
+    .criteria-eval-item,
+    .criteria-eval-bar-fill,
+    .criteria-eval-step,
+    .criteria-eval-score,
+    .criteria-eval-abbreviation,
+    .criteria-eval-contribution {
+        transition: none;
+    }
+}
+
+/* Compact density: stepper остаётся, но contribution-bar сворачиваем,
+   а пилюли становятся более плотными. */
+[data-density="compact"] .criteria-eval-item {
+    padding: 3px 6px;
+    min-width: 110px;
+    min-height: 24px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+[data-density="compact"] .criteria-eval-bar { display: none; }
+[data-density="compact"] .criteria-eval-contribution { display: none; }
+[data-density="compact"] .criteria-eval-stepper { padding: 0; }
+[data-density="compact"] .criteria-eval-step { width: 20px; height: 20px; font-size: 0.85rem; }
+[data-density="compact"] .criteria-eval-score { font-size: 0.78rem; padding: 1px 3px; }
+
+/* Бейдж Priority Score — главная метрика, теперь компактный inline-pill. */
+.priority-score-container {
+    border-radius: 8px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     white-space: nowrap;
     flex-shrink: 0;
+    border: 1px solid var(--accent-border-faint);
+    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    min-height: 26px;
+}
+
+.priority-score-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--accent-bg-light);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.priority-score-icon .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.priority-score-meta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    line-height: 1;
+    min-width: 0;
+}
+
+.priority-score-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.priority-score-sublabel {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.priority-score-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    /* v8.27.2: pulse при изменении значения. Класс .priority-score-value--pulsed
+       навешивается JS-ом и снимается через 350ms. */
+    transition: transform 0.18s ease, text-shadow 0.18s ease;
+}
+
+.priority-score-value--pulsed {
+    transform: scale(1.12);
+    text-shadow: 0 0 6px var(--accent-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .priority-score-value,
+    .priority-score-value--pulsed {
+        transition: none;
+        transform: none;
+        text-shadow: none;
+    }
+}
+
+/* Цветовые варианты Priority Score */
+.priority-score-container.priority-score-critical {
+    border-color: var(--danger-bg-light);
+    background: linear-gradient(135deg, var(--danger-bg-subtle), var(--danger-bg-light));
+}
+.priority-score-critical .priority-score-icon {
+    background: var(--danger-bg-light);
+    color: var(--danger);
+}
+.priority-score-critical .priority-score-value {
+    color: var(--danger);
+}
+
+.priority-score-container.priority-score-high {
+    border-color: var(--warning-bg-light);
+    background: linear-gradient(135deg, var(--warning-bg-subtle), var(--warning-bg-light));
+}
+.priority-score-high .priority-score-icon {
+    background: var(--warning-bg-light);
+    color: var(--warning);
+}
+.priority-score-high .priority-score-value {
+    color: var(--warning);
+}
+
+.priority-score-container.priority-score-medium {
+    border-color: var(--accent-border-faint);
+    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+}
+.priority-score-medium .priority-score-value {
+    color: var(--accent);
+}
+
+.priority-score-container.priority-score-low {
+    border-color: var(--border);
+    background: var(--overlay-faint);
+}
+.priority-score-low .priority-score-icon {
+    background: var(--overlay-medium);
+    color: var(--text-muted);
+}
+.priority-score-low .priority-score-value {
+    color: var(--text-muted);
 }
 
 /* Мобильная адаптация */
 @media (max-width: 900px) {
-    .task-row {
+    .task-row--header {
         flex-wrap: wrap;
     }
 
-    .task-estimates {
-        margin-left: 0;
-        justify-content: flex-start;
+    .task-estimates-roles {
+        flex-wrap: wrap;
     }
 
     .task-btn-group {
-        margin-left: 0;
+        margin-left: auto;
         justify-content: flex-end;
+    }
+}
+
+@media (max-width: 540px) {
+    .est-box {
+        flex: 1 1 calc(33.333% - 6px);
+    }
+
+    .task-status-badge,
+    .task-priority-badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
     }
 }
 
@@ -473,4 +1140,188 @@
     border: 2px dashed var(--accent);
     transform: scale(1.01);
     transition: all 0.2s ease;
+}
+
+/* ========================================================================== */
+/* view-toggle (stream C) — переключатель режима списка задач                 */
+/* ========================================================================== */
+
+.view-toggle {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.view-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1;
+    /* Touch-target ≥44px на coarse-указателях обеспечивается :where ниже. */
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+    border-left: 1px solid var(--border);
+}
+
+.view-toggle-btn:hover {
+    background: var(--bg-card-hover, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary, var(--text));
+}
+
+.view-toggle-btn.active {
+    background: var(--accent, #00d9ff);
+    color: var(--accent-text, #0f172a);
+    font-weight: 600;
+}
+
+.view-toggle-btn:focus-visible {
+    outline: 2px solid var(--accent, #00d9ff);
+    outline-offset: 2px;
+}
+
+.view-toggle-label {
+    /* На узких экранах прячется — остаётся только иконка. */
+}
+
+@media (max-width: 720px) {
+    .view-toggle-label {
+        display: none;
+    }
+    .view-toggle-btn {
+        padding: 8px 10px;
+    }
+}
+
+@media (pointer: coarse) {
+    .view-toggle-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ========================================================================== */
+/* Quadrant grouping (stream C) — группы задач по квадрантам приоритета       */
+/* ========================================================================== */
+
+.quadrant-group {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    /* ВАЖНО: НИКАКОГО overflow ≠ visible на ancestor sticky-summary,
+       иначе sticky привязывается к этому контейнеру, а не к viewport
+       (#taskList тоже НЕ имеет overflow). См. CLAUDE.md «CSS-ловушки». */
+}
+
+.quadrant-group[open] {
+    /* Отображение «open» — работает через нативный <details>. */
+}
+
+/* Sticky-заголовок: позиционируется относительно прокрутки страницы. */
+.quadrant-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    list-style: none;
+    /* убираем стандартный disclosure-маркер браузера */
+}
+
+.quadrant-group-header::-webkit-details-marker {
+    display: none;
+}
+.quadrant-group-header::marker {
+    display: none;
+}
+
+.quadrant-group-header:hover {
+    background: var(--bg-card-hover, rgba(127, 127, 127, 0.05));
+}
+
+.quadrant-group-header:focus-visible {
+    outline: 2px solid var(--accent, #00d9ff);
+    outline-offset: -2px;
+}
+
+.quadrant-group-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--accent, #00d9ff);
+}
+
+.quadrant-group-title {
+    font-weight: 600;
+    color: var(--text, currentColor);
+}
+
+.quadrant-group-summary {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.quadrant-summary-sep {
+    color: var(--border);
+}
+
+.quadrant-group-body {
+    padding: 8px 12px 12px;
+}
+
+/* Скрытый indicator для свёрнутого состояния (через [open] селектор). */
+.quadrant-group:not([open]) .quadrant-group-header {
+    border-bottom: 0;
+}
+
+/* v8.29.1: 5-я группа «Исключённые из спринта» — визуально приглушена,
+   чтобы пользователь сразу понимал, что это «архив», а не активные задачи.
+   Иконка eyeOff унаследует цвет --text-muted (не --accent, как у Q1..Q4).
+   Карточки задач сами по себе уже выглядят приглушёнными благодаря классу
+   `.task-item.excluded` (opacity ниже), здесь снижаем визуальный вес заголовка. */
+.quadrant-group--excluded .quadrant-group-icon {
+    color: var(--text-muted);
+}
+
+.quadrant-group--excluded .quadrant-group-title {
+    color: var(--text-muted);
+}
+
+.quadrant-group--excluded {
+    /* лёгкий отступ от Q4, чтобы визуально оторвать от приоритетного контента */
+    margin-top: 16px;
+}
+
+@media (pointer: coarse) {
+    .quadrant-group-header {
+        min-height: 44px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quadrant-group-header,
+    .view-toggle-btn {
+        transition: none;
+    }
 }

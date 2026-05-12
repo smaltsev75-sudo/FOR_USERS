@@ -30,7 +30,12 @@
     <link rel="stylesheet" href="css/responsive.css?v=4">
     <link rel="stylesheet" href="css/criteria.css?v=4">
     <link rel="stylesheet" href="css/selection-report.css?v=4">
-    <link rel="stylesheet" href="css/task-card.css?v=4">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.22.2">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=1">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.22.2">
+    <link rel="stylesheet" href="css/toolbar.css?v=1">
+    <link rel="stylesheet" href="css/config-panel.css?v=1">
+    <link rel="stylesheet" href="css/a11y.css?v=1">
     <link rel="stylesheet" href="css/print.css?v=4" media="print">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00d9ff">
@@ -43,106 +48,195 @@
         <!-- ШАПКА -->
         <div class="header-container">
             <h1 class="header-title">
-                📊 Планирование спринта
+                <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Планирование спринта
             </h1>
             <div class="export-buttons">
                 <button class="export-btn theme-toggle-btn" id="themeToggleBtn"
                     title="Переключить тему (светлая/тёмная)" aria-label="Переключить тему">
-                    ☀️ Тема
+                    <span class="theme-toggle-icon" aria-hidden="true"></span>
+                    <span class="theme-toggle-label">Тема</span>
                 </button>
                 <button class="export-btn print-btn" onclick="window.print()" title="Печать (Ctrl+Alt+P)">
-                    🖨️ Печать
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Печать
                 </button>
                 <button class="export-btn load-btn" id="loadDataBtn"
                     title="Загрузить данные из JSON-файла (Ctrl+Alt+O)">
-                    📂 Загрузить
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 14l1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
+                    Загрузить
                 </button>
                 <button class="export-btn save-btn" id="saveDataBtn"
                     title="Сохранить текущие данные в JSON-файл (Ctrl+Alt+S)">
-                    💾 Сохранить
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Сохранить
                 </button>
                 <button class="export-btn help-btn" id="helpBtn" title="Открыть справку">
-                    ❓ Справка
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Справка
                 </button>
             </div>
         </div>
 
         <!-- TABS -->
-        <div class="tabs-container">
-            <button class="tab-btn active" data-tab="planning">
-                📅 Планирование спринта
+        <div class="tabs-container" role="tablist">
+            <button class="tab-btn active" data-tab="planning" role="tab">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Планирование спринта
             </button>
-            <button class="tab-btn" data-tab="criteria">
-                ⚖️ Критерии оценки
+            <button class="tab-btn" data-tab="criteria" role="tab">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                Критерии оценки
             </button>
         </div>
 
         <!-- ВКЛАДКА ПЛАНИРОВАНИЯ -->
         <div id="planningTabContent" class="tab-content">
-            <!-- Параметры спринта -->
-            <div class="panel">
-                <div class="availability-info">
-                    <div><label for="cfgProduct">Продукт</label><input type="text" id="cfgProduct" value="SberUnity"
-                            maxlength="100"></div>
-                    <div><label for="cfgDays">Дни спринта</label><input type="number" id="cfgDays" value="10" min="1"
-                            step="1"></div>
-                    <div><label for="cfgStartDate">Начало</label><input type="text" id="cfgStartDate"
-                            class="date-input center-align" placeholder="дд.мм.гггг"></div>
-                    <div><label for="cfgEndDate">Окончание</label><input type="text" id="cfgEndDate"
-                            class="date-input center-align" placeholder="дд.мм.гггг"></div>
-                    <div><label for="cfgHolidays">Праздники (дн) <span class="info-hint"
-                                title="Нерабочие праздничные дни в периоде спринта. Вычитаются из рабочих дней при расчёте «Дни спринта».">ⓘ</span></label><input
-                            type="number" id="cfgHolidays" value="0" min="0" step="1"></div>
-                </div>
-                <div class="availability-info config-row-2">
-                    <div><label for="cfgAvailCoef">Коэфф.доступности % <span class="info-hint"
-                                title="Учитывает риски (болезни, переключения между задачами и т.д.). По умолчанию 93.5%">ⓘ</span></label><input
-                            type="text" id="cfgAvailCoef" class="number-input" value="93,5"></div>
-                    <div><label for="cfgAlert">Порог алерта % <span class="info-hint"
-                                title="Визуальное предупреждение: если загрузка команды превышает 100% + данный порог, появляется красная подсветка. ⚠️ Не влияет на алгоритмы отбора — они всегда работают со строгими ограничениями ёмкости.">ⓘ</span></label><input
-                            type="text" id="cfgAlert" class="number-input" value="3,0"></div>
-                </div>
+            <!-- Параметры спринта (cfg-panel v8.25): две секции с явной иерархией -->
+            <div class="cfg-panel" role="form" aria-label="Параметры спринта и коэффициенты расчёта">
+                <section class="cfg-section" aria-labelledby="cfgSection1Title">
+                    <h2 class="cfg-section-title" id="cfgSection1Title">Параметры спринта</h2>
+                    <div class="cfg-fields">
+
+                        <div class="cfg-field cfg-field--product">
+                            <label class="cfg-label" for="cfgProduct">Продукт</label>
+                            <input type="text" id="cfgProduct" class="cfg-input cfg-input--product"
+                                value="SberUnity" maxlength="100" autocomplete="off">
+                        </div>
+
+                        <div class="cfg-field cfg-field--narrow">
+                            <label class="cfg-label" for="cfgDays">Дни спринта</label>
+                            <input type="number" id="cfgDays" class="cfg-input cfg-input--number"
+                                value="10" min="1" step="1">
+                        </div>
+
+                        <div class="cfg-daterange" role="group" aria-label="Период спринта">
+                            <div class="cfg-field">
+                                <label class="cfg-label" for="cfgStartDate">Начало</label>
+                                <input type="text" id="cfgStartDate"
+                                    class="cfg-input cfg-input--date date-input center-align"
+                                    placeholder="дд.мм.гггг">
+                            </div>
+                            <span class="cfg-daterange__sep" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                    <polyline points="13 6 19 12 13 18"/>
+                                </svg>
+                            </span>
+                            <div class="cfg-field">
+                                <label class="cfg-label" for="cfgEndDate">Окончание</label>
+                                <input type="text" id="cfgEndDate"
+                                    class="cfg-input cfg-input--date date-input center-align"
+                                    placeholder="дд.мм.гггг">
+                            </div>
+                        </div>
+
+                        <div class="cfg-field cfg-field--narrow">
+                            <label class="cfg-label" for="cfgHolidays">
+                                Праздники (дн)
+                                <button type="button" class="cfg-info-btn"
+                                    title="Нерабочие праздничные дни в периоде спринта. Вычитаются из рабочих дней при расчёте «Дни спринта»."
+                                    aria-label="Пояснение: праздничные дни">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                </button>
+                            </label>
+                            <input type="number" id="cfgHolidays" class="cfg-input cfg-input--number"
+                                value="0" min="0" step="1">
+                        </div>
+
+                    </div>
+                </section>
+
+                <section class="cfg-section cfg-section--coef" aria-labelledby="cfgSection2Title">
+                    <h2 class="cfg-section-title" id="cfgSection2Title">Коэффициенты расчёта</h2>
+                    <div class="cfg-fields">
+
+                        <div class="cfg-field cfg-field--medium">
+                            <label class="cfg-label" for="cfgAvailCoef">
+                                Коэфф. доступности %
+                                <button type="button" class="cfg-info-btn"
+                                    title="Учитывает риски (болезни, переключения между задачами и т.д.). По умолчанию 93.5%."
+                                    aria-label="Пояснение: коэффициент доступности">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                </button>
+                            </label>
+                            <input type="text" id="cfgAvailCoef"
+                                class="cfg-input cfg-input--number number-input" value="93,5">
+                        </div>
+
+                        <div class="cfg-field cfg-field--medium">
+                            <label class="cfg-label" for="cfgAlert">
+                                Порог алерта %
+                                <button type="button" class="cfg-info-btn"
+                                    title="Визуальное предупреждение: если загрузка команды превышает 100% + данный порог, появляется красная подсветка. Не влияет на алгоритмы отбора — они всегда работают со строгими ограничениями ёмкости."
+                                    aria-label="Пояснение: порог алерта">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                </button>
+                            </label>
+                            <input type="text" id="cfgAlert"
+                                class="cfg-input cfg-input--number number-input" value="3,0">
+                        </div>
+
+                    </div>
+                </section>
             </div>
 
             <!-- Дэшборд: загрузка команды + распределение по типам -->
             <div class="dash-grid">
-                <div class="panel">
-                    <h3 style="margin: 0 0 8px 0; font-size: 0.85rem;">Загрузка команды</h3>
-                    <div class="res-grid-header">
-                        <span>Роль</span>
-                        <span>Загрузка <span class="info-hint"
-                                title="Расчет: (Спринт - Отпуск (д)) × 8 ч. × FTE % × Коэфф.доступности % - Саморазвитие (9%) - Встречи (7 ч.)">ⓘ</span></span>
-                        <span>FTE %</span>
-                        <span>Отпуск (д)</span>
-                    </div>
-                    <div id="roleList"></div>
-                    <div id="roleTotal" class="role-total-row">
-                        <span>ИТОГО</span>
-                        <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:1px">
-                                <span class="role-total-numbers" style="font-size: 0.9rem; font-weight: bold;">0,0 /
-                                    0,0ч</span>
-                                <span class="role-total-numbers"
-                                    style="font-size: 0.9rem; font-weight: bold;">0,0%</span>
-                            </div>
-                            <div class="progress-bg" style="margin-top: 4px;">
-                                <div class="progress-fill" style="width:0%; background:var(--success)"></div>
-                            </div>
-                        </div>
-                        <div></div>
-                        <div></div>
-                    </div>
+                <div class="panel panel--team-cap">
+                    <h3 class="panel-title-sm panel-title-sm--with-hint">
+                        Загрузка команды
+                        <span class="info-hint"
+                              title="Расчет: (Спринт - Отпуск (д)) × 8 ч. × FTE % × Коэфф.доступности % - Саморазвитие (9%) - Встречи (7 ч.)">ⓘ</span>
+                    </h3>
+                    <!-- Team Capacity Dashboard (v8.14.1):
+                         объединяет header (общая загрузка + gauge) и 5 карточек ролей.
+                         Карточки совмещают визуализацию (bar/иконка/%) и ввод (FTE/Отпуск). -->
+                    <section id="capacityStrip" class="team-cap" aria-label="Загрузка команды по ролям"></section>
                 </div>
 
-                <div class="panel">
-                    <h3 style="margin: 0 0 8px 0; font-size: 0.85rem;">Распределение работ по типам задач (ч)</h3>
-                    <table class="table-dash">
+                <div class="panel panel--matrix">
+                    <h3 class="panel-title-sm panel-title-sm--with-hint">
+                        Распределение работ по типам задач (ч)
+                        <span class="info-hint"
+                              title="Тепловая карта: насыщенность фона ячейки = объём часов">ⓘ</span>
+                    </h3>
+                    <table class="table-dash table-dash--heatmap">
                         <thead>
                             <tr>
-                                <th>Роль</th>
-                                <th>Bug</th>
-                                <th>Tech</th>
-                                <th>US</th>
+                                <th class="matrix-th-role" scope="col">Роль</th>
+                                <th class="matrix-th-type" data-type="bug" scope="col">
+                                    <span class="type-dot type-dot--bug" aria-hidden="true"></span>
+                                    <span class="matrix-th-type__label">Bug</span>
+                                </th>
+                                <th class="matrix-th-type" data-type="tech" scope="col">
+                                    <span class="type-dot type-dot--tech" aria-hidden="true"></span>
+                                    <span class="matrix-th-type__label">Tech</span>
+                                </th>
+                                <th class="matrix-th-type" data-type="us" scope="col">
+                                    <span class="type-dot type-dot--us" aria-hidden="true"></span>
+                                    <span class="matrix-th-type__label">US</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="matrixBody"></tbody>
@@ -153,33 +247,78 @@
 
 
 
-            <!-- Заголовок и кнопки управления списком задач -->
-            <div class="list-header">
-                <div class="header-left">
-                    <div id="excludedTasksHeader" class="header-excluded"></div>
-                    <div id="includedTasksHeader" class="header-included"></div>
+            <!-- Toolbar: статус | поиск/фильтр/вид | действия (одна строка ~44px) -->
+            <div class="toolbar" role="toolbar" aria-label="Управление списком задач">
+                <div class="toolbar__status-group">
+                    <div id="excludedTasksHeader"></div>
+                    <div id="includedTasksHeader"></div>
                 </div>
-                <div class="list-header-search">
-                    <input type="text" id="taskSearchInput" placeholder="🔍 Поиск по названию..."
-                        aria-label="Поиск задач по названию">
-                    <select id="taskTypeFilter" aria-label="Фильтр по типу задачи">
+
+                <div class="toolbar__divider" aria-hidden="true"></div>
+
+                <div class="toolbar__center">
+                    <div class="toolbar__search">
+                        <svg class="toolbar__search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="taskSearchInput" class="toolbar__search-input"
+                               placeholder="Поиск задач..." aria-label="Поиск задач по названию">
+                    </div>
+                    <select id="taskTypeFilter" class="toolbar__filter" aria-label="Фильтр по типу задачи">
                         <option value="">Все типы</option>
                         <option value="us">US</option>
                         <option value="bug">Bug</option>
                         <option value="tech">Tech</option>
                     </select>
                 </div>
-                <div class="task-list-actions">
-                    <div class="actions-grid">
-                        <button class="export-btn danger" id="deleteAllTasksBtn" title="Удалить все задачи">🗑️ Удалить
-                            всё</button>
-                        <button class="export-btn" id="sortByPriorityBtn"
-                            title="Сортировать по убыванию Priority Score">🔽 По приоритету</button>
-                        <button class="export-btn primary" id="addTaskBtn" title="Создать новую задачу (Ctrl+Alt+N)">➕
-                            Новая задача</button>
-                        <button class="export-btn" id="autoSelectBtn" title="Автоматический отбор задач">🤖 Отбор
-                            задач</button>
+
+                <div class="toolbar__divider" aria-hidden="true"></div>
+
+                <div class="toolbar__actions">
+                    <div class="toolbar__density density-toggle" role="group" aria-label="Плотность списка задач">
+                        <button class="density-btn toolbar__icon-btn" data-density="compact" type="button"
+                            title="Компактный режим" aria-label="Компактный режим" aria-pressed="false">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                        </button>
+                        <button class="density-btn toolbar__icon-btn" data-density="comfortable" type="button"
+                            title="Стандартный режим" aria-label="Стандартный режим" aria-pressed="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                        </button>
                     </div>
+
+                    <div class="toolbar__view view-toggle" role="group" aria-label="Режим отображения списка задач">
+                        <button class="view-toggle-btn toolbar__icon-btn" id="viewModeListBtn"
+                                data-view-mode="list" type="button"
+                                title="Плоский список" aria-label="Плоский список" aria-pressed="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        </button>
+                        <button class="view-toggle-btn toolbar__icon-btn" id="viewModeQuadrantsBtn"
+                                data-view-mode="quadrants" type="button"
+                                title="Квадранты приоритета" aria-label="Квадранты приоритета" aria-pressed="false">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                        </button>
+                    </div>
+
+                    <button class="toolbar__btn toolbar__btn--ghost export-btn" id="sortByPriorityBtn"
+                            title="Сортировать по убыванию Priority Score">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/></svg>
+                        <span>По приоритету</span>
+                    </button>
+
+                    <button class="toolbar__btn toolbar__btn--ghost export-btn" id="autoSelectBtn"
+                            title="Автоматический отбор задач">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span>Отбор задач</span>
+                    </button>
+
+                    <button class="toolbar__btn toolbar__btn--primary export-btn primary" id="addTaskBtn"
+                            title="Создать новую задачу (Ctrl+Alt+N)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Новая задача</span>
+                    </button>
+
+                    <button class="toolbar__icon-btn toolbar__icon-btn--danger export-btn danger" id="deleteAllTasksBtn"
+                            title="Удалить все задачи" aria-label="Удалить все задачи">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
                 </div>
             </div>
 
@@ -189,24 +328,26 @@
         </div>
 
         <!-- ВКЛАДКА КРИТЕРИЕВ -->
-        <div id="criteriaTabContent" class="tab-content" style="display: none;">
+        <div id="criteriaTabContent" class="tab-content tab-content--hidden">
             <div class="panel">
                 <div class="criteria-header-title">
-                    <h3 style="margin:0; font-size:0.95rem; color:var(--accent);">
-                        ⚖️ Управление критериями оценки задач
+                    <h3 class="criteria-section-title">
+                        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                        Управление критериями оценки задач
                     </h3>
                     <div class="criteria-header-buttons">
                         <button class="btn-reset-criteria" id="resetCriteriaBtn"
-                            title="Сбросить критерии к значениям по умолчанию">
-                            🔄
+                            title="Сбросить критерии к значениям по умолчанию" aria-label="Сбросить критерии">
+                            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                         </button>
                         <button class="btn-add-criteria-small" id="addCriteriaBtn" title="Добавить новый критерий">
-                            ➕ Добавить
+                            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Добавить
                         </button>
                     </div>
                 </div>
 
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:18px; line-height:1.4;">
+                <p class="section-description">
                     Настройте критерии оценки задач для расчета Priority Score. Вес каждого критерия определяет его
                     влияние на итоговый приоритет задачи.
                     Сумма весов всех критериев должна равняться 100%. Аббревиатура (3-5 символов) используется для
@@ -219,208 +360,274 @@
     </div>
 
     <!-- МОДАЛЬНЫЕ ОКНА -->
-    <div class="modal-overlay" id="editModal">
-        <div class="modal-content">
+    <!-- v8.27: единый task-form modal — см. #createTaskModal выше.
+         Edit использует тот же модал в edit-mode: openEditModal сохраняет
+         editId, меняет заголовок/текст primary-кнопки, заполняет поля из
+         задачи. Отдельный #editModal удалён, JS-флоу унифицирован. -->
+
+    <!-- Модальное окно создания задачи (v8.26: redesigned form, секции + segmented + presets) -->
+    <div class="modal-overlay" id="createTaskModal" role="dialog" aria-modal="true" aria-labelledby="createTaskModalTitle">
+        <div class="modal-content modal-content--create">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem;">Редактирование</h3>
-                <button id="closeEditModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+                <h3 id="createTaskModalTitle" class="modal-title"
+                    data-create-text="Создание задачи"
+                    data-edit-text="Редактирование задачи">Создание задачи</h3>
+                <button id="closeCreateModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
             </div>
-            <div class="modal-form">
-                <div><label for="editTitle">Название <span style="color:var(--danger)">*</span></label><input
-                        type="text" id="editTitle" required></div>
-                <div><label for="editJira">JIRA <span style="color:var(--danger)">*</span></label><input type="text"
-                        id="editJira" required></div>
-                <div><label for="editType">Тип</label><select id="editType" aria-label="Тип задачи">
-                        <option value="us">User Story</option>
-                        <option value="bug">Bug</option>
-                        <option value="tech">Tech Debt</option>
-                    </select></div>
-                <div>
-                    <label for="editComment">Комментарий <span id="editCommentCounter"
-                            style="float:right; font-size:0.75rem; color:var(--text-muted);">0/255</span></label>
-                    <textarea id="editComment" rows="2" maxlength="255"></textarea>
+
+            <form class="modal-form create-form" id="createTaskForm" novalidate>
+
+                <!-- Section 1: Main info -->
+                <fieldset class="cf-section">
+                    <legend class="cf-section-title">Основная информация</legend>
+
+                    <div class="cf-field">
+                        <label class="cf-label" for="newTitle">
+                            Название <span class="cf-required" aria-hidden="true">*</span>
+                        </label>
+                        <input type="text" id="newTitle" class="cf-input" required
+                               placeholder="Кратко опишите задачу" autocomplete="off">
+                    </div>
+
+                    <div class="cf-row cf-row--type-jira">
+                        <div class="cf-field cf-field--type">
+                            <span class="cf-label" id="newTypeLabel">Тип</span>
+                            <div class="cf-segmented" role="radiogroup" aria-labelledby="newTypeLabel"
+                                 id="newTypeSegmented">
+                                <button type="button" class="cf-seg-btn" data-type="us"
+                                        role="radio" aria-checked="true" data-active="true">
+                                    <span class="cf-seg-dot cf-seg-dot--us" aria-hidden="true"></span>
+                                    US
+                                </button>
+                                <button type="button" class="cf-seg-btn" data-type="bug"
+                                        role="radio" aria-checked="false">
+                                    <span class="cf-seg-dot cf-seg-dot--bug" aria-hidden="true"></span>
+                                    Bug
+                                </button>
+                                <button type="button" class="cf-seg-btn" data-type="tech"
+                                        role="radio" aria-checked="false">
+                                    <span class="cf-seg-dot cf-seg-dot--tech" aria-hidden="true"></span>
+                                    Tech
+                                </button>
+                            </div>
+                            <!-- Hidden input preserves the read-by-id contract used by
+                                 taskFormController and existing tests (newType.value). -->
+                            <input type="hidden" id="newType" value="us">
+                        </div>
+
+                        <div class="cf-field cf-field--jira">
+                            <label class="cf-label" for="newJira">
+                                Ссылка JIRA <span class="cf-required" aria-hidden="true">*</span>
+                            </label>
+                            <input type="url" id="newJira" class="cf-input" required
+                                   placeholder="https://jira/..." autocomplete="off">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section 2: Priority criteria -->
+                <fieldset class="cf-section">
+                    <div class="cf-section-head">
+                        <legend class="cf-section-title">Критерии приоритета</legend>
+                        <span class="cf-metric cf-metric--priority" id="createPriorityScoreHeader" aria-live="polite">
+                            Priority Score: 0,0
+                        </span>
+                    </div>
+                    <div id="createCriteriaContainer" class="cf-criteria"></div>
+                </fieldset>
+
+                <!-- Section 3: Effort estimates -->
+                <fieldset class="cf-section">
+                    <div class="cf-section-head">
+                        <legend class="cf-section-title">Оценка трудозатрат (часы)</legend>
+                        <span class="cf-metric cf-metric--effort" id="createEffortHeader" aria-live="polite">
+                            Effort: 0,0
+                        </span>
+                    </div>
+                    <div class="cf-roles">
+                        <div class="cf-role">
+                            <label class="cf-role__label" for="h_uiux">UI/UX</label>
+                            <input type="text" id="h_uiux" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
+                            <div class="cf-role__presets" data-target="h_uiux" aria-hidden="true">
+                                <button type="button" class="cf-preset" data-value="1">1</button>
+                                <button type="button" class="cf-preset" data-value="2">2</button>
+                                <button type="button" class="cf-preset" data-value="4">4</button>
+                                <button type="button" class="cf-preset" data-value="8">8</button>
+                            </div>
+                        </div>
+                        <div class="cf-role">
+                            <label class="cf-role__label" for="h_ca">CA</label>
+                            <input type="text" id="h_ca" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
+                            <div class="cf-role__presets" data-target="h_ca" aria-hidden="true">
+                                <button type="button" class="cf-preset" data-value="1">1</button>
+                                <button type="button" class="cf-preset" data-value="2">2</button>
+                                <button type="button" class="cf-preset" data-value="4">4</button>
+                                <button type="button" class="cf-preset" data-value="8">8</button>
+                            </div>
+                        </div>
+                        <div class="cf-role">
+                            <label class="cf-role__label" for="h_fe">FE</label>
+                            <input type="text" id="h_fe" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
+                            <div class="cf-role__presets" data-target="h_fe" aria-hidden="true">
+                                <button type="button" class="cf-preset" data-value="2">2</button>
+                                <button type="button" class="cf-preset" data-value="4">4</button>
+                                <button type="button" class="cf-preset" data-value="8">8</button>
+                                <button type="button" class="cf-preset" data-value="16">16</button>
+                            </div>
+                        </div>
+                        <div class="cf-role">
+                            <label class="cf-role__label" for="h_be">BE</label>
+                            <input type="text" id="h_be" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
+                            <div class="cf-role__presets" data-target="h_be" aria-hidden="true">
+                                <button type="button" class="cf-preset" data-value="2">2</button>
+                                <button type="button" class="cf-preset" data-value="4">4</button>
+                                <button type="button" class="cf-preset" data-value="8">8</button>
+                                <button type="button" class="cf-preset" data-value="16">16</button>
+                            </div>
+                        </div>
+                        <div class="cf-role">
+                            <label class="cf-role__label" for="h_qa">QA</label>
+                            <input type="text" id="h_qa" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
+                            <div class="cf-role__presets" data-target="h_qa" aria-hidden="true">
+                                <button type="button" class="cf-preset" data-value="1">1</button>
+                                <button type="button" class="cf-preset" data-value="2">2</button>
+                                <button type="button" class="cf-preset" data-value="4">4</button>
+                                <button type="button" class="cf-preset" data-value="8">8</button>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section 4: Comment (optional, last) — textarea + char counter -->
+                <fieldset class="cf-section cf-section--optional">
+                    <legend class="cf-section-title">
+                        Комментарий
+                        <span class="cf-section-hint">опционально</span>
+                    </legend>
+                    <div class="cf-field">
+                        <textarea id="newComment" class="cf-input cf-textarea" rows="3" maxlength="255"
+                                  placeholder="Дополнительный контекст (необязательно)" autocomplete="off"></textarea>
+                        <div class="cf-counter" aria-live="polite">
+                            <div class="cf-counter__bar" aria-hidden="true">
+                                <span class="cf-counter__bar-fill" id="newCommentCounterBar" style="--fill: 0%"></span>
+                            </div>
+                            <span class="cf-counter__text" id="newCommentCounter">Осталось: 255</span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Action buttons -->
+                <div class="cf-actions">
+                    <button type="button" id="cancelCreateBtn" class="cf-btn cf-btn--ghost export-btn"
+                            title="Отмена — Esc"
+                            aria-label="Отмена (горячая клавиша Esc)">
+                        Отмена
+                    </button>
+                    <button type="button" id="saveCreateBtn" class="cf-btn cf-btn--primary export-btn export-btn--accent"
+                            title="Создать задачу — Ctrl+Enter"
+                            aria-label="Создать задачу (горячая клавиша Ctrl+Enter)"
+                            data-create-text="Создать задачу"
+                            data-edit-text="Сохранить">
+                        Создать задачу
+                    </button>
                 </div>
-                <div class="modal-buttons-center">
-                    <button id="cancelEditBtn" class="export-btn" style="color:var(--text);">Отмена</button>
-                    <button id="saveTaskEditBtn" class="export-btn"
-                        style="background:var(--accent); color:var(--accent-text); font-weight:bold;">Сохранить</button>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Модальное окно создания задачи -->
-    <div class="modal-overlay" id="createTaskModal">
+    <div class="modal-overlay" id="editCriteriaModal" role="dialog" aria-modal="true" aria-labelledby="criteriaModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem;">Создание задачи</h3>
-                <button id="closeCreateModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;"
-                    title="Закрыть (Esc)">&times;</button>
-            </div>
-            <div class="modal-form">
-                <!-- Основные поля -->
-                <div><label for="newTitle">Название <span style="color:var(--danger)">*</span></label><input type="text"
-                        id="newTitle" required></div>
-                <div><label for="newJira">Ссылка JIRA <span style="color:var(--danger)">*</span></label><input
-                        type="text" id="newJira" placeholder="https://jira/..." required></div>
-                <div><label for="newType">Тип</label>
-                    <select id="newType" aria-label="Тип задачи">
-                        <option value="us">US</option>
-                        <option value="bug">Bug</option>
-                        <option value="tech">Tech</option>
-                    </select>
-                </div>
-                <div><label for="newComment">Комментарий</label><input type="text" id="newComment" maxlength="255">
-                </div>
-
-                <!-- Блок оценки по критериям -->
-                <div class="criteria-block">
-                    <div class="criteria-header"><label>Оценка по критериям</label><span class="criteria-header-value"
-                            id="createPriorityScoreHeader">Priority Score: 0,0</span></div>
-                    <div id="createCriteriaContainer"></div>
-                </div>
-
-                <!-- Блок оценок по ролям (часы) -->
-                <div style="margin-top:15px;">
-                    <div class="hours-header">
-                        <label>Оценки по ролям (часы)</label>
-                        <span class="criteria-header-value" id="createEffortHeader">Effort: 0,0</span>
-                    </div>
-                    <div class="est-label-row">
-                        <div>UI/UX</div>
-                        <div>CA</div>
-                        <div>FE</div>
-                        <div>BE</div>
-                        <div>QA</div>
-                    </div>
-                    <div class="task-create-estimates">
-                        <input type="text" id="h_uiux" class="number-input" placeholder="0,0">
-                        <input type="text" id="h_ca" class="number-input" placeholder="0,0">
-                        <input type="text" id="h_fe" class="number-input" placeholder="0,0">
-                        <input type="text" id="h_be" class="number-input" placeholder="0,0">
-                        <input type="text" id="h_qa" class="number-input" placeholder="0,0">
-                    </div>
-                </div>
-
-                <!-- Кнопки -->
-                <div class="modal-buttons-center" style="margin-top:20px; padding-bottom: 20px;">
-                    <button id="cancelCreateBtn" class="export-btn" style="color:var(--text);">Отмена</button>
-                    <button id="saveCreateBtn" class="export-btn"
-                        style="background:var(--accent); color:var(--accent-text); font-weight:bold;">Создать</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="editCriteriaModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem;" id="criteriaModalTitle">Добавить критерий</h3>
-                <button id="closeEditCriteriaModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+                <h3 id="criteriaModalTitle" class="modal-title">Добавить критерий</h3>
+                <button id="closeEditCriteriaModalBtn" class="modal-close-btn" aria-label="Закрыть">&times;</button>
             </div>
             <div class="modal-form">
                 <div class="form-group">
-                    <label>Название критерия <span style="color:var(--danger)">*</span></label>
+                    <label>Название критерия <span class="required-marker" aria-hidden="true">*</span></label>
                     <input type="text" id="editCriteriaName" required>
                 </div>
                 <div class="form-group">
-                    <label>Аббревиатура (1-5 символов) <span style="color:var(--danger)">*</span></label>
-                    <input type="text" id="editCriteriaAbbreviation" maxlength="5" required
-                        style="text-transform: uppercase;">
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
+                    <label>Аббревиатура (1-5 символов) <span class="required-marker" aria-hidden="true">*</span></label>
+                    <input type="text" id="editCriteriaAbbreviation" class="input-uppercase" maxlength="5" required>
+                    <div class="form-help">
                         Будет отображаться в интерфейсе оценки задач. Разрешены любые символы кроме пробелов. Первый
                         символ должен быть буквой или цифрой.
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Вес (%) <span style="color:var(--danger)">*</span></label>
+                    <label>Вес (%) <span class="required-marker" aria-hidden="true">*</span></label>
                     <input type="number" id="editCriteriaWeight" min="1" max="100" step="1" required
                         class="number-input">
                 </div>
                 <div class="form-group">
-                    <label>Обоснование веса <span style="color:var(--danger)">*</span></label>
+                    <label>Обоснование веса <span class="required-marker" aria-hidden="true">*</span></label>
                     <textarea id="editCriteriaRationale" rows="3" required></textarea>
                 </div>
                 <div class="form-group">
                     <label>Шкала оценки (1-10 баллов)</label>
-                    <div id="scaleEditor" style="display: flex; flex-direction: column; gap: 4px;"></div>
+                    <div id="scaleEditor" class="scale-editor"></div>
                 </div>
                 <div class="form-actions">
-                    <button id="cancelEditCriteriaBtn" class="export-btn" style="color:var(--text);">Отмена</button>
-                    <button id="saveCriteriaEditBtn" class="export-btn"
-                        style="background:var(--accent); color:var(--accent-text); font-weight:bold;">Сохранить</button>
+                    <button id="cancelEditCriteriaBtn" class="export-btn">Отмена</button>
+                    <button id="saveCriteriaEditBtn" class="export-btn export-btn--accent">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="selectionReportModal">
-        <div class="modal-content" style="max-width: 1100px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-overlay" id="selectionReportModal" role="dialog" aria-modal="true" aria-labelledby="selectionReportModalTitle">
+        <div class="modal-content modal-content--wide modal-content--column">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem; display: flex; align-items: center; gap: 8px;">
-                    📊 Сравнение алгоритмов автоматического отбора
+                <h3 id="selectionReportModalTitle" class="modal-title modal-title--icon">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Сравнение алгоритмов автоматического отбора
                 </h3>
-                <button id="closeSelectionReportModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+                <button id="closeSelectionReportModalBtn" class="modal-close-btn" aria-label="Закрыть">&times;</button>
             </div>
-            <div id="selectionLoadingIndicator"
-                style="display: none; padding: 20px; text-align: center; border-bottom: 1px solid var(--border);">
-                <div class="loading-spinner" style="vertical-align: middle;"></div>
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Выполняется отбор тремя алгоритмами,
+            <div id="selectionLoadingIndicator" class="selection-loading-indicator">
+                <div class="loading-spinner loading-spinner--inline"></div>
+                <span class="loading-text">Выполняется отбор тремя алгоритмами,
                     пожалуйста, подождите...</span>
             </div>
-            <div id="selectionReportContent"
-                style="padding: 15px 0; font-size: 0.8rem; overflow-y: auto; overflow-x: hidden; flex: 1;"></div>
-            <div class="modal-buttons-center"
-                style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 15px; margin-top: 10px;">
-                <button id="applyMatrixBtn" class="export-btn"
-                    style="color:var(--success); border-color:var(--success);" data-algorithm="matrix">
-                    ✅ Применить Matrix
+            <div id="selectionReportContent" class="selection-report-content"></div>
+            <div class="modal-buttons-center modal-buttons-center--report">
+                <button id="applyMatrixBtn" class="export-btn export-btn--success" data-algorithm="matrix">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+                    Применить Matrix
                 </button>
-                <button id="applyValueDensityBtn" class="export-btn"
-                    style="color:var(--success); border-color:var(--success);" data-algorithm="value-density">
-                    ✅ Применить Value Density
+                <button id="applyValueDensityBtn" class="export-btn export-btn--success" data-algorithm="value-density">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+                    Применить Value Density
                 </button>
-                <button id="applyHybridBtn" class="export-btn"
-                    style="color:var(--success); border-color:var(--success);" data-algorithm="hybrid">
-                    ✅ Применить Hybrid
+                <button id="applyHybridBtn" class="export-btn export-btn--success" data-algorithm="hybrid">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+                    Применить Hybrid
                 </button>
-                <button id="closeSelectionReportBtn" class="export-btn"
-                    style="background:var(--accent); color:var(--accent-text); font-weight:bold;">Закрыть</button>
+                <button id="closeSelectionReportBtn" class="export-btn export-btn--accent">Закрыть</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="messageModal">
+    <div class="modal-overlay" id="messageModal" role="dialog" aria-modal="true" aria-labelledby="messageModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem;">Сообщение</h3>
-                <button id="closeMessageModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+                <h3 id="messageModalTitle" class="modal-title">Сообщение</h3>
+                <button id="closeMessageModalBtn" class="modal-close-btn" aria-label="Закрыть">&times;</button>
             </div>
-            <div id="messageText"
-                style="padding: 15px 0; font-size: 0.85rem; min-height: 50px; display: flex; align-items: center; justify-content: center;">
-            </div>
+            <div id="messageText" class="modal-text-block"></div>
             <div class="modal-buttons-center">
-                <button id="okMessageBtn" class="export-btn"
-                    style="background:var(--accent); color:var(--accent-text); font-weight:bold; min-width: 80px;">OK</button>
+                <button id="okMessageBtn" class="export-btn export-btn--accent export-btn--min-80">OK</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="confirmModal">
+    <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:0.95rem;">Подтверждение</h3>
-                <button id="closeConfirmModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+                <h3 id="confirmModalTitle" class="modal-title">Подтверждение</h3>
+                <button id="closeConfirmModalBtn" class="modal-close-btn" aria-label="Закрыть">&times;</button>
             </div>
-            <div id="confirmText"
-                style="padding: 15px 0; font-size: 0.85rem; min-height: 50px; display: flex; align-items: center; justify-content: center;">
-            </div>
+            <div id="confirmText" class="modal-text-block"></div>
             <div class="confirm-buttons">
                 <button id="confirmYesBtn" class="confirm-btn confirm-yes">Да</button>
                 <button id="confirmNoBtn" class="confirm-btn confirm-no">Нет</button>
@@ -429,59 +636,47 @@
     </div>
 
     <!-- Модальное окно рекомендаций (новый UI) -->
-    <div class="modal-overlay" id="recommendationsModal">
-        <div class="modal-content"
-            style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
-            <div class="modal-header" style="padding: 20px 20px 0 20px;">
-                <h3 style="margin:0; font-size:0.95rem; display: flex; align-items: center; gap: 8px;">
-                    📋 Рекомендации по оптимизации спринта
+    <div class="modal-overlay" id="recommendationsModal" role="dialog" aria-modal="true" aria-labelledby="recommendationsModalTitle">
+        <div class="modal-content modal-content--medium modal-content--column modal-content--padless">
+            <div class="modal-header modal-header--padded">
+                <h3 id="recommendationsModalTitle" class="modal-title modal-title--icon">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                    Рекомендации по оптимизации спринта
                 </h3>
-                <button id="closeRecommendationsModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;"
-                    title="Закрыть (Esc)">&times;</button>
+                <button id="closeRecommendationsModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
             </div>
-            <div id="recommendationsContent" style="padding: 15px 20px; overflow-y: auto; flex: 1; overflow-x: hidden;">
-            </div>
-            <div class="modal-buttons-center"
-                style="padding: 10px 20px; border-top: 1px solid var(--border); text-align: center;">
-                <button id="closeRecommendationsBtn" class="export-btn"
-                    style="background:var(--accent); color:var(--accent-text); font-weight:bold;"
-                    title="Закрыть">Закрыть</button>
+            <div id="recommendationsContent" class="modal-body modal-body--padded"></div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="closeRecommendationsBtn" class="export-btn export-btn--accent" title="Закрыть">Закрыть</button>
             </div>
         </div>
     </div>
 
     <!-- Модальное окно справки -->
-    <div class="modal-overlay" id="helpModal">
-        <div class="modal-content"
-            style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
-            <div class="modal-header" style="padding: 20px 20px 0 20px;">
-                <h3 style="margin:0; font-size:1rem; display: flex; align-items: center; gap: 8px;">
-                    📖 Руководство пользователя
+    <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+        <div class="modal-content modal-content--narrow modal-content--column modal-content--padless">
+            <div class="modal-header modal-header--padded">
+                <h3 id="helpModalTitle" class="modal-title modal-title--lg modal-title--icon">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Руководство пользователя
                 </h3>
-                <button id="closeHelpModalBtn"
-                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;"
-                    title="Закрыть (Esc)">&times;</button>
+                <button id="closeHelpModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
             </div>
-            <div id="helpContent"
-                style="padding: 15px 20px; overflow-y: auto; flex: 1; font-size:0.85rem; line-height:1.5;"></div>
-            <div class="modal-buttons-center"
-                style="padding: 10px 20px; border-top: 1px solid var(--border); text-align: center;">
-                <button id="closeHelpBtn" class="export-btn"
-                    style="background:var(--accent); color:var(--accent-text); font-weight:bold;">Закрыть</button>
+            <div id="helpContent" class="modal-body modal-body--padded modal-body--help"></div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="closeHelpBtn" class="export-btn export-btn--accent">Закрыть</button>
             </div>
         </div>
     </div>
 
     <!-- Глобальный индикатор прогресса -->
-    <div id="globalProgress"
-        style="position: fixed; bottom: 20px; right: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 15px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; align-items: center; gap: 10px;">
-        <div class="loading-spinner" style="width: 20px; height: 20px;"></div>
-        <span id="progressMessage" style="color: var(--text);">Загрузка...</span>
+    <div id="globalProgress" class="global-progress" role="status" aria-live="polite">
+        <div class="loading-spinner loading-spinner--md"></div>
+        <span id="progressMessage" class="global-progress__text">Загрузка...</span>
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js?v=v8.22.3-reorg-docs-folder"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

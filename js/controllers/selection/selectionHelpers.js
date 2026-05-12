@@ -89,3 +89,35 @@ export function computeComparisonBestValues(comparableData) {
 export function areNearlyEqual(left, right, epsilon = 0.000001) {
     return Math.abs(left - right) <= epsilon;
 }
+
+/**
+ * Эвристика выбора рекомендованного алгоритма для отображения в шапке отчёта
+ * сравнения. Логика:
+ *   1. Среди алгоритмов с загрузкой ≤ 100% выбираем максимум по сумме
+ *      Priority Score (главная оптимизируемая величина).
+ *   2. Если все алгоритмы перегружены (>100%), берём пул целиком и пытаемся
+ *      выбрать тот, что ближе всего к 100% (минимизируем перегруз) при
+ *      максимальной сумме приоритетов.
+ *   3. При совпадении сумм приоритетов — ближе к 100% по загрузке;
+ *      затем — выше плотность ценности.
+ *
+ * @param {Array} comparableData - результат buildComparisonDisplayData
+ * @returns {Object|null} - элемент comparableData или null, если массив пуст
+ */
+export function pickRecommendedAlgorithm(comparableData) {
+    if (!Array.isArray(comparableData) || comparableData.length === 0) return null;
+
+    const withinBudget = comparableData.filter((item) => item.displayLoad <= 100);
+    const pool = withinBudget.length > 0 ? withinBudget : comparableData;
+
+    return pool.reduce((best, item) => {
+        if (!best) return item;
+        if (item.displayPriority > best.displayPriority) return item;
+        if (item.displayPriority < best.displayPriority) return best;
+        const itemDelta = Math.abs(item.displayLoad - 100);
+        const bestDelta = Math.abs(best.displayLoad - 100);
+        if (itemDelta < bestDelta) return item;
+        if (itemDelta > bestDelta) return best;
+        return item.displayDensity > best.displayDensity ? item : best;
+    }, null);
+}

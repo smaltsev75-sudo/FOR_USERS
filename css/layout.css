@@ -54,25 +54,8 @@
     margin-bottom: 12px;
 }
 
-.res-grid-header,
-.role-res-row,
-.role-total-row {
-    display: grid;
-    grid-template-columns: 80px 1fr 60px 60px;
-    gap: 10px;
-    align-items: center;
-    padding: 6px 0;
-}
-
-.role-total-row {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 2px solid var(--border);
-    padding: 8px 0 8px 8px;
-    margin-left: -8px;
-    margin-right: -8px;
-    padding-right: 8px;
-}
+/* v8.27.1: legacy .res-grid-header / .role-res-row / .role-total-row удалены —
+   role list переехал в team-cap__card (v8.21). */
 
 .task-create-main {
     display: grid;
@@ -101,14 +84,6 @@
     gap: 10px;
 }
 
-.list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 0 5px;
-}
-
 .task-row {
     display: flex;
     align-items: flex-start;
@@ -121,29 +96,10 @@
     min-width: 100px;
 }
 
-.est-box {
-    min-width: 20px;
-    max-width: 75px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.est-input-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
-
-.est-box-total {
-    min-width: 50px;
-    padding: 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+/* Legacy .est-box / .est-input-container / .est-box-total rules
+   удалены v8.22.2 — все стили теперь в task-card.css. Здесь были
+   правила, которые конфликтовали (flex-direction:column, max-width:75px)
+   и не позволяли компактировать карточку. */
 
 .task-btn-group {
     display: flex;
@@ -278,15 +234,6 @@
 
     .task-create-main {
         grid-template-columns: 1fr;
-    }
-
-    .res-grid-header,
-    .role-res-row {
-        grid-template-columns: 70px 1fr 60px 60px !important;
-    }
-
-    .role-total-row {
-        grid-template-columns: 70px 1fr 60px 60px !important;
     }
 
     .task-row {

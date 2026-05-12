@@ -17,12 +17,6 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .res-grid-header,
-    .role-res-row,
-    .role-total-row {
-        grid-template-columns: 70px 1fr 60px 60px;
-    }
-
     .task-row {
         flex-wrap: wrap;
     }
@@ -76,29 +70,7 @@
     }
 }
 
-@media (max-width: 768px) {
-    .list-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .header-left {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-
-    .list-header-search {
-        width: 100%;
-    }
-
-    .task-list-actions {
-        width: 100%;
-    }
-
-    .actions-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
+/* Toolbar responsive rules moved to css/toolbar.css (BEM-scoped). */
 
 @media (max-width: 600px) {
     .modal-content {
@@ -187,38 +159,9 @@
         justify-content: flex-start;
     }
 
-    .est-box {
-        min-width: 45px;
-        /* чуть шире для комфорта */
-        max-width: none;
-        /* убираем ограничение максимальной ширины */
-    }
-
-    .est-box-total {
-        min-width: 80px;
-        /* Effort тоже может быть шире */
-        margin-left: 0;
-        margin-top: 4px;
-    }
+    /* Legacy .est-box rules удалены v8.22.2 — task-card.css управляет всем. */
 }
 
 @media (max-width: 600px) {
-    .task-estimates {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .est-box {
-        min-width: 40px;
-        flex: 1 0 auto;
-        /* позволяем боксам растягиваться */
-    }
-
-    .est-box-total {
-        width: 100%;
-        /* Effort занимает всю ширину */
-        min-width: 0;
-        margin-top: 8px;
-        order: 999;
-    }
+    /* Legacy .est-box rules удалены v8.22.2 — task-card.css управляет всем. */
 }

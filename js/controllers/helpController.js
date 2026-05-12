@@ -1,6 +1,6 @@
 // js/controllers/helpController.js
 // Контроллер модального окна справки.
-// Загружает UserManual.md, парсит через marked.js и санитизирует через DOMPurify.
+// Загружает docs/UserManual.md, парсит через marked.js и санитизирует через DOMPurify.
 
 import { messageService } from '../services/message.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
@@ -9,7 +9,7 @@ import { showModal, hideModal } from '../ui/modalManager.js';
  * HelpController — управляет модальным окном справки.
  *
  * Отвечает за:
- * - Загрузку UserManual.md с сервера
+ * - Загрузку docs/UserManual.md с сервера
  * - Парсинг Markdown → HTML через библиотеку marked
  * - Санитизацию HTML через DOMPurify (защита от XSS)
  * - Генерацию якорей для оглавления
@@ -58,7 +58,7 @@ export class HelpController {
 
             // Ищем файл по нескольким путям (для совместимости)
             let response = null;
-            for (const path of ['UserManual.md', './UserManual.md']) {
+            for (const path of ['docs/UserManual.md', './docs/UserManual.md']) {
                 try {
                     response = await fetch(path);
                     if (response.ok) break;
@@ -105,7 +105,7 @@ export class HelpController {
                 <div style="padding:20px; color:var(--danger); text-align:center;">
                     <p>❌ Не удалось загрузить руководство пользователя.</p>
                     <p style="font-size:0.8rem; color:var(--text-muted);">${error.message}</p>
-                    <p>Убедитесь, что файл <strong>UserManual.md</strong> находится в корневой папке приложения.</p>
+                    <p>Убедитесь, что файл <strong>docs/UserManual.md</strong> существует в проекте.</p>
                 </div>
             `;
         }

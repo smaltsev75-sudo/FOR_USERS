@@ -1,5 +1,7 @@
 // js/controllers/themeController.js
 
+import { ICONS } from '../utils/icons.js';
+
 const THEME_KEY = 'sprintPlannerTheme';
 const DARK = 'dark';
 const LIGHT = 'light';
@@ -32,12 +34,23 @@ export class ThemeController {
     _applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(THEME_KEY, theme);
-        if (this._btn) {
-            this._btn.textContent = theme === LIGHT ? '🌙 Тема' : '☀️ Тема';
-            this._btn.title = theme === LIGHT
-                ? 'Переключить на тёмную тему'
-                : 'Переключить на светлую тему';
+        if (!this._btn) return;
+        const iconEl = this._btn.querySelector('.theme-toggle-icon');
+        const labelEl = this._btn.querySelector('.theme-toggle-label');
+        // В тёмной теме показываем иконку «солнце» (для перехода в светлую),
+        // в светлой — «луна» (для перехода в тёмную).
+        const iconKey = theme === LIGHT ? 'moon' : 'sun';
+        if (iconEl) {
+            iconEl.innerHTML = ICONS[iconKey] || '';
         }
+        if (labelEl) {
+            labelEl.textContent = 'Тема';
+        }
+        this._btn.dataset.themeIcon = iconKey;
+        this._btn.title = theme === LIGHT
+            ? 'Переключить на тёмную тему'
+            : 'Переключить на светлую тему';
+        this._btn.setAttribute('aria-label', this._btn.title);
     }
 
     /**

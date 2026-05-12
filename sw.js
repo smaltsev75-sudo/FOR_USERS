@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.19';
+const CACHE_VERSION = 'sp-v8.29.2-recommendations-dedupe';
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -27,11 +27,17 @@ const ASSETS_TO_CACHE = [
     '/css/criteria.css',
     '/css/selection-report.css',
     '/css/task-card.css',
+    '/css/capacity-strip.css',
+    '/css/team-capacity.css',
+    '/css/a11y.css',
     '/css/print.css',
     // JS — app entry
     '/js/app.js',
     // JS — controllers
+    '/js/controllers/capacityStripController.js',
     '/js/controllers/configController.js',
+    '/js/controllers/densityController.js',
+    '/js/controllers/viewModeController.js',
     '/js/controllers/criteria/criteriaFormController.js',
     '/js/controllers/criteriaController.js',
     '/js/controllers/fileController.js',
@@ -59,6 +65,7 @@ const ASSETS_TO_CACHE = [
     '/js/domain/selection/hybrid.js',
     '/js/domain/selection/index.js',
     '/js/domain/selection/matrix.js',
+    '/js/domain/selection/quadrants.js',
     '/js/domain/selection/valueDensity.js',
     '/js/domain/task.js',
     '/js/domain/validation.js',
@@ -74,12 +81,13 @@ const ASSETS_TO_CACHE = [
     // JS — ui
     '/js/ui/createForm.js',
     '/js/ui/criteriaList.js',
-    '/js/ui/domUtils.js',
     '/js/ui/header.js',
     '/js/ui/index.js',
     '/js/ui/matrix.js',
     '/js/ui/modalManager.js',
-    '/js/ui/roleList.js',
+    '/js/ui/teamCapacity.js',
+    '/js/ui/taskListGrouped.js',
+    '/js/ui/createTaskRowVM.js',
     '/js/ui/selectionRecommendations.js',
     '/js/ui/selectionReport.js',
     '/js/ui/snackbar.js',
@@ -91,14 +99,24 @@ const ASSETS_TO_CACHE = [
     '/js/utils/date.js',
     '/js/utils/debounce.js',
     '/js/utils/escapeHtml.js',
-    '/js/utils/lruCache.js'
+    '/js/utils/icons.js',
+    '/js/utils/lruCache.js',
+    '/js/utils/sanitize.js'
 ];
 
-// Установка: кэшируем все статические ресурсы
+// Установка: кэшируем все статические ресурсы.
+// ВАЖНО: используем `Request` с `cache:'reload'`, чтобы install не подхватил
+// устаревшие файлы из HTTP-cache браузера. Без этого после правки assets
+// и bump CACHE_VERSION пользователь продолжает видеть старую версию.
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_VERSION)
-            .then(cache => cache.addAll(ASSETS_TO_CACHE))
+            .then(cache => {
+                const requests = ASSETS_TO_CACHE.map(url =>
+                    new Request(url, { cache: 'reload' })
+                );
+                return cache.addAll(requests);
+            })
             .then(() => self.skipWaiting())
     );
 });

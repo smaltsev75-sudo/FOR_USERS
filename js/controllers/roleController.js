@@ -3,7 +3,8 @@ export class RoleController {
     constructor(store, numberFormatService) {
         this.store = store;
         this.nfs = numberFormatService;
-        this.roleListEl = document.getElementById('roleList');
+        // v8.21+: inputs живут внутри Team Capacity Dashboard (#capacityStrip).
+        this.containerEl = document.getElementById('capacityStrip');
     }
 
     init() {
@@ -11,14 +12,14 @@ export class RoleController {
     }
 
     attachEvents() {
-        if (this.roleListEl) {
-            this.roleListEl.addEventListener('input', (e) => {
+        if (this.containerEl) {
+            this.containerEl.addEventListener('input', (e) => {
                 this.handleRoleInput(e);
             });
-            this.roleListEl.addEventListener('change', (e) => {
+            this.containerEl.addEventListener('change', (e) => {
                 this.handleRoleUpdate(e);
             });
-            this.roleListEl.addEventListener('blur', (e) => {
+            this.containerEl.addEventListener('blur', (e) => {
                 this.handleRoleBlur(e);
             }, true);
         }

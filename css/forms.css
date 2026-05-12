@@ -2,16 +2,12 @@
 /* Общие стили полей ввода, извлечённые из components.css */
 
 .number-input,
-.role-res-row input,
-.role-res-row select,
 .task-create-main input,
 .task-create-main select,
 .modal-form input,
 .modal-form select,
 .modal-form textarea,
-.availability-info input,
-.list-header-search input,
-.list-header-search select {
+.availability-info input {
    background: var(--bg-main);
    border: 1px solid var(--border);
    color: var(--text);
@@ -24,16 +20,12 @@
 }
 
 .number-input:focus,
-.role-res-row input:focus,
-.role-res-row select:focus,
 .task-create-main input:focus,
 .task-create-main select:focus,
 .modal-form input:focus,
 .modal-form select:focus,
 .modal-form textarea:focus,
-.availability-info input:focus,
-.list-header-search input:focus,
-.list-header-search select:focus {
+.availability-info input:focus {
    border-color: var(--accent);
    box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
    outline: none;

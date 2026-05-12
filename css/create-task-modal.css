@@ -1,179 +1,551 @@
-/* ---------- create-task-modal.css ---------- */
-/* Стили для модального окна создания задачи, кнопка OK, выделение задачи */
+/* ============================================================
+   create-task-modal.css (v8.26 redesign)
+   Сегменты: Основная инфо | Критерии | Трудозатраты | Комментарий
+   Тёплая палитра через токены, BEM-scope cf-* (create form).
+   ============================================================ */
 
-#createTaskModal .est-label-row,
-#createTaskModal .task-create-estimates {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr) 80px;
-    gap: 8px;
+.modal-content--create {
+    max-width: 640px;
+    padding-top: 4px;
 }
 
-#createTaskModal .est-label-row div,
-#createTaskModal .task-create-estimates input,
-#createTaskModal .task-create-estimates .total-display {
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-@media (max-width: 500px) {
-
-    #createTaskModal .est-label-row,
-    #createTaskModal .task-create-estimates {
-        grid-template-columns: repeat(5, 1fr) 80px;
-    }
-
-    #createTaskModal .est-label-row div:last-child,
-    #createTaskModal .task-create-estimates div:last-child {
-        display: none;
-    }
-}
-
-/* ---------- Заголовки блоков с value справа ---------- */
-#createTaskModal .criteria-header,
-#createTaskModal .hours-header {
+.create-form {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 4px;
 }
 
-#createTaskModal .criteria-header label,
-#createTaskModal .hours-header label {
-    font-size: 0.8rem;
+/* ---------- Section ---------- */
+.cf-section {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cf-section + .cf-section {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+}
+
+.cf-section--optional {
+    opacity: 0.92;
+}
+
+.cf-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cf-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--text-muted);
     margin: 0;
+    padding: 0;
 }
 
-#createTaskModal .criteria-header .criteria-header-value,
-#createTaskModal .hours-header .criteria-header-value {
-    font-size: 0.8rem;
+.cf-section-hint {
+    margin-left: 6px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    /* v8.27.1: opacity 0.8 убран — давал 3.38:1 на bg-card в light, axe-fail.
+       Чистый --text-muted даёт ≥ 4.5:1 в обеих темах. */
+    color: var(--text-muted);
+}
+
+.cf-metric {
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 2px 8px;
+    padding: 2px 10px;
     border-radius: 12px;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
-#createTaskModal .criteria-header .criteria-header-value {
+.cf-metric--priority {
     color: var(--accent);
     background: var(--accent-bg-subtle);
 }
 
-#createTaskModal .hours-header .criteria-header-value {
+.cf-metric--effort {
     color: var(--success);
     background: var(--success-bg-subtle);
 }
 
-/* ---------- Сетка для критериев в модальном окне ---------- */
-#createTaskModal .criteria-grid {
+/* ---------- Field / label / input ---------- */
+.cf-field {
     display: flex;
     flex-direction: column;
-    width: 100%;
     gap: 4px;
 }
 
-#createTaskModal .criteria-label-row,
-#createTaskModal .criteria-select-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-    gap: 8px;
-    width: 100%;
-}
-
-#createTaskModal .criteria-label-cell {
-    font-size: 0.75rem;
-    font-weight: 600;
+.cf-label {
+    font-size: 0.72rem;
+    font-weight: 500;
     color: var(--text-muted);
-    text-align: left;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.02em;
 }
 
-#createTaskModal .criteria-label-cell .criteria-weight {
-    font-size: 0.7rem;
-    color: var(--text);
-    background-color: var(--bg-main);
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-right: 4px;
+.cf-required {
+    color: var(--danger);
+    margin-left: 2px;
     font-weight: 700;
-    border: 1px solid var(--accent);
-    box-shadow: 0 1px 2px var(--shadow-md);
 }
 
-#createTaskModal .criteria-select-cell {
-    text-align: left;
-}
-
-#createTaskModal .criteria-select-cell select {
+.cf-input {
     width: 100%;
-    min-width: 50px;
-    padding: 4px 2px;
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-    font-size: 0.7rem;
-    text-align: left;
     box-sizing: border-box;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: none;
 }
 
-#createTaskModal .criteria-select-cell select:focus {
+.cf-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.cf-input:hover {
+    border-color: var(--border-light);
+}
+
+.cf-input:focus,
+.cf-input:focus-visible {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+    box-shadow: 0 0 0 3px var(--accent-bg-strong);
+    background: var(--bg-card);
 }
 
-#createTaskModal .criteria-label-row .criteria-label-cell:last-child {
-    display: none;
-    /* скрываем пустую ячейку в строке заголовков */
+/* Inline-валидация: красная подсветка при ошибке (выставляется JS) */
+.cf-input.error,
+.cf-input[aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-bg-subtle);
 }
 
-#createTaskModal .criteria-select-cell.priority-score-cell .priority-score-container {
-    background: var(--accent-bg-medium);
-    border-radius: 6px;
-    border: 1px solid var(--accent);
-    font-weight: bold;
+/* Title-вариант: главный акцент формы — крупнее, жирнее. */
+.cf-input--title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Secondary вариант: вспомогательное поле (JIRA), визуально приглушено. */
+.cf-input--secondary {
     font-size: 0.8rem;
-    color: var(--accent);
-    padding: 4px 8px;
+    color: var(--text-muted);
+}
+
+.cf-input--secondary:focus,
+.cf-input--secondary:focus-visible {
+    color: var(--text);
+}
+
+/* Wrapper с иконкой слева внутри input. */
+.cf-input-wrap {
+    position: relative;
+}
+
+.cf-input-wrap--with-icon .cf-input-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.cf-input--with-icon {
+    padding-left: 32px;
+}
+
+/* Textarea: тот же стиль, но resize по вертикали + min-height. */
+.cf-textarea {
+    min-height: 64px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+/* ---------- Character counter с прогресс-баром ---------- */
+.cf-counter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 6px;
+}
+
+.cf-counter__bar {
+    width: 100%;
+    height: 3px;
+    background: var(--overlay-medium);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cf-counter__bar-fill {
+    --fill: 0%;
+    --color: var(--success);
+    display: block;
+    width: var(--fill);
+    height: 100%;
+    background: var(--color);
+    border-radius: 2px;
+    transition: width 0.18s ease, background 0.18s ease;
+}
+
+.cf-counter__text {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    align-self: flex-end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cf-counter__bar-fill {
+        transition: none;
+    }
+}
+
+/* ---------- Row layout: type + jira рядом ---------- */
+.cf-row {
+    display: grid;
+    gap: 12px;
+    align-items: start;
+}
+
+.cf-row--type-jira {
+    grid-template-columns: minmax(220px, auto) 1fr;
+}
+
+@media (max-width: 540px) {
+    .cf-row--type-jira {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- Segmented control: Тип задачи ---------- */
+.cf-segmented {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 3px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.cf-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cf-seg-btn:hover {
+    color: var(--text);
+}
+
+.cf-seg-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.cf-seg-btn[data-active="true"],
+.cf-seg-btn[aria-checked="true"] {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.cf-seg-btn[data-active="true"] .cf-seg-dot,
+.cf-seg-btn[aria-checked="true"] .cf-seg-dot {
+    box-shadow: 0 0 0 1px var(--accent-text);
+}
+
+.cf-seg-dot {
     display: inline-block;
-    width: auto;
-    min-width: 110px;
-    text-align: right;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.cf-seg-dot--us { background: var(--us-color); }
+.cf-seg-dot--bug { background: var(--bug-color); }
+.cf-seg-dot--tech { background: var(--tech-color); }
+
+@media (pointer: coarse), (max-width: 720px) {
+    .cf-seg-btn {
+        min-height: 44px;
+        height: 44px;
+    }
+}
+
+/* ---------- Criteria block ---------- */
+.cf-criteria {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* createCriteriaContainer рендерится из taskFormController как
+   labels-row + selects-row грид. Стиль легковеснее старого. */
+#createCriteriaContainer {
+    font-variant-numeric: tabular-nums;
+}
+
+#createCriteriaContainer .criteria-score-select {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 6px !important;
+    font-size: 0.78rem !important;
+    padding: 6px 4px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    text-align: center !important;
+    cursor: pointer;
+}
+
+#createCriteriaContainer .criteria-score-select:hover {
+    border-color: var(--border-light) !important;
+}
+
+#createCriteriaContainer .criteria-score-select:focus,
+#createCriteriaContainer .criteria-score-select:focus-visible {
+    outline: none;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-bg-strong) !important;
+}
+
+/* ---------- Roles block: карточки ролей с пресетами ---------- */
+.cf-roles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 720px) {
+    .cf-roles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .cf-roles {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cf-role {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cf-role:focus-within {
+    border-color: var(--accent);
+    background: var(--accent-bg-faint);
+}
+
+.cf-role__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cf-role__input {
+    width: 100% !important;
     box-sizing: border-box;
+    padding: 6px 8px !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1.5px solid var(--border-light) !important;
+    border-radius: 0 !important;
+    color: var(--text) !important;
+    font-size: 0.95rem !important;
+    font-weight: 600;
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    box-shadow: none !important;
+    transition: border-bottom-color 0.15s ease;
 }
 
-/* Адаптация для узких экранов в модалке */
-@media (max-width: 600px) {
+.cf-role__input:focus,
+.cf-role__input:focus-visible {
+    outline: none;
+    border-bottom-color: var(--accent) !important;
+    box-shadow: 0 1px 0 0 var(--accent) !important;
+}
 
-    #createTaskModal .criteria-label-row,
-    #createTaskModal .criteria-select-row {
-        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-        gap: 4px;
-    }
+.cf-role__input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-weight: 400;
+}
 
-    #createTaskModal .criteria-label-cell {
-        font-size: 0.7rem;
-    }
+.cf-role__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
 
-    #createTaskModal .criteria-select-cell select {
-        font-size: 0.65rem;
-        padding: 2px;
-    }
+.cf-preset {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 3px 0;
+    background: var(--overlay-light);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    font-variant-numeric: tabular-nums;
+}
 
-    #createTaskModal .criteria-select-cell.priority-score-cell .priority-score-container {
-        font-size: 0.7rem;
-        padding: 2px 4px;
-        min-width: 90px;
+.cf-preset:hover {
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+}
+
+.cf-preset:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.cf-preset:active {
+    background: var(--accent-bg-medium);
+}
+
+@media (pointer: coarse) {
+    .cf-preset {
+        padding: 8px 0;
+        min-height: 32px;
     }
 }
 
-/* ---------- Кнопка OK ---------- */
+/* ---------- Action buttons ---------- */
+.cf-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.cf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    border: 1px solid transparent;
+}
+
+.cf-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.cf-btn:active {
+    transform: translateY(1px);
+}
+
+.cf-btn--ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.cf-btn--ghost:hover {
+    background: var(--overlay-medium);
+    color: var(--text);
+    border-color: var(--border-light);
+}
+
+.cf-btn--primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 8px 22px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px var(--accent-shadow);
+}
+
+.cf-btn--primary:hover {
+    background: var(--accent-hover);
+}
+
+@media (max-width: 540px) {
+    .cf-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .cf-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cf-input,
+    .cf-seg-btn,
+    .cf-role,
+    .cf-role__input,
+    .cf-preset,
+    .cf-btn {
+        transition: none;
+    }
+    .cf-btn:active {
+        transform: none;
+    }
+}
+
+/* ---------- Кнопка OK (внешний msg modal) — оставлено как было ---------- */
 #okMessageBtn {
     display: flex;
     align-items: center;
@@ -182,7 +554,7 @@
     text-align: center;
 }
 
-/* ---------- Выделение выбранной задачи ---------- */
+/* ---------- Выделение выбранной задачи (внешний контекст) ---------- */
 .task-item.selected-task {
     border: 3px solid var(--accent) !important;
     background-color: var(--accent-bg-highlight) !important;

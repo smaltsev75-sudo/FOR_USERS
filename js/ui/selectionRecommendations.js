@@ -27,6 +27,40 @@ function buildRecCardHtml(rec, extraStyle = '') {
 }
 
 /**
+ * Группирует «общие» (team-*) рекомендации по `type`, склеивая проценты
+ * от разных алгоритмов в диапазон. До v8.29.2 dedup шёл по `message`, но
+ * процент в строке («60.7%», «66.4%», «65.7%») делал каждое сообщение
+ * формально уникальным — пользователь видел 3 одинаковые карточки подряд.
+ *
+ * @param {Array<{type:string, message:string, percentage?:number, severity:string, suggestion?:string}>} recs
+ * @returns {Array} dedup'd рекомендации с диапазоном % в message
+ */
+export function aggregateGeneralRecommendations(recs) {
+    const byType = new Map(); // type → { rec, percentages: number[] }
+    recs.forEach(rec => {
+        if (!byType.has(rec.type)) {
+            byType.set(rec.type, { rec, percentages: [] });
+        }
+        if (typeof rec.percentage === 'number') {
+            byType.get(rec.type).percentages.push(rec.percentage);
+        }
+    });
+
+    return Array.from(byType.values()).map(({ rec, percentages }) => {
+        if (percentages.length <= 1) return rec; // ничего склеивать
+        const min = Math.min(...percentages);
+        const max = Math.max(...percentages);
+        const minStr = min.toFixed(1);
+        const maxStr = max.toFixed(1);
+        const rangeText = minStr === maxStr ? `${minStr}%` : `${minStr}%–${maxStr}%`;
+        // Заменяем единичный «(NN.N%)» в исходном message на диапазон.
+        // Подходит для шаблонов: «… (60.7%) …» / «… (60.7%)»
+        const msgWithRange = rec.message.replace(/\(\d+(?:[.,]\d+)?%\)/, `(${rangeText})`);
+        return { ...rec, message: msgWithRange };
+    });
+}
+
+/**
  * Builds the recommendations HTML from multi-selection results.
  * @param {Object} multiSelectionResults - { results, comparison }
  * @param {Object} capacityByRole
@@ -34,7 +68,7 @@ function buildRecCardHtml(rec, extraStyle = '') {
  * @returns {string}
  */
 export function buildRecommendationsHtml(multiSelectionResults, capacityByRole, algorithms = ALGORITHM_KEYS) {
-    const allGeneral = [];
+    const generalRaw = [];
     const specific = Object.fromEntries(algorithms.map(a => [a, []]));
 
     algorithms.forEach(algo => {
@@ -43,14 +77,14 @@ export function buildRecommendationsHtml(multiSelectionResults, capacityByRole, 
         const recs = getOptimizationRecommendations(res, capacityByRole) || [];
         recs.forEach(rec => {
             if (rec.type && rec.type.startsWith('team-')) {
-                if (!allGeneral.some(g => g.message === rec.message)) {
-                    allGeneral.push(rec);
-                }
+                generalRaw.push(rec);
             } else {
                 specific[algo].push(rec);
             }
         });
     });
+
+    const allGeneral = aggregateGeneralRecommendations(generalRaw);
 
     const hasAny = allGeneral.length > 0 || algorithms.some(a => specific[a].length > 0);
     if (!hasAny) {

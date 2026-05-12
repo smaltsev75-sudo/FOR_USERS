@@ -1,7 +1,5 @@
 // js/controllers/taskController.js
 
-import { messageService } from '../services/message.js';
-import { fixTaskOrder } from '../domain/task.js';
 import { ROLES } from '../utils/constants.js';
 import { TaskCacheService } from './task/taskCacheService.js';
 import { TaskFormController } from './task/taskFormController.js';
@@ -57,17 +55,26 @@ export class TaskController {
         const addBtn = document.getElementById('addTaskBtn');
         if (addBtn) addBtn.addEventListener('click', () => this._form.openCreateModal());
 
-        // Обработчики модального окна создания
+        // v8.27: единый task-form modal — close/cancel/save диспатчат
+        // по this._form.editId (если != null → edit, иначе → create).
         const closeCreateBtn = document.getElementById('closeCreateModalBtn');
-        if (closeCreateBtn) closeCreateBtn.addEventListener('click', () => this._form.closeCreateModal());
+        if (closeCreateBtn) closeCreateBtn.addEventListener('click', () => {
+            if (this._form.editId !== null) this._form.closeEditModal();
+            else this._form.closeCreateModal();
+        });
 
         const cancelCreateBtn = document.getElementById('cancelCreateBtn');
-        if (cancelCreateBtn) cancelCreateBtn.addEventListener('click', () => this._form.closeCreateModal());
+        if (cancelCreateBtn) cancelCreateBtn.addEventListener('click', () => {
+            if (this._form.editId !== null) this._form.closeEditModal();
+            else this._form.closeCreateModal();
+        });
 
         const saveCreateBtn = document.getElementById('saveCreateBtn');
         if (saveCreateBtn) {
             saveCreateBtn.addEventListener('click', () => {
-                if (this._form.handleAddTask()) {
+                if (this._form.editId !== null) {
+                    this._form.handleSaveEdit();
+                } else if (this._form.handleAddTask()) {
                     setTimeout(() => this._form.closeCreateModal(), 1200);
                 }
             });
@@ -136,7 +143,45 @@ export class TaskController {
 
             taskList.addEventListener('change', (e) => {
                 if (e.target.dataset.action === 'updateEst') this.handleUpdateEst(e);
-                if (e.target.classList.contains('criteria-score-select')) this.handleCriteriaScoreChange(e);
+            });
+
+            // v8.27.2: stepper-кнопки criteria-eval вместо <select>.
+            // Контракт: click на .criteria-eval-step с data-action=decrement|increment
+            // меняет score и пересчитывает priority через handleCriteriaScoreChange.
+            taskList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.criteria-eval-step');
+                if (!btn) return;
+                const stepper = btn.closest('.criteria-eval-stepper');
+                if (!stepper) return;
+                const action = btn.dataset.action;
+                const current = parseInt(stepper.getAttribute('aria-valuenow'), 10) || 0;
+                let next = current;
+                if (action === 'decrement') next = Math.max(0, current - 1);
+                if (action === 'increment') next = Math.min(10, current + 1);
+                if (next === current) return;
+                this._dispatchCriteriaScore(stepper, next);
+            });
+
+            // Клавиатура на spinbutton: ↑/→/PgUp = +1, ↓/←/PgDn = −1, Home = 0, End = 10.
+            taskList.addEventListener('keydown', (e) => {
+                const stepper = e.target.closest('.criteria-eval-stepper');
+                if (!stepper || e.target !== stepper) return;
+                const current = parseInt(stepper.getAttribute('aria-valuenow'), 10) || 0;
+                let next;
+                switch (e.key) {
+                    case 'ArrowUp':
+                    case 'ArrowRight':
+                    case 'PageUp':   next = Math.min(10, current + 1); break;
+                    case 'ArrowDown':
+                    case 'ArrowLeft':
+                    case 'PageDown': next = Math.max(0, current - 1); break;
+                    case 'Home':     next = 0; break;
+                    case 'End':      next = 10; break;
+                    default: return;
+                }
+                if (next === current) return;
+                e.preventDefault();
+                this._dispatchCriteriaScore(stepper, next);
             });
 
             taskList.addEventListener('click', (e) => {
@@ -159,21 +204,34 @@ export class TaskController {
             this.deselectTask();
         });
 
-        // Редактирование задачи
-        const closeEditBtn = document.getElementById('closeEditModalBtn');
-        if (closeEditBtn) closeEditBtn.addEventListener('click', () => this._form.closeEditModal());
+        // v8.27: counter-обновление + Ctrl+S/Ctrl+Enter навешены на единый
+        // newComment / createTaskModal (отдельный editModal удалён).
+        const newCommentEl = document.getElementById('newComment');
+        if (newCommentEl) {
+            newCommentEl.addEventListener('input', (e) => {
+                this._form.updateCommentCounter(e.target.value.length, 255);
+            });
+        }
 
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => this._form.closeEditModal());
-
-        const saveEditBtn = document.getElementById('saveTaskEditBtn');
-        if (saveEditBtn) saveEditBtn.addEventListener('click', () => this._form.handleSaveEdit());
-
-        const editComment = document.getElementById('editComment');
-        if (editComment) {
-            editComment.addEventListener('input', (e) => {
-                const counter = document.getElementById('editCommentCounter');
-                if (counter) counter.textContent = e.target.value.length + '/255';
+        const taskFormModal = document.getElementById('createTaskModal');
+        if (taskFormModal) {
+            taskFormModal.addEventListener('keydown', (e) => {
+                // Ctrl+Enter — primary action в любом режиме (create или edit)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this._form.editId !== null) this._form.handleSaveEdit();
+                    else if (this._form.handleAddTask()) {
+                        setTimeout(() => this._form.closeCreateModal(), 1200);
+                    }
+                }
+                // Ctrl+S — то же самое для edit-mode (привычная save-комбинация)
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (this._form.editId !== null) this._form.handleSaveEdit();
+                    else if (this._form.handleAddTask()) {
+                        setTimeout(() => this._form.closeCreateModal(), 1200);
+                    }
+                }
             });
         }
 
@@ -251,10 +309,30 @@ export class TaskController {
     handleUpdateEst(e) { this._list.handleUpdateEst(e); }
 
     /**
-     * Обрабатывает изменение оценки по критерию.
+     * Обрабатывает изменение оценки по критерию (legacy — был для <select>).
+     * Сейчас главный путь идёт через _dispatchCriteriaScore (stepper).
      * @param {Event} e
      */
     handleCriteriaScoreChange(e) { this._list.handleCriteriaScoreChange(e); }
+
+    /**
+     * v8.27.2: применяет новое значение score к задаче через stepper.
+     * Эмулирует change-событие для совместимости с _list.handleCriteriaScoreChange().
+     * @param {HTMLElement} stepper — корень spinbutton'а с data-id и data-criterion-id
+     * @param {number} score — новое значение 0..10
+     */
+    _dispatchCriteriaScore(stepper, score) {
+        const fakeEvent = {
+            target: {
+                dataset: {
+                    id: stepper.dataset.id,
+                    criterionId: stepper.dataset.criterionId
+                },
+                value: String(score)
+            }
+        };
+        this._list.handleCriteriaScoreChange(fakeEvent);
+    }
 
     /** Переключает исключение задачи. */
     handleToggleExclude(taskId) {

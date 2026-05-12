@@ -94,6 +94,84 @@ export function getRoleLoadColor(pct, alertThreshold) {
     return 'var(--success)';
 }
 
+/**
+ * Возвращает «уровень» загрузки (success/warning/danger) для CSS-классов.
+ * @param {number} pct - Процент загрузки.
+ * @param {number} alertThreshold - Порог алерта.
+ * @returns {'success'|'warning'|'danger'}
+ */
+export function getRoleLoadLevel(pct, alertThreshold) {
+    if (pct > 100 + alertThreshold) return 'danger';
+    if (pct > 95) return 'warning';
+    return 'success';
+}
+
+/**
+ * Чистая функция: вычисляет загрузку команды с учётом гипотетического добавления
+ * или удаления одной задачи (preview during hover/drag).
+ *
+ * Возвращает по каждой роли: текущая нагрузка, прогноз (next), дельта в часах
+ * и в процентах относительно ёмкости.
+ *
+ * @param {Object} params
+ * @param {Array} params.roles - Массив ролей.
+ * @param {Array} params.tasks - Массив текущих задач.
+ * @param {Object} params.config - Конфигурация спринта.
+ * @param {'add'|'remove'} [params.mode='add'] - Симулируем добавление или удаление.
+ * @param {Object|null} [params.task] - Задача-кандидат. null = просто текущее состояние.
+ * @returns {{
+ *   byRole: Object<string, {
+ *     current: number,
+ *     next: number,
+ *     delta: number,
+ *     capacity: number,
+ *     currentPercent: number,
+ *     nextPercent: number,
+ *     deltaPercent: number,
+ *     currentOverload: boolean,
+ *     nextOverload: boolean
+ *   }>
+ * }}
+ */
+export function simulateLoadDelta({ roles, tasks, config, mode = 'add', task = null } = {}) {
+    const byRole = {};
+    if (!Array.isArray(roles)) return { byRole };
+
+    const alert = (config && typeof config.alert === 'number') ? config.alert : 0;
+    const previewActive = task && !task.excluded;
+
+    roles.forEach(role => {
+        const capacity = calculateAvailability(role, config).useful;
+        const current = calculateRoleLoad(role.id, tasks, false);
+        let next = current;
+        if (previewActive) {
+            const taskHours = Number(task.est?.[role.id]) || 0;
+            if (mode === 'add') {
+                next = current + taskHours;
+            } else if (mode === 'remove') {
+                // when removing, current already includes the task — subtract.
+                next = current - taskHours;
+                if (next < 0) next = 0;
+            }
+        }
+        const currentPercent = capacity > 0 ? (current / capacity) * 100 : 0;
+        const nextPercent = capacity > 0 ? (next / capacity) * 100 : 0;
+        byRole[role.id] = {
+            current,
+            next,
+            delta: next - current,
+            capacity,
+            currentPercent,
+            nextPercent,
+            deltaPercent: nextPercent - currentPercent,
+            currentOverload: currentPercent > 100 + alert,
+            nextOverload: nextPercent > 100 + alert
+        };
+    });
+
+    return { byRole };
+}
+
 
 
 

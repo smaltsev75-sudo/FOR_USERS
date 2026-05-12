@@ -70,8 +70,8 @@
 }
 
 .criteria-abbreviation {
-   background: #7c3aed;
-   color: white;
+   background: var(--tech);
+   color: var(--accent-text);
    border-radius: 6px;
    padding: 4px 8px;
    font-size: 0.8rem;
@@ -125,16 +125,19 @@
    background: var(--danger-bg-subtle);
 }
 
+/* v8.29: убраны 7×!important — больше не нужны, т.к. карточка
+   развёрнута только когда `data-expanded="true"`, и нет конкурирующих
+   правил по специфичности из старого `display:none/!important`-патча. */
 .criteria-rationale {
-   display: block !important;
-   font-size: 0.8rem !important;
-   color: var(--text-muted) !important;
-   line-height: 1.5 !important;
-   margin-bottom: 16px !important;
-   padding: 10px !important;
-   background: var(--overlay-light) !important;
-   border-radius: 6px !important;
-   border: 1px solid var(--border) !important;
+   display: block;
+   font-size: 0.8rem;
+   color: var(--text-muted);
+   line-height: 1.6;
+   margin: 0 0 12px 0;
+   padding: 10px 12px;
+   background: var(--overlay-light);
+   border-radius: 6px;
+   border: 1px solid var(--border);
 }
 
 .criteria-scale-container {
@@ -251,4 +254,297 @@
 .weight-invalid {
    color: var(--danger);
    font-weight: bold;
+}
+
+/* ============================================================
+   Criteria management — v8.29 redesign
+   - Sticky-bar с суммой и кнопкой авто-баланса
+   - Карточки collapsed-by-default
+   - Inline-редактирование веса
+   - Hover-actions (edit/delete) — снижаем визуальный шум
+   - Drag-and-drop reorder через grip-handle
+   ============================================================ */
+
+/* ----- Sticky sum bar ----- */
+.criteria-sum-bar {
+   position: sticky;
+   top: 0;
+   z-index: 10;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 10px 12px;
+   margin-bottom: 16px;
+   background: var(--bg-card);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   box-shadow: 0 2px 6px var(--shadow-sm);
+}
+
+.criteria-sum-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   font-size: 0.85rem;
+   font-weight: 600;
+   padding: 6px 14px;
+   border-radius: 20px;
+   background: var(--success-bg-light);
+   color: var(--success);
+   border: 1px solid var(--success-border-faint);
+   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.criteria-sum-pill--invalid-under {
+   background: var(--warning-bg-light);
+   color: var(--warning);
+   border-color: var(--warning);
+}
+
+.criteria-sum-pill--invalid-over {
+   background: var(--danger-bg-light);
+   color: var(--danger);
+   border-color: var(--danger);
+}
+
+.criteria-sum-pill .icon {
+   width: 14px;
+   height: 14px;
+}
+
+.criteria-sum-actions {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+/* Кнопка «Авто-баланс» — появляется только когда сумма != 100 */
+.criteria-auto-balance-btn {
+   background: var(--button-bg);
+   border: 1px solid var(--warning);
+   color: var(--warning);
+   border-radius: 6px;
+   padding: 6px 12px;
+   font-size: 0.78rem;
+   font-weight: 500;
+   cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   transition: all 0.2s ease;
+}
+
+.criteria-auto-balance-btn:hover {
+   background: var(--warning);
+   color: var(--accent-text);
+   transform: translateY(-1px);
+}
+
+.criteria-auto-balance-btn[hidden] {
+   display: none;
+}
+
+/* ----- Criteria item: collapsed-by-default header ----- */
+.criteria-item {
+   /* перекрываем старое margin/padding через тот же селектор —
+      теперь карточка как ёмкость, а вся раскладка идёт в header/body */
+   padding: 0;
+}
+
+.criteria-item-header {
+   display: grid;
+   grid-template-columns: auto auto 1fr auto auto auto;
+   align-items: center;
+   gap: 12px;
+   padding: 12px 14px;
+   cursor: pointer;
+   user-select: none;
+   transition: background 0.2s ease;
+   border-radius: 8px;
+}
+
+.criteria-item-header:hover {
+   background: var(--overlay-light);
+}
+
+.criteria-item-header:focus-visible {
+   outline: 2px solid var(--accent);
+   outline-offset: -2px;
+}
+
+.criteria-item-grip {
+   color: var(--text-muted);
+   opacity: 0;
+   cursor: grab;
+   display: inline-flex;
+   align-items: center;
+   transition: opacity 0.2s ease, color 0.2s ease;
+   /* минимальный hit-area для DnD */
+   padding: 2px;
+   margin: -2px;
+}
+
+.criteria-item-header:hover .criteria-item-grip,
+.criteria-item-header:focus-within .criteria-item-grip {
+   opacity: 0.7;
+}
+
+.criteria-item-grip:hover {
+   opacity: 1 !important;
+   color: var(--accent);
+}
+
+.criteria-item-grip:active {
+   cursor: grabbing;
+}
+
+.criteria-item-chevron {
+   color: var(--text-muted);
+   transition: transform 0.2s ease;
+   width: 12px;
+   text-align: center;
+   font-size: 0.75rem;
+}
+
+.criteria-item.is-expanded .criteria-item-chevron {
+   transform: rotate(90deg);
+}
+
+/* Inline weight control */
+.criteria-weight-control {
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+   /* Не реагирует на клик-toggle родителя */
+}
+
+.criteria-weight-input {
+   width: 56px;
+   padding: 4px 6px;
+   font-size: 0.85rem;
+   font-weight: 600;
+   text-align: right;
+   color: var(--text);
+   background: var(--bg-main);
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   font-variant-numeric: tabular-nums;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+   /* убрать spin-кнопки в Chrome/Safari, оставить функциональность Firefox */
+   -moz-appearance: textfield;
+}
+
+.criteria-weight-input::-webkit-outer-spin-button,
+.criteria-weight-input::-webkit-inner-spin-button {
+   -webkit-appearance: none;
+   margin: 0;
+}
+
+.criteria-weight-input:hover {
+   border-color: var(--border-light);
+}
+
+.criteria-weight-input:focus {
+   outline: none;
+   border-color: var(--accent);
+   box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.criteria-weight-input.is-invalid {
+   border-color: var(--danger);
+   box-shadow: 0 0 0 2px var(--danger-bg-light);
+}
+
+.criteria-weight-suffix {
+   font-size: 0.85rem;
+   color: var(--text-muted);
+   font-weight: 600;
+}
+
+/* Hover-only actions (паттерн v8.14, как у task-row) */
+.criteria-actions {
+   display: inline-flex;
+   gap: 4px;
+   opacity: 0;
+   transition: opacity 0.2s ease;
+}
+
+.criteria-item-header:hover .criteria-actions,
+.criteria-item-header:focus-within .criteria-actions {
+   opacity: 1;
+}
+
+/* ----- Body: collapsed by default ----- */
+.criteria-body[hidden] {
+   display: none;
+}
+
+.criteria-body {
+   padding: 0 14px 14px 14px;
+   animation: criteriaBodyFadeIn 0.2s ease;
+}
+
+@keyframes criteriaBodyFadeIn {
+   from { opacity: 0; transform: translateY(-4px); }
+   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .criteria-body { animation: none; }
+   .criteria-item-chevron,
+   .criteria-item-grip,
+   .criteria-actions,
+   .criteria-weight-input,
+   .criteria-sum-pill,
+   .criteria-auto-balance-btn {
+      transition: none;
+   }
+}
+
+/* Hide-bottom-total — теперь sticky top достаточно */
+.bottom-total-weight {
+   display: none;
+}
+
+/* ----- Drag states ----- */
+.criteria-item.is-dragging {
+   opacity: 0.4;
+   cursor: grabbing;
+}
+
+.criteria-item.is-drop-target {
+   border-color: var(--accent);
+   box-shadow: 0 0 0 1px var(--accent), 0 4px 8px var(--accent-shadow);
+}
+
+/* ----- Empty state ----- */
+.criteria-empty-state {
+   text-align: center;
+   padding: 28px 20px;
+   color: var(--text-muted);
+   font-style: italic;
+   border: 1px dashed var(--border);
+   border-radius: 8px;
+}
+
+/* ----- Адаптив ----- */
+@media (max-width: 720px) {
+   .criteria-sum-bar {
+      flex-wrap: wrap;
+      padding: 10px;
+   }
+   .criteria-item-header {
+      grid-template-columns: auto auto 1fr auto auto;
+      gap: 8px;
+      padding: 10px;
+   }
+   /* На мобильных drag-handle всегда видна (нет hover) */
+   .criteria-item-grip,
+   .criteria-actions {
+      opacity: 1;
+   }
+   .criteria-actions {
+      display: none; /* mobile: открывайте edit-модалку через раскрытие */
+   }
 }

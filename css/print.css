@@ -4,12 +4,12 @@
     .export-btn,
     .task-action-btn,
     .task-btn-group,
-    .actions-grid,
-    .list-header-actions,
+    .toolbar__actions,
+    .toolbar__center,
+    .toolbar__divider,
     .modal-overlay,
     .tab-btn,
     .header-container .export-buttons,
-    .list-header .task-list-actions,
     .drag-handle,
     .btn-edit,
     .btn-delete,
@@ -29,7 +29,6 @@
     .info-hint,
     .overload-tag,
     .task-estimates .est-input-container input,
-    .list-header-search,
     .criteria-eval-item,
     .criteria-eval-abbreviation,
     .mobile-criteria-abbreviation,
@@ -90,7 +89,7 @@
     }
 
     /* ---------- БЛОК ИНФОРМАЦИИ О ЗАДАЧАХ (В ОДНУ СТРОКУ, С ИЗМЕНЁННЫМ ПОРЯДКОМ) ---------- */
-    .header-left {
+    .toolbar__status-group {
         display: flex !important;
         flex-direction: row !important;
         justify-content: space-between !important;
@@ -104,15 +103,15 @@
     }
 
     /* Меняем местами: сначала включённые, потом исключённые */
-    .header-excluded {
+    #excludedTasksHeader {
         order: 2;
         font-size: 12pt !important;
         color: black !important;
         white-space: nowrap;
-        margin-left: auto; /* при необходимости можно добавить отступ */
+        margin-left: auto;
     }
 
-    .header-included {
+    #includedTasksHeader {
         order: 1;
         font-size: 12pt !important;
         color: black !important;
@@ -128,32 +127,8 @@
         page-break-inside: avoid;
     }
 
-    /* ---------- Таблица загрузки команды ---------- */
-    .res-grid-header {
-        display: grid !important;
-        grid-template-columns: 80px 1fr 70px 70px !important;
-        gap: 5px !important;
-        padding: 8px 0 !important;
-        font-weight: bold;
-        border-bottom: 2px solid #000;
-        background: #eee !important;
-    }
-
-    .role-res-row,
-    .role-total-row {
-        display: grid !important;
-        grid-template-columns: 80px 1fr 70px 70px !important;
-        gap: 5px !important;
-        padding: 6px 0 !important;
-        border-bottom: 1px solid #ccc;
-    }
-
-    .role-total-row {
-        border-top: 2px solid #000;
-        font-weight: bold;
-        background: #f5f5f5 !important;
-        margin-top: 8px;
-    }
+    /* v8.27.1: legacy print-стили для .res-grid-header / .role-res-row /
+       .role-total-row удалены — print rendering для team-cap__card живёт ниже. */
 
     .progress-bg {
         background: #eee !important;

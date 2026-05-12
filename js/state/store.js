@@ -3,6 +3,13 @@
 import { ROLES } from '../utils/constants.js';
 /** @typedef {import('../types/contracts.js').AppState} AppState */
 
+const VALID_VIEW_MODES = ['list', 'quadrants'];
+// v8.29.1: 'excluded' — отдельная 5-я группа в Quadrants view для
+// исключённых задач. Хранится наряду с q1..q4 в expandedQuadrants,
+// чтобы сворачивание секции переживало F5.
+const VALID_QUADRANT_KEYS = ['q1', 'q2', 'q3', 'q4', 'excluded'];
+const DEFAULT_EXPANDED_QUADRANTS = [...VALID_QUADRANT_KEYS];
+
 export class Store {
     /**
      * Создаёт хранилище с начальным состоянием.
@@ -32,6 +39,12 @@ export class Store {
             taskSort: {
                 by: 'priority',
                 order: 'desc'
+            },
+            ui: {
+                activeAlgorithm: 'matrix',
+                density: 'comfortable',
+                viewMode: 'list',
+                expandedQuadrants: [...DEFAULT_EXPANDED_QUADRANTS]
             },
             ...initialState
         };
@@ -220,7 +233,8 @@ export class Store {
             numberFormatSettings: { ...this.state.numberFormatSettings, ...newState.numberFormatSettings },
             activeTab: newState.activeTab || 'planning',
             taskFilter: newState.taskFilter || { search: '', type: '' },
-            taskSort: newState.taskSort || { by: 'priority', order: 'desc' }
+            taskSort: newState.taskSort || { by: 'priority', order: 'desc' },
+            ui: { ...(this.state.ui || {}), ...(newState.ui || {}) }
         }));
     }
 
@@ -253,6 +267,80 @@ export class Store {
         this.update(state => ({
             ...state,
             taskSort: { ...state.taskSort, ...sort }
+        }));
+    }
+
+    /**
+     * Обновляет UI-state, который persist'ится между сессиями (F5-стойкость).
+     * Сейчас хранит активный алгоритм автоотбора, чтобы кнопка-action в модалке
+     * показывала последний выбранный алгоритм.
+     * @param {Object} partial - { activeAlgorithm?: string }
+     */
+    setUiState(partial) {
+        this.update(state => ({
+            ...state,
+            ui: { ...(state.ui || {}), ...partial }
+        }));
+    }
+
+    /**
+     * Устанавливает плотность отображения списка задач (Compact/Comfortable/Cozy).
+     * Невалидные значения нормализуются в 'comfortable' (backward-compatible default).
+     * @param {string} density - 'compact' | 'comfortable' | 'cozy'
+     */
+    setDensity(density) {
+        const valid = ['compact', 'comfortable', 'cozy'];
+        const normalized = valid.includes(density) ? density : 'comfortable';
+        this.update(state => ({
+            ...state,
+            ui: { ...(state.ui || {}), density: normalized }
+        }));
+    }
+
+    /**
+     * Устанавливает режим списка задач: 'list' или 'quadrants'.
+     * Невалидные значения нормализуются к 'list'.
+     * @param {string} mode
+     */
+    setViewMode(mode) {
+        const safeMode = VALID_VIEW_MODES.includes(mode) ? mode : 'list';
+        this.update(state => ({
+            ...state,
+            ui: { ...(state.ui || {}), viewMode: safeMode }
+        }));
+    }
+
+    /**
+     * Переключает раскрытость одного квадранта в режиме группировки.
+     * Невалидные ключи игнорируются.
+     * @param {'q1'|'q2'|'q3'|'q4'} quadrantKey
+     */
+    toggleQuadrantExpanded(quadrantKey) {
+        if (!VALID_QUADRANT_KEYS.includes(quadrantKey)) return;
+        this.update(state => {
+            const ui = state.ui || {};
+            const current = Array.isArray(ui.expandedQuadrants)
+                ? ui.expandedQuadrants
+                : [...DEFAULT_EXPANDED_QUADRANTS];
+            const next = current.includes(quadrantKey)
+                ? current.filter(k => k !== quadrantKey)
+                : [...current, quadrantKey];
+            return { ...state, ui: { ...ui, expandedQuadrants: next } };
+        });
+    }
+
+    /**
+     * Полностью заменяет набор раскрытых квадрантов.
+     * Невалидные ключи отфильтровываются.
+     * @param {Array<string>} quadrantKeys
+     */
+    setExpandedQuadrants(quadrantKeys) {
+        const safe = Array.isArray(quadrantKeys)
+            ? quadrantKeys.filter(k => VALID_QUADRANT_KEYS.includes(k))
+            : [...DEFAULT_EXPANDED_QUADRANTS];
+        this.update(state => ({
+            ...state,
+            ui: { ...(state.ui || {}), expandedQuadrants: safe }
         }));
     }
 }

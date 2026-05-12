@@ -1,5 +1,12 @@
 /* ---------- base.css ---------- */
 
+/* Декларация порядка слоёв каскада. Файлы пока не обёрнуты в @layer
+   (они unlayered и получают высший приоритет), но декларация задаёт
+   порядок на будущее: reset → tokens → layout → components →
+   utilities → a11y → overrides. Это позволяет постепенно мигрировать
+   CSS-модули, не ломая существующий каскад. */
+@layer reset, tokens, layout, components, utilities, a11y, overrides;
+
 /* ===== ТЁМНАЯ ТЕМА (по умолчанию) ===== */
 :root {
     --bg-main: #0f172a;
@@ -23,6 +30,10 @@
     --us-color: #00ff9d;
     --bug-color: #ff4d4d;
     --tech-color: #a855f7;
+    /* v8.27.1: усиленные варианты для матрицы (контраст ≥4.5:1 над .total-row) */
+    --bug-color-strong: #ff8a8a;
+    --tech-color-strong: #cba8ff;
+    --text-muted-strong: #b0becd;
     --priority-score-color: #00d9ff;
     --effort-color: #c174f8;
     --button-bg: #2d3748;
@@ -88,92 +99,110 @@
     --best-value-bg: rgba(11, 98, 22, 0.875);
 }
 
-/* ===== СВЕТЛАЯ ТЕМА ===== */
+/* ===== СВЕТЛАЯ ТЕМА — песочная палитра (v8.14) =====
+   Тёплый «sandy»-стиль вместо холодного офисного белого.
+   Все hex-токены рассчитаны на WCAG 2.1 AA:
+     - text/bg-main 12.04:1, text/bg-card 14.12:1
+     - accent #03568a / bg-main 6.14:1 (с запасом на overlay-light eff)
+     - accent-text #fdfaf2 / accent 7.45:1
+     - danger/success/warning/tech на bg-main ≥ 4.5:1
+     - border-light/bg-main 3.38:1 (UI components)
+   Декоративный --border (1.54:1) применяется только для
+   тонких разделительных линий, что допускается WCAG. */
 [data-theme="light"] {
-    --bg-main: #f1f5f9;
-    --bg-card: #ffffff;
-    --accent: #0369a1;
-    --accent-hover: #075985;
-    --accent-text: #ffffff;
+    --bg-main: #ede4ce;          /* тёплый песочный (было #f1f5f9) */
+    --bg-card: #faf6ec;          /* кремовый, не чистый белый (было #ffffff) */
+    --accent: #03568a;           /* затемнено для AA на песочных подложках
+                                    (включая overlay-light effective #e5dcc7) */
+    --accent-hover: #024976;
+    --accent-text: #fdfaf2;      /* кремово-белый, не #ffffff */
     --danger: #b91c1c;
     --danger-hover: #991b1b;
-    --success: #0f766e;
-    --success-hover: #115e59;
-    --warning: #d97706;
-    --warning-hover: #b45309;
+    --success: #0d6258;          /* затемнено для AA на песке */
+    --success-hover: #0a4f47;
+    --warning: #955100;          /* затемнено для AA */
+    --warning-hover: #7a4200;
     --tech: #7c3aed;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: #cbd5e1;
-    --border-light: #94a3b8;
-    --print: #c2410c;
-    --excluded: #475569;
-    --us-color: #0f766e;
-    --bug-color: #dc2626;
+    --text: #2d2419;             /* тёмный шоколад (было #0f172a) */
+    --text-muted: #6b5b47;       /* серо-коричневый (было #475569) */
+    --border: #c9b896;           /* песочный border (декоративный) */
+    --border-light: #8a7858;     /* medium tan для focus/active (≥3:1) */
+    --print: #9a3408;            /* затемнено для AA */
+    --excluded: #6b5b47;
+    --us-color: #0d6258;
+    --bug-color: #b91c1c;
     --tech-color: #7c3aed;
-    --priority-score-color: #0369a1;
+    /* v8.27.1: усиленные варианты для матрицы (контраст ≥4.5:1 над .total-row #ddd1b3) */
+    --bug-color-strong: #8b0000;
+    --tech-color-strong: #5b21b6;
+    --text-muted-strong: #54462f;
+    --priority-score-color: #03568a;
     --effort-color: #7c3aed;
-    --button-bg: #e2e8f0;
-    --button-hover: #cbd5e1;
+    --button-bg: #e7dcc4;        /* бежевый (было #e2e8f0) */
+    --button-hover: #d9cdb6;     /* tan hover */
 
-    /* Семантические переменные для светлой темы */
-    --overlay-dark: rgba(0, 0, 0, 0.6);
-    --overlay-subtle: rgba(0, 0, 0, 0.02);
-    --overlay-faint: rgba(0, 0, 0, 0.03);
-    --overlay-light: rgba(0, 0, 0, 0.04);
-    --overlay-medium: rgba(0, 0, 0, 0.06);
-    --row-divider: rgba(0, 0, 0, 0.06);
-    --scale-item-bg: rgba(0, 0, 0, 0.04);
-    --scale-item-border: rgba(0, 0, 0, 0.1);
-    --code-bg: rgba(0, 0, 0, 0.06);
-    --shadow-sm: rgba(0, 0, 0, 0.06);
-    --shadow-md: rgba(0, 0, 0, 0.1);
-    --shadow-lg: rgba(0, 0, 0, 0.15);
-    --shadow-xl: rgba(0, 0, 0, 0.2);
-    --modal-overlay-bg: rgba(0, 0, 0, 0.6);
-    --progress-track: rgba(0, 0, 0, 0.1);
-    --inset-shadow: rgba(0, 0, 0, 0.06);
+    /* Семантические переменные для светлой темы. Базируются на тёплом
+       коричневом тоне rgba(45, 36, 25, X), чтобы подтоны overlays/shadows
+       сочетались с песочным фоном, а не с холодным графитовым. */
+    --overlay-dark: rgba(45, 36, 25, 0.6);
+    --overlay-subtle: rgba(45, 36, 25, 0.02);
+    --overlay-faint: rgba(45, 36, 25, 0.03);
+    --overlay-light: rgba(45, 36, 25, 0.04);
+    --overlay-medium: rgba(45, 36, 25, 0.06);
+    --row-divider: rgba(45, 36, 25, 0.06);
+    --scale-item-bg: rgba(45, 36, 25, 0.04);
+    --scale-item-border: rgba(45, 36, 25, 0.1);
+    --code-bg: rgba(45, 36, 25, 0.06);
+    --shadow-sm: rgba(45, 36, 25, 0.06);
+    --shadow-md: rgba(45, 36, 25, 0.1);
+    --shadow-lg: rgba(45, 36, 25, 0.15);
+    --shadow-xl: rgba(45, 36, 25, 0.2);
+    --modal-overlay-bg: rgba(45, 36, 25, 0.6);
+    --progress-track: rgba(45, 36, 25, 0.1);
+    --inset-shadow: rgba(45, 36, 25, 0.06);
 
-    /* Акцентные полупрозрачные — нейтральные для обеспечения контраста WCAG AA */
-    --accent-bg-faint: #f0f9ff;
-    --accent-bg-subtle: #e0f2fe;
-    --accent-bg-light: #bae6fd;
-    --accent-bg-medium: #7dd3fc;
-    --accent-bg-strong: rgba(3, 105, 161, 0.15);
-    --accent-bg-highlight: rgba(3, 105, 161, 0.15);
-    --accent-border-faint: rgba(3, 105, 161, 0.3);
-    --accent-border: rgba(3, 105, 161, 0.4);
-    --accent-glow: rgba(3, 105, 161, 0.4);
-    --accent-spinner: rgba(3, 105, 161, 0.3);
-    --accent-shadow: rgba(3, 105, 161, 0.1);
+    /* Акцентные полупрозрачные. Холодные #f0f9ff/#e0f2fe выглядели «грязными»
+       на песке — заменены на нейтральные песочные fill'ы того же светлого
+       уровня (контраст к --text сохраняется ≥ 11:1). */
+    --accent-bg-faint: #f3eedb;
+    --accent-bg-subtle: #ebe2c8;
+    --accent-bg-light: #ddd1b3;
+    --accent-bg-medium: #c8b894;
+    --accent-bg-strong: rgba(3, 86, 138, 0.15);
+    --accent-bg-highlight: rgba(3, 86, 138, 0.15);
+    --accent-border-faint: rgba(3, 86, 138, 0.3);
+    --accent-border: rgba(3, 86, 138, 0.4);
+    --accent-glow: rgba(3, 86, 138, 0.4);
+    --accent-spinner: rgba(3, 86, 138, 0.3);
+    --accent-shadow: rgba(3, 86, 138, 0.1);
 
     /* Успех полупрозрачные */
-    --success-bg-faint: rgba(22, 163, 74, 0.08);
-    --success-bg-subtle: rgba(22, 163, 74, 0.1);
-    --success-bg-light: rgba(22, 163, 74, 0.15);
-    --success-border-faint: rgba(22, 163, 74, 0.3);
+    --success-bg-faint: rgba(13, 98, 88, 0.08);
+    --success-bg-subtle: rgba(13, 98, 88, 0.1);
+    --success-bg-light: rgba(13, 98, 88, 0.15);
+    --success-border-faint: rgba(13, 98, 88, 0.3);
 
     /* Опасность полупрозрачные */
-    --danger-bg-subtle: rgba(220, 38, 38, 0.1);
-    --danger-bg-light: rgba(220, 38, 38, 0.15);
-    --danger-shadow: rgba(220, 38, 38, 0.25);
-    --danger-glow: rgba(220, 38, 38, 0.2);
+    --danger-bg-subtle: rgba(185, 28, 28, 0.1);
+    --danger-bg-light: rgba(185, 28, 28, 0.15);
+    --danger-shadow: rgba(185, 28, 28, 0.25);
+    --danger-glow: rgba(185, 28, 28, 0.2);
 
     /* Предупреждение полупрозрачные */
-    --warning-bg-subtle: rgba(217, 119, 6, 0.1);
-    --warning-bg-light: rgba(217, 119, 6, 0.15);
+    --warning-bg-subtle: rgba(149, 81, 0, 0.1);
+    --warning-bg-light: rgba(149, 81, 0, 0.15);
 
-    /* Серые полупрозрачные */
-    --excluded-bg: rgba(100, 116, 139, 0.1);
-    --excluded-border: rgba(100, 116, 139, 0.3);
+    /* Серые полупрозрачные (теплее, согласованы с песочным фоном) */
+    --excluded-bg: rgba(107, 91, 71, 0.1);
+    --excluded-border: rgba(107, 91, 71, 0.3);
 
-    /* Подсветка новой задачи */
+    /* Подсветка новой задачи — медово-янтарная */
     --highlight-pulse-start: rgba(234, 179, 8, 0.5);
     --highlight-pulse-mid: rgba(234, 179, 8, 0.25);
     --highlight-glow: rgba(234, 179, 8, 0.6);
 
     /* Лучшее значение в таблице */
-    --best-value-bg: rgba(22, 163, 74, 0.2);
+    --best-value-bg: rgba(13, 98, 88, 0.2);
 }
 
 body {

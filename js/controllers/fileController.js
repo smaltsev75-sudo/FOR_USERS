@@ -88,6 +88,14 @@ export class FileController {
                 'Загрузить данные? Текущие данные будут потеряны.',
                 async () => {
                     this.showProgress('Загрузка...');
+                    // Snapshot для atomic rollback при ошибке во время импорта.
+                    // Если внутри try что-то упадёт, восстанавливаем criteriaManager,
+                    // nfs и store до состояния до импорта.
+                    const snapshot = {
+                        state: this.store.getState(),
+                        criteria: this.criteriaManager.getCriteria().map(c => ({ ...c, scale: { ...(c.scale || {}) } })),
+                        decimalSeparator: this.nfs.decimalSeparator
+                    };
                     try {
                         await new Promise(resolve => setTimeout(resolve, 100));
                         const migratedState = migratePersistedState(data);
@@ -122,13 +130,21 @@ export class FileController {
 
                         messageService.showMessage(`Данные успешно загружены! Загружено ${taskCount} задач`);
                     } catch (error) {
-                        messageService.showMessage('Ошибка при обработке данных: ' + error.message);
+                        // Atomic rollback: возвращаем все три источника состояния
+                        // в snapshot, чтобы пользователь не получил partial state.
+                        try {
+                            this.criteriaManager.loadCriteria(snapshot.criteria);
+                            this.nfs.decimalSeparator = snapshot.decimalSeparator;
+                            this.nfs.saveSettings();
+                            this.store.loadState(snapshot.state);
+                        } catch { /* лучшее, что можем сделать после двойного сбоя */ }
+                        messageService.showMessage('Ошибка при обработке данных (изменения откачены): ' + error.message);
                     } finally {
                         this.hideProgress();
                     }
                 }
             );
-        } catch (err) {
+        } catch (_err) {
             this.hideProgress();
         }
     }

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Очистка Service Worker — Sprint Planner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: #1e293b;
+            padding: 28px 32px;
+            border-radius: 12px;
+            max-width: 560px;
+            width: 100%;
+            border: 1px solid #334155;
+        }
+        h1 { margin: 0 0 14px; font-size: 1.3rem; color: #00d9ff; }
+        p { line-height: 1.5; }
+        #log { background: #0f172a; border-radius: 8px; padding: 14px; min-height: 100px; font-family: monospace; font-size: 0.85rem; }
+        #log p { margin: 4px 0; }
+        .ok { color: #00ff9d; }
+        .info { color: #94a3b8; }
+        .err { color: #ff8080; }
+        a {
+            color: #00d9ff;
+            display: inline-block;
+            margin-top: 14px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Очистка Service Worker и кэшей</h1>
+        <p>Эта страница автоматически удаляет все Service Worker'ы и кэши <strong>для текущего origin</strong>
+            (<span id="origin"></span>), а затем перенаправит на главное приложение.</p>
+        <div id="log"></div>
+        <a href="/index.html" id="goLink">→ Перейти к Sprint Planner</a>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        document.getElementById('origin').textContent = location.origin;
+
+        function out(msg, cls) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            if (cls) p.className = cls;
+            log.appendChild(p);
+        }
+
+        (async function cleanup() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    out('Найдено Service Worker регистраций: ' + regs.length, 'info');
+                    for (const reg of regs) {
+                        await reg.unregister();
+                        out('  ✓ Unregister: ' + reg.scope, 'ok');
+                    }
+                } else {
+                    out('Service Worker API недоступен', 'info');
+                }
+
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    out('Найдено кэшей: ' + keys.length, 'info');
+                    for (const key of keys) {
+                        await caches.delete(key);
+                        out('  ✓ Кэш удалён: ' + key, 'ok');
+                    }
+                }
+
+                // Force-bypass HTTP cache for всех ESM-модулей и CSS:
+                // делаем fetch с {cache:'reload'} — это перезаписывает disk cache
+                out('', 'info');
+                out('Сбрасываю HTTP-кэш для критичных файлов...', 'info');
+                const critical = [
+                    '/index.html',
+                    '/js/app.js',
+                    '/js/ui/index.js',
+                    '/js/ui/teamCapacity.js',
+                    '/js/utils/icons.js',
+                    '/js/controllers/capacityStripController.js',
+                    '/js/controllers/roleController.js',
+                    '/css/team-capacity.css',
+                    '/css/base.css',
+                    '/css/components.css',
+                    '/css/task-card.css'
+                ];
+                let okCount = 0;
+                for (const url of critical) {
+                    try {
+                        await fetch(url, { cache: 'reload', credentials: 'same-origin' });
+                        okCount++;
+                    } catch (_) { /* ignore */ }
+                }
+                out('  ✓ Перезаписано ' + okCount + ' / ' + critical.length + ' файлов', 'ok');
+
+                out('', 'info');
+                out('Готово. Перенаправление через 2 секунды...', 'ok');
+                setTimeout(() => {
+                    // Cache-bust query — заставит browser трактовать URL как новый
+                    location.replace('/index.html?fresh=' + Date.now());
+                }, 2000);
+            } catch (err) {
+                out('Ошибка: ' + err.message, 'err');
+                out('Откройте DevTools → Application → Service Workers и удалите вручную.', 'info');
+            }
+        })();
+    </script>
+</body>
+</html>

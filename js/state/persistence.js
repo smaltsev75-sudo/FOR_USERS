@@ -8,6 +8,17 @@ import { ROLES } from '../utils/constants.js';
 const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
 const DEFAULT_TASK_FILTER = { search: '', type: '' };
 const DEFAULT_TASK_SORT = { by: 'priority', order: 'desc' };
+// v8.29.1: + 'excluded' — для persist состояния 5-й секции (см. store.js).
+const VALID_QUADRANT_KEYS = ['q1', 'q2', 'q3', 'q4', 'excluded'];
+const VALID_VIEW_MODES = ['list', 'quadrants'];
+const DEFAULT_UI_STATE = {
+    activeAlgorithm: 'matrix',
+    density: 'comfortable',
+    viewMode: 'list',
+    expandedQuadrants: [...VALID_QUADRANT_KEYS]
+};
+const VALID_ALGORITHMS = ['matrix', 'value-density', 'hybrid'];
+const VALID_DENSITIES = ['compact', 'comfortable', 'cozy'];
 
 /**
  * Нормализует сохраненное состояние по актуальному контракту приложения.
@@ -34,6 +45,7 @@ export function migratePersistedState(rawState = {}) {
         activeTab: rawState.activeTab === 'criteria' ? 'criteria' : 'planning',
         taskFilter: normalizeTaskFilter(rawState.taskFilter),
         taskSort: normalizeTaskSort(rawState.taskSort),
+        ui: normalizeUi(rawState.ui),
         lastAddedTaskId: null
     };
 }
@@ -55,7 +67,8 @@ export function serializeStateForStorage(state, criteria, decimalSeparator) {
         numberFormatSettings: normalizeNumberFormat({ decimalSeparator }),
         activeTab: state.activeTab === 'criteria' ? 'criteria' : 'planning',
         taskFilter: normalizeTaskFilter(state.taskFilter),
-        taskSort: normalizeTaskSort(state.taskSort)
+        taskSort: normalizeTaskSort(state.taskSort),
+        ui: normalizeUi(state.ui)
     };
 }
 
@@ -153,6 +166,25 @@ function normalizeTaskSort(sort = {}) {
         ...DEFAULT_TASK_SORT,
         by: String(sort?.by || DEFAULT_TASK_SORT.by),
         order: sort?.order === 'asc' ? 'asc' : 'desc'
+    };
+}
+
+function normalizeUi(ui = {}) {
+    const algorithm = ui?.activeAlgorithm;
+    const density = ui?.density;
+    const viewMode = ui?.viewMode;
+    const rawExpanded = ui?.expandedQuadrants;
+
+    const expandedQuadrants = Array.isArray(rawExpanded)
+        ? rawExpanded.filter((k) => VALID_QUADRANT_KEYS.includes(k))
+        : [...DEFAULT_UI_STATE.expandedQuadrants];
+
+    return {
+        ...DEFAULT_UI_STATE,
+        activeAlgorithm: VALID_ALGORITHMS.includes(algorithm) ? algorithm : DEFAULT_UI_STATE.activeAlgorithm,
+        density: VALID_DENSITIES.includes(density) ? density : DEFAULT_UI_STATE.density,
+        viewMode: VALID_VIEW_MODES.includes(viewMode) ? viewMode : DEFAULT_UI_STATE.viewMode,
+        expandedQuadrants
     };
 }
 

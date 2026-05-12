@@ -6,11 +6,13 @@ import { storageService } from './services/storage.js';
 import { CriteriaManager } from './domain/criteriaManager.js';
 import { ConfigController } from './controllers/configController.js';
 import { RoleController } from './controllers/roleController.js';
+import { CapacityStripController } from './controllers/capacityStripController.js';
 import { TaskController } from './controllers/taskController.js';
 import { CriteriaController } from './controllers/criteriaController.js';
 import { SelectionController } from './controllers/selectionController.js';
 import { FileController } from './controllers/fileController.js';
 import { TabController } from './controllers/tabController.js';
+import { ViewModeController } from './controllers/viewModeController.js';
 import { renderApp } from './ui/index.js';
 import { calculatePriorityScore } from './domain/criteria.js';
 import { createDefaultConfig } from './domain/config.js';
@@ -19,6 +21,7 @@ import { HelpController } from './controllers/helpController.js';
 import { KeyboardController } from './controllers/keyboardController.js';
 import { migratePersistedState, serializeStateForStorage } from './state/persistence.js';
 import { ThemeController } from './controllers/themeController.js';
+import { DensityController } from './controllers/densityController.js';
 
 export class App {
     /**
@@ -46,14 +49,17 @@ export class App {
 
         this.configController = new ConfigController(this.store, this.nfs);
         this.roleController = new RoleController(this.store, this.nfs);
+        this.capacityStripController = new CapacityStripController(this.store, this.nfs);
         this.taskController = new TaskController(this.store, this.nfs);
         this.criteriaController = new CriteriaController(this.store, this.criteriaManager);
         this.selectionController = new SelectionController(this.store, this.criteriaManager, this.nfs);
         this.fileController = new FileController(this.store, this.nfs, this.criteriaManager);
         this.tabController = new TabController(this.store);
+        this.viewModeController = new ViewModeController(this.store);
         this.helpController = new HelpController();
         this.keyboardController = new KeyboardController(this.taskController, this.fileController);
         this.themeController = new ThemeController();
+        this.densityController = new DensityController(this.store);
 
         this.taskController.setPriorityScoreCalculator((task) => {
             return calculatePriorityScore(this.criteriaManager.getCriteria(), task.criteriaEvaluations);
@@ -78,13 +84,16 @@ export class App {
 
     init() {
         this.themeController.init();
+        this.densityController.init();
         this.configController.init();
         this.roleController.init();
+        this.capacityStripController.init();
         this.taskController.init();
         this.criteriaController.init();
         this.selectionController.init();
         this.fileController.init();
         this.tabController.init();
+        this.viewModeController.init();
         this.helpController.init();
         this.store.subscribe(() => {
             this.schedulePersist();
@@ -98,6 +107,14 @@ export class App {
             this.saveToLS();
         });
         this.keyboardController.init();
+
+        // v8.27.1: clamp только для неподдерживаемого density 'cozy' (DOM
+        // имеет compact/comfortable). viewMode toggle вернулся в тулбар —
+        // 'quadrants' валиден и более не клампится.
+        const ui = this.store.getState().ui || {};
+        if (ui.density === 'cozy') {
+            this.store.setDensity('comfortable');
+        }
 
         this.requestRender();
     }

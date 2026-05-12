@@ -92,3 +92,129 @@
     background-color: var(--accent-bg-strong);
     transition: background-color 0.3s ease;
 }
+
+/* ---- Формулы / однострочные блоки (<div class="formula">) ---- */
+.formula {
+    background: var(--code-bg);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    margin: 0.75rem 0;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* ---- Priority-Effort Matrix 2×2 (<div class="quadrant-matrix">) ---- */
+.quadrant-matrix {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9em;
+}
+
+.quadrant-matrix__axis-top,
+.quadrant-matrix__axis-bottom {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+/* 2-column grid for the 4 cells + full-width divider */
+.quadrant-matrix__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Full-width horizontal divider row with effort label */
+.quadrant-matrix__divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: var(--code-bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+}
+
+/* Base quadrant cell */
+.quadrant-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+}
+
+/* Right-column cells get a left border as column separator */
+.quadrant-cell--q1,
+.quadrant-cell--q3 {
+    border-left: 1px solid var(--border);
+}
+
+/* Q1 — best (↓effort, ↑priority) → success tint */
+.quadrant-cell--q1 {
+    background: var(--success-bg-faint);
+}
+
+/* Q2 — strategic (↑effort, ↑priority) → accent tint */
+.quadrant-cell--q2 {
+    background: var(--accent-bg-faint);
+}
+
+/* Q3 — filler (↓effort, ↓priority) → warning tint */
+.quadrant-cell--q3 {
+    background: var(--warning-bg-subtle);
+}
+
+/* Q4 — defer (↑effort, ↓priority) → danger tint */
+.quadrant-cell--q4 {
+    background: var(--danger-bg-subtle);
+}
+
+/* Quadrant code chip (Q1, Q2, …) */
+.quadrant-cell__code {
+    display: inline-block;
+    font-size: 0.7em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--code-bg);
+    color: var(--text-muted);
+    align-self: flex-start;
+}
+
+.quadrant-cell__name {
+    font-size: 0.95em;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.quadrant-cell__hint {
+    font-size: 0.75em;
+    color: var(--text-muted);
+}
+
+/* Respect reduced-motion preference — no transitions on the matrix */
+@media (prefers-reduced-motion: reduce) {
+    .quadrant-matrix * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

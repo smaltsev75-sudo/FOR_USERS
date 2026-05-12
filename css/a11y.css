@@ -1,0 +1,344 @@
+/* ---------- a11y.css ---------- */
+/* Универсальные правила доступности (WCAG 2.1 AA).
+   Подключается ПОСЛЕ всех остальных CSS, чтобы перекрыть :focus-стили
+   на :focus-visible и зафиксировать prefers-reduced-motion / touch-target. */
+
+/* ===== :focus-visible — keyboard-only фокус-кольцо =====
+   Браузер показывает :focus при mouse-клике, что отвлекает.
+   Заменяем все :focus-стили проекта на :focus-visible-эквиваленты. */
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus,
+a:focus {
+    outline: none;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--accent-bg-strong);
+    border-radius: 6px;
+}
+
+/* ===== Touch-target ≥44px на pointer:coarse =====
+   WCAG 2.5.5 (Target Size) — минимум 44×44 для тач-устройств. */
+
+@media (pointer: coarse), (max-width: 720px) {
+    .export-btn,
+    .tab-btn,
+    .confirm-btn,
+    .btn-reset-criteria,
+    .btn-add-criteria-small,
+    .modal-close-btn,
+    .task-action-btn,
+    .criteria-icon-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Малые иконки-кнопки в строке задачи — увеличиваем тап-зону за счёт padding */
+    .task-action-btn {
+        padding: 6px;
+    }
+}
+
+/* ===== prefers-reduced-motion =====
+   WCAG 2.3.3 — пользователь может потребовать минимум анимаций. */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Snackbar pulse — обнуляем полностью */
+    .sp-snackbar {
+        animation: none !important;
+    }
+
+    /* Drag-state highlight pulses */
+    .task-item.dragging,
+    .task-item.drag-over {
+        animation: none !important;
+    }
+}
+
+/* ===== Аккордеон — content-visibility для скрытых секций ===== */
+.accordion-content[hidden],
+.accordion-content[aria-hidden="true"] {
+    content-visibility: auto;
+}
+
+/* ===== Поля с ошибкой — единый стиль для aria-invalid ===== */
+[aria-invalid="true"] {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 2px var(--danger-bg-light) !important;
+}
+
+[aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 2px var(--danger-bg-light), inset 0 2px 4px var(--inset-shadow) !important;
+}
+
+/* Inline-сообщение об ошибке (role="alert") */
+.field-error {
+    color: var(--danger);
+    font-size: 0.7rem;
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+/* ===== Утилитарные хелперы ===== */
+.tab-content--hidden {
+    display: none;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ===== Заголовок секции критериев ===== */
+.criteria-section-title {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Theme toggle кнопка с inline-SVG ===== */
+.theme-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+/* ===== Tabular-nums для числовых колонок ===== */
+.criteria-eval-value,
+.criteria-eval-weight,
+.priority-score-container,
+.task-effort-value,
+.table-dash td,
+.table-dash th,
+.est-input-container input,
+.number-input,
+.date-input {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===== Ссылка на пропустить контент (опционально, скрыта по умолчанию) ===== */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 8px 12px;
+    text-decoration: none;
+    z-index: 9999;
+    transition: top 0.2s;
+}
+
+.skip-link:focus-visible {
+    top: 0;
+}
+
+/* ===== Утилитарные классы (вынесены из inline style в HTML) ===== */
+.required-marker {
+    color: var(--danger);
+    margin-left: 2px;
+}
+
+.panel-title-sm {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+}
+
+/* v8.27.1: legacy .role-total-numbers-row / .role-total-numbers--bold /
+   .progress-bg--spaced удалены — не использовались в живом коде. */
+
+.progress-fill--success {
+    background: var(--success);
+    width: 0;
+}
+
+.section-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    line-height: 1.4;
+}
+
+.char-counter {
+    float: right;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.modal-buttons-center--create {
+    margin-top: 20px;
+    padding-bottom: 20px;
+}
+
+.hours-block {
+    margin-top: 15px;
+}
+
+.input-uppercase {
+    text-transform: uppercase;
+}
+
+.form-help {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.scale-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.selection-loading-indicator {
+    display: none;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.loading-spinner--inline {
+    vertical-align: middle;
+}
+
+.loading-spinner--md {
+    width: 20px;
+    height: 20px;
+}
+
+.loading-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.selection-report-content {
+    padding: 15px 0;
+    font-size: 0.8rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+}
+
+.modal-buttons-center--report {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 15px;
+    margin-top: 10px;
+}
+
+.modal-text-block {
+    padding: 15px 0;
+    font-size: 0.85rem;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.global-progress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 15px;
+    z-index: 9999;
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+.global-progress__text {
+    color: var(--text);
+}
+
+/* ===== Адаптивные правила (clamp / @container) ===== */
+.header-title {
+    font-size: clamp(1rem, 2vw, 1.4rem);
+}
+
+.modal-title {
+    font-size: clamp(0.9rem, 1.4vw, 1rem);
+}
+
+.section-description,
+.form-help {
+    font-size: clamp(0.7rem, 1vw, 0.78rem);
+}
+
+/* @container для карточек задач — контейнерные queries вместо @media */
+#taskList {
+    container-type: inline-size;
+    container-name: tasks;
+}
+
+@supports (container-type: inline-size) {
+    @container tasks (max-width: 720px) {
+        .task-row {
+            flex-wrap: wrap;
+        }
+
+        .task-estimates {
+            order: 1;
+            width: 100%;
+            margin-top: 8px;
+        }
+    }
+}
+
+/* Фолбэк для браузеров без @container */
+@supports not (container-type: inline-size) {
+    @media (max-width: 720px) {
+        .task-row {
+            flex-wrap: wrap;
+        }
+    }
+}
+
+/* ===== Перекрытие hardcoded hex (через токены) ===== */
+.criteria-abbreviation {
+    background: var(--tech) !important;
+    color: var(--accent-text);
+}

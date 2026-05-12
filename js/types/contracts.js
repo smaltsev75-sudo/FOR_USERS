@@ -119,5 +119,3 @@
  * @property {string} key
  * @property {*} value
  */
-
-export const CONTRACTS = {};
