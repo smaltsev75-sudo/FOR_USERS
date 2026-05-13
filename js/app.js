@@ -22,6 +22,7 @@ import { KeyboardController } from './controllers/keyboardController.js';
 import { migratePersistedState, serializeStateForStorage } from './state/persistence.js';
 import { ThemeController } from './controllers/themeController.js';
 import { DensityController } from './controllers/densityController.js';
+import { renderAppVersionBadge } from './ui/appVersionBadge.js';
 
 export class App {
     /**
@@ -83,6 +84,7 @@ export class App {
     }
 
     init() {
+        renderAppVersionBadge();
         this.themeController.init();
         this.densityController.init();
         this.configController.init();

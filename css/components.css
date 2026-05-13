@@ -19,6 +19,19 @@
     gap: 10px;
 }
 
+/* Бейдж версии в шапке — заполняется из js/version.js через
+   renderAppVersionBadge(). Мутный, тонкий, не отвлекает.
+   tabular-nums держит ширину постоянной при bump'е minor/patch. */
+.app-version {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    margin-left: 4px;
+    user-select: text;
+}
+
 .info-hint {
     color: var(--text-muted);
     cursor: help;

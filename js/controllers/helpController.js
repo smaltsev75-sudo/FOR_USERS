@@ -173,7 +173,9 @@ export class HelpController {
     }
 
     /**
-     * Ленивая загрузка marked.js через CDN (если ещё не загружен).
+     * Ленивая загрузка локальной копии marked.js из js/vendor/.
+     * Vendor-файл закэширован SW при install, поэтому работает офлайн
+     * после первого открытия страницы (см. sw.js ASSETS_TO_CACHE).
      * @returns {Promise<void>}
      */
     ensureMarked() {
@@ -183,7 +185,7 @@ export class HelpController {
                 return;
             }
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+            script.src = './js/vendor/marked.min.js';
             script.onload = resolve;
             script.onerror = () => {
                 this.globalApi.marked = { parse: (text) => `<pre>${text.replace(/</g, '&lt;')}</pre>` };
@@ -194,7 +196,7 @@ export class HelpController {
     }
 
     /**
-     * Ленивая загрузка DOMPurify через CDN (если ещё не загружен).
+     * Ленивая загрузка локальной копии DOMPurify из js/vendor/.
      * Если загрузка не удалась — продолжаем без санитизации (fallback в _sanitize).
      * @returns {Promise<void>}
      */
@@ -205,7 +207,7 @@ export class HelpController {
                 return;
             }
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js';
+            script.src = './js/vendor/purify.min.js';
             script.onload = resolve;
             script.onerror = () => resolve(); // Без DOMPurify используем fallback
             document.head.appendChild(script);

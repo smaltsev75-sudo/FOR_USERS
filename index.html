@@ -50,6 +50,7 @@
             <h1 class="header-title">
                 <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 Планирование спринта
+                <span id="appVersion" class="app-version" aria-label="Версия приложения"></span>
             </h1>
             <div class="export-buttons">
                 <button class="export-btn theme-toggle-btn" id="themeToggleBtn"
@@ -682,7 +683,7 @@
     <!-- Service Worker для офлайн-режима (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(function (reg) {
+            navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
                 // Detect new SW version and notify user
                 reg.addEventListener('updatefound', function () {
                     var newWorker = reg.installing;
