@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sprint Planner (maskable)">
+  <!--
+    Maskable safe-zone: круг радиуса ~205 в центре (40% от 512).
+    Полезный контент сжат до 64% (scale 0.64, translate чтобы остаться в центре)
+    и помещается в безопасный круг с запасом. Фон занимает весь viewport,
+    чтобы маска ОС обрезала фон, а не контент.
+  -->
+  <rect width="512" height="512" fill="#0f172a"/>
+  <g transform="translate(92,92) scale(0.64)">
+    <rect x="102" y="128" width="308" height="256" rx="24" fill="#0f172a" stroke="#00d9ff" stroke-width="16"/>
+    <line x1="102" y1="200" x2="410" y2="200" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="205" cy="282" r="24" fill="#00ff9d"/>
+    <circle cx="307" cy="282" r="24" fill="#ff4d4d"/>
+    <polyline points="154,360 230,436 358,308" fill="none" stroke="#ff9800" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

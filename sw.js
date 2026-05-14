@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.29.3-pwa-portable-paths';
+const CACHE_VERSION = 'sp-v8.29.6-onedrive-docs';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -11,8 +11,12 @@ const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
+    './icons/icon-192.png',
+    './icons/icon-512.png',
+    './icons/icon-maskable-512.png',
     './icons/icon-192.svg',
     './icons/icon-512.svg',
+    './icons/icon-maskable-512.svg',
     // CSS
     './css/base.css',
     './css/layout.css',

@@ -1,4 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#0f172a"/>
-  <text x="256" y="340" font-family="Arial, sans-serif" font-size="280" font-weight="bold" fill="#00d9ff" text-anchor="middle">SP</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sprint Planner">
+  <!--
+    Square без rounded corners + полный фон до краёв = непрозрачный PNG при растеризации.
+    rx-маску ОС/браузер накладывает сам при создании desktop-shortcut'а / app-icon'а;
+    локальный rx в иконке делает PNG-углы прозрачными (alpha=0), и Windows для ярлыка
+    показывает «пустую плитку». См. docs/RELEASE_NOTES.md → 8.29.5.
+  -->
+  <rect width="512" height="512" fill="#0f172a"/>
+  <rect x="102" y="128" width="308" height="256" rx="24" fill="#0f172a" stroke="#00d9ff" stroke-width="16"/>
+  <line x1="102" y1="200" x2="410" y2="200" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="205" cy="282" r="24" fill="#00ff9d"/>
+  <circle cx="307" cy="282" r="24" fill="#ff4d4d"/>
+  <polyline points="154,360 230,436 358,308" fill="none" stroke="#ff9800" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

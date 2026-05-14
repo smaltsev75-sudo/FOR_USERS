@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="32" fill="#0f172a"/>
-  <text x="96" y="128" font-family="Arial, sans-serif" font-size="110" font-weight="bold" fill="#00d9ff" text-anchor="middle">SP</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sprint Planner">
+  <rect width="512" height="512" fill="#0f172a"/>
+  <rect x="102" y="128" width="308" height="256" rx="24" fill="#0f172a" stroke="#00d9ff" stroke-width="16"/>
+  <line x1="102" y1="200" x2="410" y2="200" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="205" cy="282" r="24" fill="#00ff9d"/>
+  <circle cx="307" cy="282" r="24" fill="#ff4d4d"/>
+  <polyline points="154,360 230,436 358,308" fill="none" stroke="#ff9800" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
