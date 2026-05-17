@@ -275,70 +275,76 @@
         font-weight: normal !important;
     }
 
-    /* ---------- v8.30.3: КОМПАКТНЫЙ INLINE-LAYOUT КАК В СПИСКЕ ЗАДАЧ ----------
+    /* ---------- v8.30.4: FLOWING INLINE TEXT (wrap по словам, не по chip'ам) ----
      *
-     * v8.30.1: grid auto-fit + display:contents → input первого бокса
-     *          вылезал в начало следующей grid-cell.
-     * v8.30.2: блочный layout (каждая роль на своей строке) — лечил смещение,
-     *          но раздувал высоту строки задачи до 12+ строк. Пользователь:
-     *          «почему нельзя все оценки при печати отобразить так как они
-     *          отображаются с списке задач — c минимальным размером высоты».
-     * v8.30.3: inline-flex одна строка для всех ролей, одна строка для критериев.
-     *          Высота задачи: было ~12 строк → стало 4 строки (заголовок + URL +
-     *          оценка трудозатрат + метрики приоритета).
+     * v8.30.3 был inline-flex с flex-wrap — на A4 (~700px эффективной ширины)
+     * 7 flex-items (label + 5 ролей + Σ) НЕ помещались в строку, и flex-wrap
+     * раскладывал каждый на свою строку → задача снова 12+ строк. На широком
+     * viewport (1280px) layout выглядел нормально, на A4 — нет. Моя ошибка
+     * верификации: тестировал на 1280, не на 794.
+     *
+     * v8.30.4: inline text-flow. Каждая роль/критерий — `display: inline` с
+     * `white-space: nowrap` внутри, разделители ` · ` через `::after`. Текст
+     * wrap'ается как параграф — на A4 даёт 1-2 строки на task instead of 12.
      */
 
-    /* Inline-метка «Оценка трудозатрат:» */
     .task-estimates-label,
     .criteria-section-label {
-        display: inline-block !important;
+        display: inline !important;
         font-weight: bold !important;
         font-size: 9pt !important;
         color: black !important;
         text-transform: none !important;
         letter-spacing: 0 !important;
-        margin-right: 8px !important;
-        white-space: nowrap !important;
+        margin-right: 4px !important;
     }
 
-    /* Контейнер всех ролевых est-box'ов — одна горизонтальная строка */
+    .task-estimates-label::after,
+    .criteria-section-label::after {
+        content: ":";
+        margin-right: 4px;
+    }
+
     .task-estimates {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: baseline !important;
-        gap: 4px 12px !important;
-        padding-top: 5px !important;
-        margin-top: 5px !important;
+        display: block !important;
+        padding-top: 4px !important;
+        margin-top: 4px !important;
         border-top: 1px dashed #999 !important;
         font-size: 9pt !important;
-        line-height: 1.35 !important;
+        line-height: 1.4 !important;
+        text-align: left !important;
     }
 
     .task-estimates-grid,
-    .task-estimates-roles {
-        display: contents !important;
+    .task-estimates-roles,
+    .est-box-header,
+    .criteria-row-body,
+    .criteria-evaluation,
+    .criteria-eval-head {
+        display: inline !important;
     }
 
-    .est-box-header {
-        display: contents !important;
-    }
-
-    .est-role-icon {
+    .est-role-icon,
+    .est-box-total-icon,
+    .priority-score-icon,
+    .mobile-criteria-abbreviation {
         display: none !important;
     }
 
-    /* Ролевой est-box: «UI/UX: 5,0ч» в одну линию */
+    /* Ролевой chip — inline-block чтобы не разрывался посередине, но flow'ил
+       вместе с соседями как слова в абзаце. */
     .est-box:not(.est-box-total) {
-        display: inline-flex !important;
-        align-items: baseline !important;
-        gap: 2px !important;
+        display: inline-block !important;
         padding: 0 !important;
+        margin: 0 8px 0 0 !important;
         border: none !important;
         background: transparent !important;
         min-height: 0 !important;
+        min-width: 0 !important;
         font-size: 9pt !important;
         color: black !important;
         white-space: nowrap !important;
+        line-height: 1.4 !important;
     }
 
     .est-box .est-role-label {
@@ -350,12 +356,11 @@
         letter-spacing: 0 !important;
         max-width: none !important;
         overflow: visible !important;
-        white-space: nowrap !important;
         min-width: 0 !important;
     }
 
     .est-box .est-role-label::after {
-        content: ":";
+        content: ":\00a0";  /* двоеточие + nbsp, чтобы не отрывалось от значения */
     }
 
     .est-input-container {
@@ -367,7 +372,13 @@
 
     .task-estimates .est-input-container input {
         display: inline-block !important;
-        width: 2.6em !important;
+        /* v8.30.4 fix: native <input> default width ≈ 173px (size=20) — без
+           фикс-ширины между значением и суффиксом «ч» зияет большой gap.
+           2.4em покрывает значения до 99,9 ч (5 символов с запятой).
+           field-sizing: content для модерн-браузеров (Chrome 123+) подгонит
+           автоматически; fallback на 2.4em для остальных. */
+        field-sizing: content;
+        width: 2.4em !important;
         min-width: 0 !important;
         padding: 0 !important;
         border: none !important;
@@ -382,21 +393,22 @@
         display: inline !important;
         font-size: 9pt !important;
         color: black !important;
-        margin-left: 1px !important;
+        margin-left: 2px !important;
     }
 
-    /* Σ Effort total в той же строке, выделен padding'ом и bold'ом */
+    /* Σ Effort — inline-block, выделен жирным, перед ним разделитель «·» */
     .est-box-total {
-        display: inline-flex !important;
-        align-items: baseline !important;
-        gap: 3px !important;
+        display: inline-block !important;
         margin: 0 0 0 8px !important;
         padding: 0 0 0 8px !important;
-        border-left: 1px solid #ccc !important;
-        border-top: none !important;
+        border: none !important;
+        border-left: 1px solid #999 !important;
+        background: transparent !important;
         font-weight: bold !important;
         font-size: 9pt !important;
         white-space: nowrap !important;
+        line-height: 1.4 !important;
+        min-height: 0 !important;
     }
 
     .est-box-total .task-effort-value,
@@ -406,47 +418,30 @@
         font-weight: bold !important;
     }
 
-    .est-box-total-icon {
-        display: none !important;
-    }
-
-    /* ---------- v8.30.3: МЕТРИКИ ПРИОРИТЕТА — одна inline-строка ---------- */
+    /* ---------- v8.30.4: КРИТЕРИИ — flowing inline ---------- */
     .criteria-row {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: baseline !important;
-        gap: 4px 10px !important;
-        padding-top: 5px !important;
-        margin-top: 5px !important;
+        display: block !important;
+        padding-top: 4px !important;
+        margin-top: 4px !important;
         border-top: 1px dashed #999 !important;
         page-break-inside: avoid;
         font-size: 9pt !important;
-        line-height: 1.35 !important;
-    }
-
-    .criteria-row-body,
-    .criteria-evaluation {
-        display: contents !important;
+        line-height: 1.4 !important;
+        text-align: left !important;
     }
 
     .criteria-eval-item {
-        display: inline-flex !important;
-        /* v8.30.3 fix: base CSS задаёт flex-direction:column для chip-вёрстки —
-           в print обязательно сбрасываем в row, иначе weight/contribution/score
-           укладываются друг под другом и задача снова занимает 4 строки. */
-        flex-direction: row !important;
-        align-items: baseline !important;
-        gap: 2px !important;
+        display: inline-block !important;
+        margin: 0 8px 0 0 !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
         font-size: 9pt !important;
         color: black !important;
         white-space: nowrap !important;
-    }
-
-    .criteria-eval-head {
-        display: contents !important;
+        min-height: 0 !important;
+        min-width: 0 !important;
+        line-height: 1.4 !important;
     }
 
     .criteria-eval-abbreviation {
@@ -464,7 +459,7 @@
         margin: 0 2px !important;
     }
 
-    .criteria-eval-weight::before { content: "("; }
+    .criteria-eval-weight::before { content: "\00a0("; }
     .criteria-eval-weight::after { content: ")"; }
 
     .criteria-eval-stepper {
@@ -486,6 +481,10 @@
         min-width: 0 !important;
     }
 
+    .criteria-eval-score::before {
+        content: "\00a0";
+    }
+
     .criteria-eval-score::after {
         content: "/10";
         font-weight: normal;
@@ -501,22 +500,19 @@
         margin-left: 4px !important;
     }
 
-    /* Priority Score итог — inline в конце строки критериев, через левый бордер */
+    /* Priority Score — inline в конце строки критериев, через левый бордер */
+    .criteria-row .priority-score-container,
     .criteria-row-body .priority-score-container {
-        display: inline-flex !important;
-        align-items: baseline !important;
-        gap: 3px !important;
+        display: inline-block !important;
         margin: 0 0 0 8px !important;
         padding: 0 0 0 8px !important;
-        border-left: 1px solid #ccc !important;
-        border-top: none !important;
+        border: none !important;
+        border-left: 1px solid #999 !important;
+        background: transparent !important;
         font-weight: bold !important;
         font-size: 9pt !important;
         white-space: nowrap !important;
-    }
-
-    .priority-score-icon {
-        display: none !important;
+        line-height: 1.4 !important;
     }
 
     .priority-score-label,
@@ -525,7 +521,7 @@
         color: black !important;
     }
 
-    /* Сжимаем сам контейнер задачи, чтобы между строками не было лишнего воздуха */
+    /* Компактный контейнер задачи */
     .task-item {
         margin-bottom: 6px !important;
         padding: 6px 8px !important;

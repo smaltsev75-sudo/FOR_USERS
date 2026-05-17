@@ -1,5 +1,74 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.5) — Code-review pass 4: error UX, sanitize unification, filename guard, docs sync
+
+Четвёртый проход ревью обнаружил 4 неблокирующих, но реальных пропуска + 4 расхождения документации с реализацией.
+
+### Что починено
+
+| Пункт | Было | Стало |
+|---|---|---|
+| **P2 Импорт JSON ест ошибки молча** | `storageService.loadFile()` rejected с generic Error для 4 разных причин (cancel/timeout/read/parse). `FileController.loadFromFile` ловил всё в одном `catch (_err)` и только скрывал прогресс. Битый JSON → пользователь видит «ничего не произошло». | `loadFile` возвращает Error с `.code: 'cancel'/'timeout'/'read'/'parse'`. Контроллер silent'ит cancel/timeout и показывает `messageService.showMessage('Не удалось загрузить файл: ...')` для real errors. Парсер JSON теперь включает detail сообщение SyntaxError. |
+| **P2 HelpController fallback sanitizer слабее общего** | Локальный `_sanitize` удалял только `<script>` и `on*=`. Если DOMPurify не загрузится, в HTML остаются `<iframe>`, `<object>`, `<embed>`, `<link>`, `<meta>`, `javascript:` URL — общий `sanitizeHtml()` в [utils/sanitize.js](../js/utils/sanitize.js) уже умеет всё это блокировать. | `HelpController._sanitize` теперь делегирует в общий `sanitizeHtml()`. Один defense-in-depth путь, fail-closed одинаково везде. |
+| **P3 Имя экспортируемого файла без filename-sanitize** | `state.config.product` вставлялся в `download` filename как есть. Символы `/ \ : * ? " < > |` и >255 символов давали странное поведение в Win/macOS/Linux. | `sanitizeForFilename(s)` заменяет запрещённые символы на `_`, обрезает trailing dots/spaces, slice(0, 60). Кейс «product = `../../etc/passwd`» больше не проблема. |
+| **P3 Coverage 0% на JSDoc-only `js/types/contracts.js`** | Файл попадал в `collectCoverageFrom`, был typedef-only без исполняемого кода → постоянный 0% портил статистику. | `!js/types/**` добавлено в `jest.config.cjs`. Coverage стал чище. |
+
+### Документация (по жалобе ревьюера на расхождения с кодом)
+
+| Файл | Что | Как |
+|---|---|---|
+| `docs/UserManual.md` line 116 | Формула Priority Score была `Σ(score × weight) / 100` и диапазон 1..10 | Исправлена на `Σ(score × weight) / Σ(weight)` и диапазон 0..10 (соответствует [domain/criteria.js:17](../js/domain/criteria.js#L17)). |
+| `docs/UserManual.md` line 210 | Пример VD: «приоритет 80» (целое число вне диапазона 0..10) | Скорректирован: Priority Score 8,0; VD 0,80. |
+| `docs/UserManual.md` lines 495, 565, etc. | Кнопки описывались как «💾 Сохранить», «📂 Загрузить», «🖨️ Печать», «🤖 Отбор задач» | Emoji убраны — описание SVG-иконок и подписей (реальный UI с v8.27). |
+| `docs/RELEASE_PROCESS.md` line 35 | «index.html не меняется автоматически» — устарело (с v8.30.2 bump обновляет `manifest.json?v=` в index.html). | Добавлен index.html и UserManual.md в список авто-обновляемых файлов. |
+| `docs/ARCHITECTURE.md` lines 241, 408 | Зафиксированы устаревшие счётчики тестов (807/145, 1028/186). | Числа убраны, ссылка на RELEASE_NOTES как source of truth. |
+| `docs/CODE_REVIEW_GUIDELINES.md` line 205 | Ссылка на несуществующий `tests/e2e/a11y.spec.js` | Исправлено на реальный `tests/e2e/accessibility.spec.js`. |
+
+### Метрики
+
+| Метрика | v8.30.4 | v8.30.5 |
+|---|---|---|
+| Unit-тесты | 1130 PASS | 1130 PASS |
+| E2E | 190 PASS | 190 PASS |
+| Lint | clean | clean |
+| npm audit | 0 vulns | 0 vulns |
+| Coverage | 94.05% (с шумом от types/) | чище: types/ исключён |
+
+### Что НЕ сделано в этом релизе (документировано)
+
+- **P3 UserManual.md inline `<style>` блок (60 строк):** удалить безопасно (DOMPurify USE_PROFILES html=true в HelpController всё равно strip'ает `<style>` — в in-app help стили не работают; в github-rendering — тоже игнорируются). Но `<div class="user-manual">` обёртка нужна для `.user-manual *` правил в `css/help.css`. Откладываем на отдельный refactor, чтобы не ломать визуально in-app help.
+
+---
+
+## Версия: май 2026 (обновление 8.30.4) — Print A4 hot-fix: flowing inline text
+
+Регрессия v8.30.3 при печати. Я (Claude) верифицировал layout на Playwright-screenshot шириной 1280px и доложил «3 строки на задачу». Реальная A4-печать (~700px эффективной ширины после margin) показала **каждую роль и каждый критерий на отдельной строке** — flex-wrap раскладывал 7 flex-items (label + 5 ролей + Σ) на 7 разных строк, потому что они не помещались в одну. **Корень ошибки — верификация на широком viewport вместо реального A4.**
+
+### Что починено
+
+| Что | Было (v8.30.3) | Стало (v8.30.4) |
+|---|---|---|
+| Layout строк | `display: inline-flex` + `flex-wrap: wrap` — каждый chip имел собственную ширину и при нехватке места переносился на свою строку. | `display: inline-block` для chip'ов внутри `display: block` контейнера — текст flow'ит как абзац, wrap по словам. Pre-wrap'ed `&nbsp;` между label/value/suffix защищает от разрыва внутри одного chip'а. |
+| Ширина `<input>` | `width: 2.4em` фиксированная (или 3.5em — менялась между версиями). | `field-sizing: content` для Chrome 123+ (подгоняет под содержимое) + fallback `width: 2.4em` для остальных. Между значением и «ч» нет лишнего пустого пространства. |
+| Высота карточки задачи на A4 | ~12 строк (после регрессии v8.30.3) | **2-3 строки**: оценка трудозатрат укладывается в одну строку, метрики приоритета — в 1-2 строки. |
+| Метод верификации | Playwright screenshot на default viewport (1280×720) — НЕ репрезентативно для печати. | Playwright с `viewport: { width: 794, height: 1123 }` (A4 @ 96dpi). Скриншот открывается через Read tool и сравнивается с пользовательским скрином. |
+
+### Метрики
+
+| Метрика | v8.30.3 | v8.30.4 |
+|---|---|---|
+| Unit-тесты | 1130 PASS | **1130 PASS** |
+| E2E | 190 PASS | 190 PASS |
+| Lint | clean | clean |
+| npm audit | 0 vulns | 0 vulns |
+| Print task на A4 | ~12 строк (регрессия) | **2-3 строки** |
+
+### Урок (добавлен в CLAUDE.md)
+
+**Print rendering верифицируется ТОЛЬКО на A4 viewport (794×1123 @ 96dpi).** Screenshot на 1280px показывает «всё хорошо» — пользователь видит реальную регрессию. Третий раз подряд я (Claude) ломаю print: v8.30.1 grid auto-fit смещение, v8.30.3 flex-direction column, v8.30.3 (вторая регрессия) flex-wrap на узкой ширине. Памятка теперь в проектном CLAUDE.md §«Ловушки v8.30.4».
+
+---
+
 ## Версия: май 2026 (обновление 8.30.3) — Code-review pass 3: XSS guard, theme private-mode, SW cache-poisoning, jest 30, print compact, UserManual fix
 
 Третий проход ревью + жалоба на печать выявили **6 пропусков** (включая 1 P1 security + 2 P1/P2 reliability) и устаревший раздел UserManual.

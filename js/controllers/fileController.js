@@ -64,8 +64,18 @@ export class FileController {
                 this.criteriaManager.getCriteria(),
                 this.nfs.decimalSeparator
             );
-            const product = state.config?.product ? state.config.product + '-' : '';
-            const filename = product + 'sprint-plan-' + new Date().toISOString().slice(0, 10) + '.json';
+            // v8.30.5: sanitize user-input product name для filename.
+            // Запрещённые в Windows/macOS/Linux: / \ : * ? " < > | + control chars.
+            // Длинные имена обрезаем до 60 символов чтобы не упереться в OS limits.
+            const sanitizeForFilename = (s) => String(s || '')
+                // eslint-disable-next-line no-control-regex
+                .replace(/[\\/:*?"<>|\x00-\x1f]+/g, '_')
+                .replace(/[. ]+$/g, '')
+                .slice(0, 60)
+                .trim();
+            const productSlug = sanitizeForFilename(state.config?.product);
+            const productPrefix = productSlug ? productSlug + '-' : '';
+            const filename = productPrefix + 'sprint-plan-' + new Date().toISOString().slice(0, 10) + '.json';
             storageService.saveFile(data, filename);
         } catch (error) {
             messageService.showMessage('Не удалось сохранить файл: ' + error.message);
@@ -144,8 +154,15 @@ export class FileController {
                     }
                 }
             );
-        } catch (_err) {
+        } catch (err) {
+            // v8.30.5: различаем cancel/timeout (silent) от real errors
+            // (parse/read — обязательно показать пользователю, иначе он не
+            // поймёт, почему импорт не сработал).
             this.hideProgress();
+            const code = err && err.code;
+            if (code === 'cancel' || code === 'timeout') return;
+            const reason = (err && err.message) || 'неизвестная ошибка';
+            messageService.showMessage(`Не удалось загрузить файл: ${reason}`);
         }
     }
 }

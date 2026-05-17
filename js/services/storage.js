@@ -45,20 +45,32 @@ export const storageService = {
     },
 
     loadFile() {
+        // v8.30.5: типизируем причину reject через `.code` —
+        //   'cancel' — пользователь отменил file picker (silent для caller).
+        //   'timeout' — picker не сработал за 30s (silent).
+        //   'read'   — FileReader.onerror (real error, показать пользователю).
+        //   'parse'  — невалидный JSON (real error, показать пользователю).
+        // До v8.30.5 все 4 пути выбрасывали generic Error, и fileController
+        // глотал их одинаково — пользователь не понимал, что произошло.
+        const makeError = (message, code) => {
+            const e = new Error(message);
+            e.code = code;
+            return e;
+        };
         return new Promise((resolve, reject) => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
 
             const timeout = setTimeout(() => {
-                reject(new Error('Выбор файла отменён (таймаут)'));
+                reject(makeError('Выбор файла отменён (таймаут)', 'timeout'));
             }, 30000);
 
             input.onchange = (e) => {
                 clearTimeout(timeout);
                 const file = e.target.files[0];
                 if (!file) {
-                    reject(new Error('Файл не выбран'));
+                    reject(makeError('Файл не выбран', 'cancel'));
                     return;
                 }
                 const reader = new FileReader();
@@ -66,17 +78,17 @@ export const storageService = {
                     try {
                         const data = JSON.parse(e.target.result);
                         resolve(data);
-                    } catch (_err) {
-                        reject(new Error('Ошибка чтения файла'));
+                    } catch (parseErr) {
+                        reject(makeError(`Невалидный JSON: ${parseErr.message}`, 'parse'));
                     }
                 };
-                reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+                reader.onerror = () => reject(makeError('Ошибка чтения файла (FileReader)', 'read'));
                 reader.readAsText(file);
             };
 
             input.oncancel = () => {
                 clearTimeout(timeout);
-                reject(new Error('Выбор файла отменён'));
+                reject(makeError('Выбор файла отменён', 'cancel'));
             };
 
             input.click();

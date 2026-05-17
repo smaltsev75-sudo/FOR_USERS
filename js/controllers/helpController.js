@@ -4,6 +4,7 @@
 
 import { messageService } from '../services/message.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
+import { sanitizeHtml } from '../utils/sanitize.js';
 
 /**
  * HelpController — управляет модальным окном справки.
@@ -121,22 +122,16 @@ export class HelpController {
     }
 
     /**
-     * Санитизирует HTML-строку, удаляя опасные теги и атрибуты.
-     * Использует DOMPurify при наличии, иначе — fallback с ручным удалением.
+     * Санитизирует HTML-строку через общий sanitizeHtml() из utils/sanitize.js.
+     * v8.30.5: раньше HelpController имел собственный fallback, который чистил
+     * только <script> и on*=, но НЕ удалял `<iframe>`, `<object>`, `<embed>`,
+     * `<link>`, `<meta>` и `javascript:` URL. При отсутствии DOMPurify это
+     * давало weaker защиту, чем sanitizeHtml() из utils/. Унифицировано.
      * @param {string} html — «грязный» HTML
      * @returns {string} — безопасный HTML
      */
     _sanitize(html) {
-        if (this.globalApi.DOMPurify) {
-            return this.globalApi.DOMPurify.sanitize(html, {
-                USE_PROFILES: { html: true },
-                ADD_ATTR: ['target'] // разрешаем target="_blank" в ссылках
-            });
-        }
-        // Fallback: грубая очистка (если DOMPurify не загрузился)
-        return html
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/\son\w+\s*=/gi, ' data-removed-attr=');
+        return sanitizeHtml(html, this.globalApi);
     }
 
     /**
