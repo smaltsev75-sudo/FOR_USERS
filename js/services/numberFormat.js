@@ -26,9 +26,25 @@ export class NumberFormatService {
         } catch { /* игнор ошибок localStorage */ }
     }
 
+    /**
+     * Сохраняет настройки в localStorage.
+     * v8.30.2: возвращает status-объект `{ok, error}` (тот же контракт что в
+     * storageService.save). Раньше localStorage.setItem мог throw'нуть
+     * QuotaExceededError / SecurityError, и App.saveToLS прерывался на этой
+     * строке — даже после fix v8.30.0 (там я починил storageService.save,
+     * но забыл соседнюю persist-точку в numberFormat). Caller (App.saveToLS)
+     * теперь видит result и при !ok показывает snackbar.
+     * @returns {{ok: true} | {ok: false, error: string}}
+     */
     saveSettings() {
         const settings = { decimalSeparator: this.decimalSeparator };
-        localStorage.setItem('numberFormatSettings', JSON.stringify(settings));
+        try {
+            localStorage.setItem('numberFormatSettings', JSON.stringify(settings));
+            return { ok: true };
+        } catch (err) {
+            const name = (err && (err.name || err.message)) || 'StorageError';
+            return { ok: false, error: String(name) };
+        }
     }
 
     formatNumber(value, decimals = 1) {

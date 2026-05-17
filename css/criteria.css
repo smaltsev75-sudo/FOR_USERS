@@ -144,12 +144,15 @@
    margin-top: 16px;
 }
 
+/* v8.30.2: scale-toggle переведён с div role=button на native <button>.
+   Reset нативной кнопки + явные :focus-visible / :hover для feedback'а. */
 .scale-toggle {
    display: flex;
    align-items: center;
    gap: 8px;
    color: var(--text-muted);
    cursor: pointer;
+   font: inherit;
    font-size: 0.8rem;
    margin-bottom: 10px;
    padding: 6px;
@@ -158,12 +161,18 @@
    background: var(--button-bg);
    border: 1px solid var(--border);
    width: fit-content;
+   text-align: left;
 }
 
 .scale-toggle:hover {
    background: var(--button-hover);
    color: var(--text);
    border-color: var(--border-light);
+}
+
+.scale-toggle:focus-visible {
+   outline: 2px solid var(--accent);
+   outline-offset: 2px;
 }
 
 .scale-toggle-icon {

@@ -48,8 +48,8 @@ export class HelpController {
     async open() {
         if (!this.modal || !this.content) return;
 
-        // Показываем индикатор загрузки
-        this.content.innerHTML = '<div style="text-align:center; padding:20px;"><div class="loading-spinner"></div><span style="color:var(--text-muted);">Загрузка руководства...</span></div>';
+        // Показываем индикатор загрузки (v8.30.2: inline-styles → .help-loading-state)
+        this.content.innerHTML = '<div class="help-loading-state"><div class="loading-spinner"></div><span>Загрузка руководства...</span></div>';
         showModal(this.modal);
 
         try {
@@ -101,10 +101,19 @@ export class HelpController {
 
         } catch (error) {
             messageService.showMessage('Ошибка загрузки справки: ' + error.message);
+            // v8.30.2: inline-styles → .help-error-state. Эмодзи ❌ убран
+            // (правило проекта «эмодзи в UI запрещены»). Текст ошибки
+            // эскейпируется через textContent после insertHtml — но безопаснее
+            // через template-литерал + escapeHtml. Здесь error.message —
+            // строка от error.constructor, в основном internal — но всё равно
+            // escape для безопасности.
+            const safeMessage = String(error.message || '').replace(/[<>&"]/g, s => (
+                { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]
+            ));
             this.content.innerHTML = `
-                <div style="padding:20px; color:var(--danger); text-align:center;">
-                    <p>❌ Не удалось загрузить руководство пользователя.</p>
-                    <p style="font-size:0.8rem; color:var(--text-muted);">${error.message}</p>
+                <div class="help-error-state">
+                    <p class="help-error-state__title">Не удалось загрузить руководство пользователя.</p>
+                    <p class="help-error-state__detail">${safeMessage}</p>
                     <p>Убедитесь, что файл <strong>docs/UserManual.md</strong> существует в проекте.</p>
                 </div>
             `;

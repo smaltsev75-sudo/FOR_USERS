@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.1-print-rendering';
+const CACHE_VERSION = 'sp-v8.30.2-review-pass-2';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -36,6 +36,8 @@ const ASSETS_TO_CACHE = [
     './css/task-card.css',
     './css/capacity-strip.css',
     './css/team-capacity.css',
+    './css/toolbar.css',
+    './css/config-panel.css',
     './css/a11y.css',
     './css/print.css',
     // JS — app entry

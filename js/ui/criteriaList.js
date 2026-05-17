@@ -82,12 +82,17 @@ function buildScaleSectionHtml(criterion) {
         const scaleValue = criterion.scale && criterion.scale[i] !== undefined ? criterion.scale[i] : '';
         scaleRows += `<div class="scale-item"><div class="scale-score">${i}</div><div class="scale-description">${escapeHtml(scaleValue)}</div></div>`;
     }
+    // v8.30.2: scale-toggle переведён с `<div role="button" tabindex="0">` на
+    // native `<button>`. Раньше у dive был только click-listener, Enter/Space
+    // нативно не работали — пользователи с клавиатуры не могли раскрыть шкалу.
+    // Native button даёт Enter/Space из коробки. Это тот же урок что
+    // criteria-item-header в v8.30.0 — но я пропустил scale-toggle в audit'е.
     return `
         <div class="criteria-scale-container">
-            <div class="scale-toggle" data-id="${criterion.id}" role="button" tabindex="0" aria-expanded="false">
-                <span class="scale-toggle-icon collapsed">▶</span>
+            <button type="button" class="scale-toggle" data-id="${criterion.id}" aria-expanded="false" aria-controls="scale_${criterion.id}">
+                <span class="scale-toggle-icon collapsed" aria-hidden="true">▶</span>
                 <span class="scale-toggle-text">Показать шкалу 1–10</span>
-            </div>
+            </button>
             <div class="criteria-scale" id="scale_${criterion.id}">${scaleRows}</div>
         </div>`;
 }

@@ -33,7 +33,13 @@ export class ThemeController {
 
     _applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem(THEME_KEY, theme);
+        // v8.30.2: try/catch вокруг setItem — quota/security error не должен
+        // ломать смену темы (UI важнее persist'а темы; в худшем случае тема
+        // не сохранится между сессиями, но текущая работа продолжится).
+        // Тот же класс ошибки, что я починил в storage.save и numberFormat.saveSettings.
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch { /* SecurityError / QuotaExceededError — тема применена в DOM, persist optional */ }
         if (!this._btn) return;
         const iconEl = this._btn.querySelector('.theme-toggle-icon');
         const labelEl = this._btn.querySelector('.theme-toggle-label');

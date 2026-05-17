@@ -157,7 +157,8 @@ export class TaskFormController {
         if (!container) return;
         const criteria = this.store.getState().criteria;
         if (!criteria || criteria.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:8px;">Нет критериев оценки</div>';
+            // v8.30.2: inline-styles → .create-criteria-empty
+            container.innerHTML = '<div class="create-criteria-empty">Нет критериев оценки</div>';
             return;
         }
 
@@ -165,16 +166,20 @@ export class TaskFormController {
         let labelsHtml = '';
         let selectsHtml = '';
 
+        // v8.30.2: inline-styles в labels/selects/grid → CSS-классы.
+        // Grid columns задаются через CSS-property --n (динамическое значение,
+        // оправдывает inline-style — единственный element с runtime value).
         criteria.forEach(c => {
+            const safeName = String(c.name).replace(/"/g, '&quot;');
             labelsHtml += `
-                <div style="text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.name}">
-                    <span style="font-size:0.7rem; color:var(--text); background-color:var(--bg-card); display:inline-block; padding:2px 6px; border-radius:4px; margin-right:4px; font-weight:700; border:1px solid var(--accent);">${c.weight}%</span>
+                <div class="create-criteria-label" title="${safeName}">
+                    <span class="create-criteria-weight-badge">${c.weight}%</span>
                     ${c.abbreviation}
                 </div>
             `;
             selectsHtml += `
                 <div>
-                    <select id="criteria_${c.id}" class="criteria-score-select" data-criterion-id="${c.id}" aria-label="${c.name} оценка" style="width:100%; min-width:50px; padding:4px 2px; background:var(--bg-main); border:1px solid var(--border); color:var(--text); border-radius:6px; font-size:0.7rem; text-align:left; box-sizing:border-box;">
+                    <select id="criteria_${c.id}" class="criteria-score-select" data-criterion-id="${c.id}" aria-label="${safeName} оценка">
                         ${Array.from({ length: 11 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                     </select>
                 </div>
@@ -182,10 +187,10 @@ export class TaskFormController {
         });
 
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(${n}, 1fr); gap: 8px;">
+            <div class="create-criteria-grid create-criteria-grid--labels" style="--n: ${n};">
                 ${labelsHtml}
             </div>
-            <div style="display: grid; grid-template-columns: repeat(${n}, 1fr); gap: 8px; margin-top: 4px;">
+            <div class="create-criteria-grid create-criteria-grid--selects" style="--n: ${n};">
                 ${selectsHtml}
             </div>
         `;

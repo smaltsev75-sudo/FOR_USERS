@@ -1,6 +1,31 @@
 /* ---------- help.css ---------- */
 /* Стили справки (HelpController) */
 
+/* v8.30.2: inline-styles loading/error в HelpController.open() перенесены сюда. */
+.help-loading-state {
+    text-align: center;
+    padding: 20px;
+}
+
+.help-loading-state span {
+    color: var(--text-muted);
+}
+
+.help-error-state {
+    padding: 20px;
+    color: var(--danger);
+    text-align: center;
+}
+
+.help-error-state__title {
+    font-weight: 600;
+}
+
+.help-error-state__detail {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .help-content {
     font-family: Arial, sans-serif;
     line-height: 1.6;

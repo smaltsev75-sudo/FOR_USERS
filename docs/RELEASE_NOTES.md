@@ -1,5 +1,51 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.2) — Code-review pass 2: PWA precache, persist completeness, scale-toggle keyboard, manifest cache-bust + print layout regression-fix
+
+Второй проход независимого ревью обнаружил **5 пропусков** моего self-audit'а
+после v8.30.0 — те же классы ошибок, которые v8.30.0 чинил в одних местах,
+но я не сделал grep на родственные. Плюс **визуальная регрессия** v8.30.1
+print rendering (числа смещались на колонку вправо относительно labels).
+
+### Что починено
+
+| Пункт | Было | Стало |
+|---|---|---|
+| **P1.1 PWA precache неполный** | `css/toolbar.css` и `css/config-panel.css` подключены в `index.html`, но отсутствовали в `ASSETS_TO_CACHE` в `sw.js`. Offline-режим загружался без верхней панели и панели конфигурации спринта. | Добавлены в precache. Новый архитектурный инвариант [`tests/unit/architecture/precache-coverage.test.js`](../tests/unit/architecture/precache-coverage.test.js) парсит `<link rel="stylesheet">` из index.html и сверяет с `ASSETS_TO_CACHE`. |
+| **P1.2 Silent persist в numberFormat** | `numberFormat.saveSettings()` делал `localStorage.setItem` БЕЗ try/catch — при QuotaExceededError/SecurityError приложение крашилось на autosave. Это саботировало мой же v8.30.0 fix П.5 (storage status), потому что `App.saveToLS` вызывал `nfs.saveSettings()` ПОСЛЕ `storageService.save()`. | `saveSettings()` возвращает `{ok, error}` (тот же контракт что storage.save). `App.saveToLS` проверяет оба результата, snackbar показывается при любом fail'е. Новый архитектурный инвариант [`persist-must-have-try-catch.test.js`](../tests/unit/architecture/persist-must-have-try-catch.test.js) ловит этот класс регрессий во всех services. |
+| **P2.1 scale-toggle не работает с клавиатуры** | `<div class="scale-toggle" role="button" tabindex="0">` с только-click handler — Enter/Space нативно не работали. Тот же a11y-баг что `.criteria-item-header` в v8.30.0 (П.1), но я пропустил scale-toggle в audit'е. | Переведён на native `<button type="button" aria-expanded aria-controls>`. Native button сам обрабатывает Enter/Space. Reset CSS + `:focus-visible` outline. |
+| **P2.2 manifest cache-bust устарел** | `index.html: manifest.json?v=8.29.6` после bump'ов до 8.30.0/8.30.1 — установленные PWA продолжали читать старый manifest. | `scripts/bump-version.mjs` теперь обновляет `?v=` в index.html синхронно. Тест в `pwa-icons.test.js` усилен: проверяет совпадение версии с `package.json`, не только формат. |
+| **P3 Inline-styles в HelpController + TaskFormController** | Loading/error states и create-criteria grid имели множественные `style="..."` атрибуты. Мешало строгому CSP и противоречило design-system правилу. | Перенесены в [css/help.css](../css/help.css) (`.help-loading-state`, `.help-error-state`) и [css/create-task-modal.css](../css/create-task-modal.css) (`.create-criteria-empty`, `.create-criteria-grid`, `.create-criteria-label`, `.create-criteria-weight-badge`). Number of columns остаётся через CSS-property `--n` (единственное оправданное runtime-значение). |
+
+### Print rendering hot-fix (регрессия v8.30.1)
+
+В v8.30.1 я использовал `grid auto-fit` + `display:contents` на `.est-box-header` —
+это давало визуальное смещение: input первого бокса вылезал в начало следующей
+grid-cell. Пользователь видел `UI/UX:   CA:1 ч   0,FE:   5,BE:   2,QA:   3,0 ч`
+вместо нормальной разбивки.
+
+Переписано на **блочный layout**: каждая роль и каждый критерий на отдельной
+строке, никаких grid-cell сюрпризов. Input получил фиксированную ширину `3.5em`
+вместо browser default ~173px.
+
+### Урок (зафиксирован в проектную память Claude)
+
+Когда фиксишь определённый класс ошибки в одном месте (например, `role="button"`
+на div без keyboard, или silent `localStorage.setItem`), **обязательно grep'нуть
+проект по этому же паттерну** до того, как объявить self-audit пройденным. В
+v8.30.0 я починил 2 случая (nested-interactive header + storage.save) и
+пропустил 2 родственных (scale-toggle + numberFormat) — ревьюер нашёл их за 30
+минут. Новый feedback-файл в memory + усиление skill `review` §2.
+
+### Метрики
+
+- unit-тесты: 1093 → **1105** (+12, включая 3 архитектурных инварианта).
+- e2e: 186 → **190** (+4 print-verify, сохранены с v8.30.1).
+- lint: clean.
+- npm audit: 0 vulnerabilities.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.1) — Print rendering: детальные оценки трудозатрат и метрики приоритета
 
 **Hot-fix регрессии печати.** В v8.29.x и ранее CSS-правило `@media print`

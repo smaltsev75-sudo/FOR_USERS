@@ -146,11 +146,17 @@ export class App {
             this.criteriaManager.getCriteria(),
             this.nfs.decimalSeparator
         );
-        const result = storageService.save(data);
-        if (result && !result.ok) {
-            this._notifyPersistFailure(result.error);
-        }
-        this.nfs.saveSettings();
+        const stateResult = storageService.save(data);
+        // v8.30.2: nfs.saveSettings раньше делал localStorage.setItem БЕЗ
+        // try/catch — при quota/security error прерывал autosave даже после
+        // fix v8.30.0 (там я починил только storageService.save, забыв
+        // соседнюю persist-точку). Теперь обе возвращают {ok,error}, любой
+        // fail триггерит snackbar.
+        const nfsResult = this.nfs.saveSettings();
+        const failed = (stateResult && !stateResult.ok)
+            ? stateResult
+            : (nfsResult && !nfsResult.ok ? nfsResult : null);
+        if (failed) this._notifyPersistFailure(failed.error);
     }
 
     /**
