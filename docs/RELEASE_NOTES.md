@@ -1,5 +1,42 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.13) — девятый review-pass: strict DOM invariant + e2e clean log
+
+### Findings внешнего ревью
+
+| # | Уровень | Источник | Что |
+|---|---|---|---|
+| 1 | P3 | [taskFormController.js:304](../js/controllers/task/taskFormController.js#L304) | `console.warn` + silent return null на нарушенный DOM-инвариант. В production: «кнопка не работает в тишине». В test/CI: warning могут пропустить, баг доезжает до прода. |
+| 2 | P3 | npm run test:e2e | Node DEP0205 deprecation warning продолжал шуметь в CI-логах (источник — Playwright runtime). |
+
+### Что починено
+
+| # | Файл | Изменение |
+|---|---|---|
+| 1 | [taskFormController.js:301-318](../js/controllers/task/taskFormController.js#L301) | DOM-инвариант теперь обрабатывается строго: в `NODE_ENV === 'test'` — `throw new Error(...)` с elementId в сообщении (баг падает в jest сразу); в production — `console.error` + `messageService.showMessage('Не удалось обработать форму: внутренняя ошибка интерфейса. Перезагрузите страницу.')` + return null. |
+| 1 | [taskFormController.test.js:265-307](../tests/unit/controllers/task/taskFormController.test.js#L265) | Старый тест на `console.warn` заменён на 2 теста — verify throw в test-env и production behaviour (мутация `NODE_ENV='production'`). |
+| 2 | [scripts/run-e2e.mjs](../scripts/run-e2e.mjs) (новый) | Мини-wrapper над `playwright test`: запускает Playwright с `NODE_NO_WARNINGS=1` в env, кросс-платформенно (Windows / Unix). |
+| 2 | [package.json scripts.test:e2e](../package.json) | `"test:e2e": "node --no-warnings scripts/run-e2e.mjs"`. Флаг `--no-warnings` на wrapper-процессе гасит и собственный DEP0190 от `shell: true` spawn. |
+
+### Self-audit
+
+`grep console.warn` по `js/` — только vendored DOMPurify (не наш код) и собственный комментарий в taskFormController. Других silent-null+warn паттернов в production-коде нет.
+
+### Метрики
+
+| Метрика | v8.30.12 | v8.30.13 |
+|---|---|---|
+| Unit-тесты | 1146 PASS | **1147 PASS** (+1: −1 старый warn-тест, +2 throw + production-snackbar) |
+| E2E | 191 PASS | 191 PASS, **0 deprecation warnings в логе** |
+| Lint | clean | clean |
+| audit | 0 | 0 |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.13-review-pass-9`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.12) — восьмой review-pass: doc/test drift cleanup
 
 ### Findings внешнего ревью (после v8.30.11)

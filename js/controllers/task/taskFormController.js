@@ -301,7 +301,16 @@ export class TaskFormController {
     _validateField(elementId, validateFn, uniqueFn, uniqueErrorMsg, excludeId = null) {
         const el = document.getElementById(elementId);
         if (!el) {
-            console.warn(`[TaskFormController] Элемент #${elementId} не найден`);
+            const err = `[TaskFormController] DOM-инвариант нарушен: элемент #${elementId} отсутствует в форме`;
+            // v8.30.13: в тестовом окружении (jest jsdom: process.env.NODE_ENV === 'test')
+            // явно бросаем — иначе пропавший элемент даёт «кнопка не работает в тишине».
+            // В production показываем пользователю снэкбар и пишем в console.error
+            // (console.warn недостаточно: warn часто отфильтрован в реальных консолях).
+            if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+                throw new Error(err);
+            }
+            console.error(err);
+            messageService.showMessage('Не удалось обработать форму: внутренняя ошибка интерфейса. Перезагрузите страницу (Ctrl+Shift+R).');
             return null;
         }
         const value = el.value.trim();
