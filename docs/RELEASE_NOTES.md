@@ -1,5 +1,36 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.1) — Print rendering: детальные оценки трудозатрат и метрики приоритета
+
+**Hot-fix регрессии печати.** В v8.29.x и ранее CSS-правило `@media print`
+скрывало `.est-box:not(.est-box-total)` и `.criteria-eval-item` одним
+`display: none` — на распечатке оставались только итоговое effort и
+priority score, без разбивки по ролям и без оценок по каждому критерию.
+
+### Что изменилось в 8.30.1
+
+- **[css/print.css](../css/print.css)** — снято скрытие ролевых est-боксов
+  и criteria-eval-item; добавлены печатные стили для читаемого layout
+  (grid auto-fit, inputs без рамок как plain text, скрыты только бары и
+  stepper-кнопки).
+- **На распечатке теперь видно:**
+  - Каждую роль: UI/UX: 5 ч, CA: 3 ч, FE: 8 ч, BE: 2 ч, QA: 4 ч.
+  - Σ Effort (итог).
+  - Каждый критерий: abbreviation + weight + оценка (0–10) + contribution.
+  - Priority Score (итог).
+- **Скрыты на печати:** progress-бары (`.est-box-bar`, `.criteria-eval-bar`),
+  +/- кнопки stepper'а, иконки ролей, mobile-only abbreviation, overload-placeholder.
+- **[tests/e2e/print-verify.spec.js](../tests/e2e/print-verify.spec.js)** —
+  новый файл с 4 e2e-тестами через `emulateMedia('print')`. Защищает
+  инвариант от регрессий.
+
+### Регрессии и совместимость
+
+- Только CSS-изменения, runtime-логика не затронута.
+- После обновления — **Ctrl+Shift+R** для перезагрузки CSS.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.0) — Code-review pass: a11y, security audit, persist correctness
 
 Большой системный pass по отчёту независимого code-review (8 пунктов).
