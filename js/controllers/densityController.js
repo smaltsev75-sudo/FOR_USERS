@@ -12,7 +12,7 @@
  * визуальный feedback active-режима.
  */
 
-const VALID_DENSITIES = ['compact', 'comfortable', 'cozy'];
+const VALID_DENSITIES = ['compact', 'comfortable'];
 
 export class DensityController {
     /**

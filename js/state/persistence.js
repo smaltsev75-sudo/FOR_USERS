@@ -18,7 +18,11 @@ const DEFAULT_UI_STATE = {
     expandedQuadrants: [...VALID_QUADRANT_KEYS]
 };
 const VALID_ALGORITHMS = ['matrix', 'value-density', 'hybrid'];
-const VALID_DENSITIES = ['compact', 'comfortable', 'cozy'];
+// v8.30.0: 'cozy' удалён из публичного контракта (UI v8.27+ двухрежимный).
+// Сохранённые состояния с density='cozy' мигрируются в 'comfortable' через
+// VALID_DENSITIES.includes() в normalizeUi() — несовместимое значение
+// заменяется на DEFAULT_UI_STATE.density.
+const VALID_DENSITIES = ['compact', 'comfortable'];
 
 /**
  * Нормализует сохраненное состояние по актуальному контракту приложения.
@@ -99,20 +103,52 @@ function normalizeRoles(roles = [], defaults) {
     });
 }
 
+// v8.30.0: unique-id allocator. Раньше `normalizeInteger(task.id, Date.now(), 1)`
+// в синхронном map() возвращал одинаковый Date.now() для нескольких задач
+// без валидного id → коллизии после импорта (Store.updateTask промахивался).
+// Allocator собирает уже использованные id и выдаёт следующий свободный.
+function createIdAllocator(existingIds, minBase = 1) {
+    const used = new Set(existingIds);
+    let next = Math.max(minBase, used.size ? Math.max(...used) + 1 : minBase);
+    return () => {
+        while (used.has(next)) next++;
+        const id = next;
+        used.add(id);
+        next++;
+        return id;
+    };
+}
+
+function collectValidIds(items, minValue = 1) {
+    const ids = [];
+    for (const item of items) {
+        const parsed = Number.parseInt(item?.id, 10);
+        if (!Number.isNaN(parsed) && parsed >= minValue) ids.push(parsed);
+    }
+    return ids;
+}
+
 function normalizeTasks(tasks = []) {
     if (!Array.isArray(tasks)) return [];
-    const normalized = tasks.map((task) => ({
-        id: normalizeInteger(task.id, Date.now(), 1),
-        title: String(task.title ?? '').trim(),
-        jira: String(task.jira ?? '').trim(),
-        type: normalizeTaskType(task.type),
-        comment: String(task.comment ?? '').trim(),
-        excluded: task.excluded ? 1 : 0,
-        est: normalizeTaskEst(task.est),
-        exclusionReason: String(task.exclusionReason ?? ''),
-        criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
-        priorityScore: normalizeNumber(task.priorityScore, 0)
-    }));
+    const validIds = collectValidIds(tasks, 1);
+    // База Date.now() сохраняет существующий контракт: новые id выглядят как timestamp.
+    const allocate = createIdAllocator(validIds, Date.now());
+    const normalized = tasks.map((task) => {
+        const parsed = Number.parseInt(task?.id, 10);
+        const id = (!Number.isNaN(parsed) && parsed >= 1) ? parsed : allocate();
+        return {
+            id,
+            title: String(task.title ?? '').trim(),
+            jira: String(task.jira ?? '').trim(),
+            type: normalizeTaskType(task.type),
+            comment: String(task.comment ?? '').trim(),
+            excluded: task.excluded ? 1 : 0,
+            est: normalizeTaskEst(task.est),
+            exclusionReason: String(task.exclusionReason ?? ''),
+            criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
+            priorityScore: normalizeNumber(task.priorityScore, 0)
+        };
+    });
     return fixTaskOrder(normalized);
 }
 
@@ -124,15 +160,23 @@ function normalizeTaskEst(est = {}) {
 
 function normalizeCriteria(criteria = []) {
     if (!Array.isArray(criteria)) return [];
-    return criteria.map((criterion) => ({
-        ...criterion,
-        id: normalizeInteger(criterion.id, 0, 0),
-        name: String(criterion.name ?? ''),
-        abbreviation: String(criterion.abbreviation ?? ''),
-        weight: normalizeInteger(criterion.weight, 0, 0, 100),
-        rationale: String(criterion.rationale ?? ''),
-        scale: { ...(criterion.scale || {}) }
-    }));
+    // v8.30.0: тот же allocator-паттерн что и для tasks — раньше default id=0
+    // приводил к коллизиям если в импорте было >1 критерия без валидного id.
+    const validIds = collectValidIds(criteria, 1);
+    const allocate = createIdAllocator(validIds, 1);
+    return criteria.map((criterion) => {
+        const parsed = Number.parseInt(criterion?.id, 10);
+        const id = (!Number.isNaN(parsed) && parsed >= 1) ? parsed : allocate();
+        return {
+            ...criterion,
+            id,
+            name: String(criterion.name ?? ''),
+            abbreviation: String(criterion.abbreviation ?? ''),
+            weight: normalizeInteger(criterion.weight, 0, 0, 100),
+            rationale: String(criterion.rationale ?? ''),
+            scale: { ...(criterion.scale || {}) }
+        };
+    });
 }
 
 function normalizeCriteriaEvaluations(evaluations = {}) {

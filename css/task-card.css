@@ -35,16 +35,6 @@
     --task-row-comment-display: block;
 }
 
-#taskList[data-density="cozy"] {
-    --task-row-padding-y: 14px;
-    --task-row-padding-x: 18px;
-    --task-row-margin: 12px;
-    --task-row-gap: 14px;
-    --task-row-title-size: 1.05rem;
-    --task-row-section-gap: 14px;
-    --task-row-comment-display: block;
-}
-
 .task-item {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -385,8 +375,7 @@
 
 /* ─── Блок оценок трудозатрат ────────────────────────────────────────
    Компактный 1-row layout: label inline → chips → Σ total.
-   Каждый chip = иконка роли + label + input. Бар можно опционально
-   включить через is-density-cozy для глаз-разгрузки. */
+   Каждый chip = иконка роли + label + input. */
 .task-estimates {
     display: flex;
     align-items: center;
@@ -481,7 +470,7 @@
     max-width: 50px;
 }
 
-/* Bar скрыт в compact (по умолчанию) — раскомментировать для cozy */
+/* Bar скрыт во всех плотностях — оставлен в DOM для backward-compat тестов */
 .est-box-bar,
 .est-box-bar-fill {
     display: none;
@@ -499,6 +488,14 @@
     min-width: 36px;
     min-height: 22px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* v8.30.0: empty-state списка задач — раньше inline `style.cssText` в taskList.js */
+.task-list-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-style: italic;
 }
 
 .est-input-container:hover {

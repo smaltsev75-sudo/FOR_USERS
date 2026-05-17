@@ -23,6 +23,7 @@ import { migratePersistedState, serializeStateForStorage } from './state/persist
 import { ThemeController } from './controllers/themeController.js';
 import { DensityController } from './controllers/densityController.js';
 import { renderAppVersionBadge } from './ui/appVersionBadge.js';
+import { showSnackbar } from './ui/snackbar.js';
 
 export class App {
     /**
@@ -109,15 +110,6 @@ export class App {
             this.saveToLS();
         });
         this.keyboardController.init();
-
-        // v8.27.1: clamp только для неподдерживаемого density 'cozy' (DOM
-        // имеет compact/comfortable). viewMode toggle вернулся в тулбар —
-        // 'quadrants' валиден и более не клампится.
-        const ui = this.store.getState().ui || {};
-        if (ui.density === 'cozy') {
-            this.store.setDensity('comfortable');
-        }
-
         this.requestRender();
     }
 
@@ -154,8 +146,32 @@ export class App {
             this.criteriaManager.getCriteria(),
             this.nfs.decimalSeparator
         );
-        storageService.save(data);
+        const result = storageService.save(data);
+        if (result && !result.ok) {
+            this._notifyPersistFailure(result.error);
+        }
         this.nfs.saveSettings();
+    }
+
+    /**
+     * v8.30.0: показать snackbar при провале localStorage.setItem. Раньше
+     * QuotaExceededError / SecurityError проглатывались — пользователь терял
+     * рабочий день после F5. Throttle 30 сек: не спамим при повторных fail'ах.
+     * @param {string} errorName
+     * @private
+     */
+    _notifyPersistFailure(errorName) {
+        const now = Date.now();
+        if (this._lastPersistFailureNotify && now - this._lastPersistFailureNotify < 30000) return;
+        this._lastPersistFailureNotify = now;
+        const isQuota = /quota/i.test(String(errorName));
+        const message = isQuota
+            ? 'Не удалось сохранить: переполнено хранилище браузера. Скачайте JSON через «Сохранить» в правом верхнем углу.'
+            : `Не удалось сохранить данные в браузере (${errorName}). Скачайте JSON через «Сохранить».`;
+        // showSnackbar безопасно вызывать вне DOM — guard на document.
+        if (typeof document !== 'undefined' && document.body) {
+            showSnackbar(message, { duration: 8000 });
+        }
     }
 
 }

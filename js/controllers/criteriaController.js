@@ -4,7 +4,7 @@
 //   - input event на .criteria-weight-input → instant sum-bar update (без commit)
 //   - change event → commit в Store (фокус сохраняется снапшотом в render)
 //   - click на «Авто-баланс» → CriteriaManager.autoBalance()
-//   - click/keydown на .criteria-item-header → toggle expand/collapse (a11y)
+//   - click на .criteria-item-toggle-btn → toggle expand/collapse (a11y: native button)
 //   - HTML5 DnD на .criteria-item через .criteria-item-grip → reorderCriteria
 //   - SVG-иконки edit/delete (через делегирование data-action — без изменений)
 
@@ -48,10 +48,9 @@ export class CriteriaController {
         if (!criteriaList) return;
 
         // ── Click-делегация: edit/delete/auto-balance/header-toggle ───────────
+        // v8.30.0: keydown-делегат удалён — toggle теперь native <button>,
+        // браузер сам обрабатывает Enter/Space и диспатчит click.
         criteriaList.addEventListener('click', (e) => this._handleListClick(e));
-
-        // ── Keyboard: Enter/Space на header → toggle ─────────────────────────
-        criteriaList.addEventListener('keydown', (e) => this._handleListKeydown(e));
 
         // ── Inline weight: input для UI-фидбека, change для commit ────────────
         criteriaList.addEventListener('input', (e) => this._handleInlineInput(e));
@@ -92,29 +91,18 @@ export class CriteriaController {
             }
         }
 
-        // Toggle header — кликабельность всего header'а, кроме элементов
-        // с `data-no-toggle="true"` (weight-input, action-buttons).
-        const header = e.target.closest('.criteria-item-header[data-action="toggleExpand"]');
-        if (!header) return;
-        if (e.target.closest('[data-no-toggle="true"]')) return;
-        // Drag-handle тоже не должен ловить клик-toggle (только mousedown→drag)
-        if (e.target.closest('.criteria-item-grip')) return;
-
-        this._toggleExpand(header);
+        // v8.30.0: toggle перенесён с .criteria-item-header (role=button) на
+        // отдельную <button class="criteria-item-toggle-btn"> — устранение
+        // nested-interactive нарушения axe-core. Браузер сам даёт native click
+        // и keyboard handling для <button>, отдельный keydown-listener больше
+        // не нужен.
+        const toggleBtn = e.target.closest('.criteria-item-toggle-btn[data-action="toggleExpand"]');
+        if (!toggleBtn) return;
+        this._toggleExpand(toggleBtn);
     }
 
-    _handleListKeydown(e) {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const header = e.target.closest('.criteria-item-header[data-action="toggleExpand"]');
-        if (!header) return;
-        // Не перехватываем space/enter внутри input'а — пользователь редактирует вес.
-        if (e.target.matches('input, textarea, select, button')) return;
-        e.preventDefault();
-        this._toggleExpand(header);
-    }
-
-    _toggleExpand(headerEl) {
-        const item = headerEl.closest('.criteria-item');
+    _toggleExpand(toggleBtn) {
+        const item = toggleBtn.closest('.criteria-item');
         if (!item) return;
         const body = item.querySelector('.criteria-body');
         if (!body) return;
@@ -122,12 +110,12 @@ export class CriteriaController {
         if (expanded) {
             item.dataset.expanded = 'false';
             item.classList.remove('is-expanded');
-            headerEl.setAttribute('aria-expanded', 'false');
+            toggleBtn.setAttribute('aria-expanded', 'false');
             body.setAttribute('hidden', '');
         } else {
             item.dataset.expanded = 'true';
             item.classList.add('is-expanded');
-            headerEl.setAttribute('aria-expanded', 'true');
+            toggleBtn.setAttribute('aria-expanded', 'true');
             body.removeAttribute('hidden');
         }
     }

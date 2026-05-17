@@ -226,6 +226,15 @@
    font-style: italic;
 }
 
+/* v8.30.0: editor-вариант для <textarea> в edit-modal — раньше inline-style */
+.scale-description--editor {
+   font-size: 0.75rem;
+   padding: 6px;
+   height: 40px;
+   width: 100%;
+   box-sizing: border-box;
+}
+
 .total-weight {
    display: flex;
    justify-content: space-between;
@@ -352,13 +361,14 @@
    padding: 0;
 }
 
+/* v8.30.0 (a11y): header больше НЕ интерактивен (role=button удалён).
+   Toggle вынесен в native <button class="criteria-item-toggle-btn">. */
 .criteria-item-header {
    display: grid;
-   grid-template-columns: auto auto 1fr auto auto auto;
+   grid-template-columns: auto 1fr auto auto;
    align-items: center;
    gap: 12px;
    padding: 12px 14px;
-   cursor: pointer;
    user-select: none;
    transition: background 0.2s ease;
    border-radius: 8px;
@@ -368,9 +378,30 @@
    background: var(--overlay-light);
 }
 
-.criteria-item-header:focus-visible {
+/* Toggle-кнопка раскрытия карточки.
+   Содержит [abbreviation, name, chevron] в собственном grid'е.
+   Reset нативной кнопки → выглядит как часть header'а. */
+.criteria-item-toggle-btn {
+   display: grid;
+   grid-template-columns: auto 1fr auto;
+   align-items: center;
+   gap: 12px;
+   background: none;
+   border: none;
+   padding: 0;
+   margin: 0;
+   font: inherit;
+   color: inherit;
+   text-align: left;
+   cursor: pointer;
+   width: 100%;
+   min-width: 0;
+}
+
+.criteria-item-toggle-btn:focus-visible {
    outline: 2px solid var(--accent);
-   outline-offset: -2px;
+   outline-offset: 2px;
+   border-radius: 6px;
 }
 
 .criteria-item-grip {
@@ -535,9 +566,13 @@
       padding: 10px;
    }
    .criteria-item-header {
-      grid-template-columns: auto auto 1fr auto auto;
+      grid-template-columns: auto 1fr auto auto;
       gap: 8px;
       padding: 10px;
+   }
+   .criteria-item-toggle-btn {
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
    }
    /* На мобильных drag-handle всегда видна (нет hover) */
    .criteria-item-grip,

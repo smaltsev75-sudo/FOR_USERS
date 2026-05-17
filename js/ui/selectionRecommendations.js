@@ -1,27 +1,36 @@
 // js/ui/selectionRecommendations.js
 // Rendering functions for the optimization recommendations modal.
+//
+// v8.30.0: эмодзи (📌 💡 🔍) заменены inline-SVG, все inline `style="..."`
+// перенесены в `css/recommendations.css` (см. проектное правило «UI redesign:
+// сначала аудит существующей дизайн-системы»). User-input message/suggestion
+// эскейпятся через escapeHtml — раньше уязвимость XSS при подмене rec-данных.
 
 import { getSeverityClass, getSeverityHint, ALGORITHM_NAMES } from './selectionReport.js';
 import { ALGORITHM_KEYS } from '../domain/selection/config.js';
 import { getOptimizationRecommendations } from '../domain/selection/index.js';
 import { messageService } from '../services/message.js';
 import { showModal, hideModal } from './modalManager.js';
+import { icon } from '../utils/icons.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 /**
  * Builds the HTML for a single recommendation card.
  * @param {Object} rec
+ * @param {string} [modifier] - дополнительный модификатор класса (например, 'rec-card--featured')
  * @returns {string}
  */
-function buildRecCardHtml(rec, extraStyle = '') {
+function buildRecCardHtml(rec, modifier = '') {
     const severityClass = getSeverityClass(rec.severity);
     const severityHint = getSeverityHint(rec.severity);
+    const cardClass = `rec-card${modifier ? ' ' + modifier : ''}`;
     return `
-        <div class="rec-card"${extraStyle ? ` style="${extraStyle}"` : ''}>
+        <div class="${cardClass}">
             <div class="rec-card-header">
-                <span class="rec-card-title">${rec.message}</span>
-                <span class="rec-card-severity ${severityClass}" title="${severityHint}">${rec.severity}</span>
+                <span class="rec-card-title">${escapeHtml(rec.message)}</span>
+                <span class="rec-card-severity ${severityClass}" title="${escapeHtml(severityHint)}">${escapeHtml(rec.severity)}</span>
             </div>
-            ${rec.suggestion ? `<div class="rec-card-suggestion">💡 ${rec.suggestion}</div>` : ''}
+            ${rec.suggestion ? `<div class="rec-card-suggestion">${icon('lightbulb')}<span>${escapeHtml(rec.suggestion)}</span></div>` : ''}
         </div>
     `;
 }
@@ -88,36 +97,36 @@ export function buildRecommendationsHtml(multiSelectionResults, capacityByRole, 
 
     const hasAny = allGeneral.length > 0 || algorithms.some(a => specific[a].length > 0);
     if (!hasAny) {
-        return '<div style="text-align:center; padding:20px; color:var(--text-muted);">Нет рекомендаций.</div>';
+        return '<div class="rec-empty">Нет рекомендаций.</div>';
     }
 
     let html = '<div class="recommendations-container">';
 
     if (allGeneral.length > 0) {
         html += `
-            <div class="general-recommendations" style="margin-bottom: 24px; width: 100%;">
-                <div class="rec-section-title" style="margin-bottom: 12px;">📌 Общие рекомендации</div>
-                <div class="rec-cards" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <div class="general-recommendations">
+                <div class="rec-section-title">${icon('pin')}<span>Общие рекомендации</span></div>
+                <div class="rec-cards rec-cards--general">
         `;
         allGeneral.forEach(rec => {
-            html += buildRecCardHtml(rec, 'width: 100%;');
+            html += buildRecCardHtml(rec, 'rec-card--full');
         });
         html += `</div></div>`;
     }
 
-    html += `<div class="algorithms-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">`;
+    html += `<div class="algorithms-grid">`;
 
     algorithms.forEach(algo => {
         const algoName = ALGORITHM_NAMES[algo] || algo;
         const items = specific[algo] || [];
 
         html += `<div class="algorithm-column">`;
-        html += `<div class="rec-section-title" style="margin-bottom: 12px; text-align: center;">🔍 ${algoName}</div>`;
+        html += `<div class="rec-section-title rec-section-title--center">${icon('search')}<span>${escapeHtml(algoName)}</span></div>`;
 
         if (items.length === 0) {
-            html += `<div class="rec-card" style="text-align: center; color: var(--text-muted);">Нет рекомендаций</div>`;
+            html += `<div class="rec-card rec-card--empty">Нет рекомендаций</div>`;
         } else {
-            html += `<div class="rec-cards" style="display: flex; flex-direction: column; gap: 12px;">`;
+            html += `<div class="rec-cards">`;
             items.forEach(rec => { html += buildRecCardHtml(rec); });
             html += `</div>`;
         }
@@ -151,9 +160,12 @@ export function showRecommendationsFallback(multiSelectionResults, capacityByRol
         });
     });
 
+    // v8.30.0: эмодзи (📋 🔍) убраны из text-fallback тоже — он выводится через
+    // messageService.showMessage в модальное окно (т.е. в UI), а правило
+    // проекта запрещает эмодзи в UI. Используем простые маркеры-заголовки.
     let message = '';
     if (allGeneral.length > 0) {
-        message += '📋 Общее:\n\n';
+        message += 'Общие рекомендации:\n\n';
         allGeneral.forEach(rec => {
             message += `  • ${rec.message}\n`;
             if (rec.suggestion) message += `    Совет: ${rec.suggestion}\n`;
@@ -164,7 +176,7 @@ export function showRecommendationsFallback(multiSelectionResults, capacityByRol
         const items = specific[algo];
         if (items.length > 0) {
             const algoName = ALGORITHM_NAMES[algo] || algo;
-            message += `🔍 ${algoName}\n\n`;
+            message += `Алгоритм «${algoName}»:\n\n`;
             items.forEach(rec => {
                 message += `  • ${rec.message}\n`;
                 if (rec.suggestion) message += `    Совет: ${rec.suggestion}\n`;

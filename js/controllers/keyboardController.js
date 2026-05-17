@@ -11,6 +11,12 @@ export class KeyboardController {
 
     init() {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e), { capture: true, passive: false });
+        // v8.30.0: print button — раньше был inline `onclick="window.print()"`
+        // в index.html, что блокировало строгий CSP `script-src 'self'`.
+        const printBtn = document.getElementById('printBtn');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => this.printFn());
+        }
     }
 
     isModalOpen() {

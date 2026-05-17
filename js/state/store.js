@@ -284,12 +284,12 @@ export class Store {
     }
 
     /**
-     * Устанавливает плотность отображения списка задач (Compact/Comfortable/Cozy).
+     * Устанавливает плотность отображения списка задач (Compact/Comfortable).
      * Невалидные значения нормализуются в 'comfortable' (backward-compatible default).
-     * @param {string} density - 'compact' | 'comfortable' | 'cozy'
+     * @param {string} density - 'compact' | 'comfortable'
      */
     setDensity(density) {
-        const valid = ['compact', 'comfortable', 'cozy'];
+        const valid = ['compact', 'comfortable'];
         const normalized = valid.includes(density) ? density : 'comfortable';
         this.update(state => ({
             ...state,

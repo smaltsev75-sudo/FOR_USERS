@@ -1,5 +1,45 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.0) — Code-review pass: a11y, security audit, persist correctness
+
+Большой системный pass по отчёту независимого code-review (8 пунктов).
+Все правки сопровождены тестами; общий счёт unit-тестов: 1074 → **1093**
+(+19 тестов с учётом удалённого Enter/Space-on-div теста — он больше не нужен,
+native button сам обрабатывает клавиатуру), e2e nested-interactive должен теперь
+проходить axe-core, `npm audit` — **0 vulnerabilities**, coverage gate починен.
+
+### Что изменилось
+
+| # | Категория | Что было | Что стало |
+|---|-----------|----------|-----------|
+| 1 | A11y (axe-core nested-interactive) | `.criteria-item-header` имел `role="button"` + `tabindex="0"`, внутри лежали focusable `input` (вес) и две `<button>` (edit/delete) — нарушение WCAG 4.1.2 | Toggle вынесен в отдельный `<button class="criteria-item-toggle-btn">`; grip, weight-input и actions — siblings, не children. Native `<button>` обрабатывает Enter/Space без отдельного keydown-listener'а. |
+| 2 | Security (npm audit) | 6 vulnerabilities (4 high, 2 moderate). `dompurify ^3.3.1` — уязвимая версия в `devDependencies`. Vendored runtime `js/vendor/purify.min.js@3.4.2` — уже не уязвим, но npm-зависимость держала старый pin. | `dompurify` поднят до `^3.4.4` + `npm audit fix` для transitive babel/picomatch/brace-expansion → **0 vulnerabilities**. |
+| 3 | Render correctness | Progressive rendering после первых 20 задач шёл батчами через `requestIdleCallback`, **без cancel-токена** — старый callback от предыдущего рендера дозаливал stale-карточки в уже очищенный новый DOM при быстрой смене state. | Введён module-level `renderGeneration` counter. Каждый `renderTaskList()` инкрементирует поколение; pending callback'и проверяют совпадение и абортятся, если их рендер устарел. |
+| 4 | Coverage gate | `npm run test:coverage` падал на отсутствующем `js/vendor/purify.min.js.map` (sourceMap comment без `.map`-файла рядом). | `jest.config.cjs.collectCoverageFrom` исключает `!js/vendor/**`. Coverage proходит, 1106/1106 тестов. |
+| 5 | Persist UX | `storageService.save()` глотал `QuotaExceededError` / `SecurityError` без сигнала — пользователь думал, что данные сохранены, а после F5 терял всю работу. | `save()` возвращает `{ok, error}`. `App.saveToLS()` при `!ok` показывает throttled snackbar (раз в 30 сек) с инструкцией скачать JSON. |
+| 6 | Import correctness | `normalizeTasks` использовал `Date.now()` как default для невалидных `id` — синхронный `map()` укладывался в <1ms, и несколько битых задач получали ОДИН и ТОТ ЖЕ id. `Store.updateTask()` потом промахивался при правке. Та же проблема — в `normalizeCriteria` с default `id=0`. | Unified `createIdAllocator()` + `collectValidIds()`. Аллокатор стартует с `max(existingIds, minBase)+1` и инкрементируется; все импортированные id гарантированно уникальны и не конфликтуют с уже валидными. |
+| 7 | Контракт density | `'cozy'` density был удалён из UI в v8.27, но `VALID_DENSITIES = ['compact','comfortable','cozy']` оставался в `Store.setDensity`, `DensityController`, `taskList.js`, `persistence.js` + CSS-блок `#taskList[data-density="cozy"]` + legacy clamp в `app.js`. | Везде `['compact','comfortable']`. Сохранённый `'cozy'` мигрируется в `'comfortable'` через `normalizeUi`. CSS-блок и иконка `densityCozy` удалены. |
+| 8 | CSP-readiness | `index.html:61` имел inline `onclick="window.print()"` — блокировка строгого `script-src 'self'`. `selectionRecommendations.js` рендерил эмодзи 📌 💡 🔍 (нарушение «эмодзи в UI запрещены» из CLAUDE.md), плюс множественные inline `style="..."`. `js/ui/utils.js` затирал SVG-иконку таба «Критерии оценки» эмодзи ⚖️. | `printBtn` подключён через `KeyboardController.init()`. Эмодзи заменены на SVG (новые иконки `pin`, `lightbulb`; `search` для алгоритмов). Inline-styles перенесены в `selection-report.css`, `task-card.css`, `criteria.css`. `escapeHtml()` добавлен в `buildRecCardHtml` (XSS-защита user-input `rec.message` / `rec.suggestion`). |
+
+### Дополнительно (сопутствующая чистка)
+
+- `densityCozy` иконка удалена из `icons.js` (dead code после v8.27).
+- `app.js` legacy-clamp `if (ui.density === 'cozy')` удалён — теперь миграция выполняется на уровне `persistence.normalizeUi`.
+- Удалён keydown-listener в `CriteriaController` (был для имитации button-поведения на role=button div — теперь не нужен, native `<button>` сам обрабатывает Enter/Space).
+- Layer hygiene audit: `js/domain/` не содержит DOM-API (clean), нет `eval` / `new Function` / `setTimeout(string)`, нет `console.log` / `debugger` / `TODO` / `FIXME`-меток в production-коде.
+
+### Архитектурный hardening
+
+- Новый паттерн «generation token» для прогрессивного рендеринга — применим везде, где async-batches могут пережить state change. Контракт: `let renderGeneration = 0;` в module scope, инкремент в начале render, abort-check в каждом async-callback.
+- `storageService.save()` теперь имеет explicit `{ok, error}` контракт. При добавлении новых persist-точек — следовать тому же паттерну (никаких silent-fail при критичных операциях).
+
+### Возможные регрессии (для ручной проверки)
+
+- Криteria header — после обновления **Ctrl+Shift+R** (новый DOM-layout). Если пользователь имеет старую expand-state, она восстановится через `data-expanded` snapshot.
+- `localStorage`, в котором лежал `ui.density === 'cozy'`, автоматически нормализуется в `'comfortable'` при первой загрузке.
+
+---
+
 ## Версия: май 2026 (обновление 8.29.6) — PWA desktop icon: документация OneDrive Folder Backup
 
 **Только документация.** В коде PLANNER изменений нет — иконки и PNG-инфраструктура остаются от 8.29.5.

@@ -47,8 +47,9 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
     const filteredTasks = filterTasks(state.tasks || [], state.taskFilter);
 
     if (filteredTasks.length === 0) {
+        // v8.30.0: было inline `style.cssText` — перенесено в `.task-list-empty`.
         const emptyMessage = document.createElement('div');
-        emptyMessage.style.cssText = 'text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;';
+        emptyMessage.className = 'task-list-empty';
         emptyMessage.textContent = (state.taskFilter?.search || state.taskFilter?.type)
             ? 'Нет задач, соответствующих поиску/фильтру'
             : 'В спринте нет задач. Добавьте первую задачу';

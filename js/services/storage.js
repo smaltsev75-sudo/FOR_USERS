@@ -1,10 +1,25 @@
 // js/services/storage.js
+//
+// v8.30.0: save() возвращает status-объект `{ok, error}` вместо тихого глотания.
+// Раньше QuotaExceededError / SecurityError проглатывались — пользователь
+// получал «успешное» сохранение и терял рабочий день после F5. Теперь вызывающая
+// сторона (app.saveToLS) реагирует на `!ok` и показывает snackbar.
+
+/** @typedef {{ ok: true } | { ok: false, error: string }} SaveResult */
+
 export const storageService = {
+    /**
+     * Сохраняет состояние в localStorage.
+     * @param {Object} data — нормализованное состояние
+     * @returns {SaveResult} `{ok:true}` при успехе либо `{ok:false, error}` при сбое.
+     */
     save(data) {
         try {
             localStorage.setItem('sprintPlannerData', JSON.stringify(data));
-        } catch {
-            // Игнорируем ошибки квоты/безопасности, чтобы не прерывать работу приложения.
+            return { ok: true };
+        } catch (err) {
+            const name = (err && (err.name || err.message)) || 'StorageError';
+            return { ok: false, error: String(name) };
         }
     },
 

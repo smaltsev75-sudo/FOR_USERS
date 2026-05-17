@@ -33,7 +33,18 @@ function buildPriorityBadgeHtml(level, label, score) {
 
 let lastHandledAddedTaskId = null;
 
-const VALID_DENSITIES = ['compact', 'comfortable', 'cozy'];
+// v8.30.0: счётчик поколений рендера для отмены stale-batch'ей.
+// Прогрессивный рендеринг (idle-callback батчи после первых 20 задач) держал
+// closure на `remaining` от старого state. Если приходил новый renderTaskList()
+// до завершения батчей, старый callback продолжал дозаливать stale-карточки
+// в уже очищенный новый список. Каждый renderTaskList() инкрементирует
+// generation; pending callback'и сверяются и абортируются если не совпадает.
+let renderGeneration = 0;
+
+/** @internal Тестовый хук — текущее поколение рендера. */
+export function _getRenderGeneration() { return renderGeneration; }
+
+const VALID_DENSITIES = ['compact', 'comfortable'];
 
 export function filterTasks(tasks, taskFilter) {
     let filtered = [...tasks];
@@ -88,6 +99,10 @@ export function renderTaskList(state, nfs, taskController = null) {
     const taskListEl = document.getElementById('taskList');
     if (!taskListEl) return;
 
+    // v8.30.0: новое поколение — pending idle-callback'и старого рендера
+    // увидят расхождение и абортятся (см. renderNextBatch ниже).
+    const myGeneration = ++renderGeneration;
+
     // v8.27.2: snapshot prior priority-score значений для pulse-анимации
     // изменившихся чисел после re-render. Хранится по task.id.
     const previousScores = new Map();
@@ -114,8 +129,9 @@ export function renderTaskList(state, nfs, taskController = null) {
     const filteredTasks = filterTasks(state.tasks, state.taskFilter);
 
     if (filteredTasks.length === 0) {
+        // v8.30.0: было inline `style.cssText` — перенесено в `.task-list-empty`.
         const emptyMessage = document.createElement('div');
-        emptyMessage.style.cssText = 'text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;';
+        emptyMessage.className = 'task-list-empty';
         emptyMessage.textContent = (state.taskFilter?.search || state.taskFilter?.type)
             ? 'Нет задач, соответствующих поиску/фильтру'
             : 'В спринте нет задач. Добавьте первую задачу';
@@ -154,6 +170,8 @@ export function renderTaskList(state, nfs, taskController = null) {
         const remaining = filteredTasks.slice(BATCH_SIZE);
         let i = 0;
         const renderNextBatch = (deadline) => {
+            // v8.30.0: abort если новый render() стартовал.
+            if (myGeneration !== renderGeneration) return;
             const batchFragment = document.createDocumentFragment();
             while (i < remaining.length && (typeof deadline === 'undefined' || deadline.timeRemaining() > 5)) {
                 batchFragment.appendChild(renderTask(remaining[i], BATCH_SIZE + i));

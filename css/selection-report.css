@@ -61,6 +61,11 @@
    color: var(--accent);
    padding-bottom: 4px;
    border-bottom: 1px solid var(--border);
+   /* v8.30.0: icon (SVG) + текст в одной строке */
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   margin-bottom: 12px;
 }
 
 .rec-card {
@@ -126,6 +131,50 @@
    border-top: 1px dashed var(--border);
    padding-top: 6px;
    margin-top: 6px;
+   /* v8.30.0: было «💡 текст», стало `[svg][span]` — flex для alignment */
+   display: flex;
+   align-items: flex-start;
+   gap: 6px;
+}
+
+.rec-card-suggestion .icon {
+   flex-shrink: 0;
+   margin-top: 1px;
+   color: var(--accent);
+}
+
+/* v8.30.0: ранее inline-styles в JS — перенесены сюда */
+.rec-cards {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.rec-card--full {
+   width: 100%;
+}
+
+.rec-card--empty {
+   text-align: center;
+   color: var(--text-muted);
+}
+
+.rec-section-title--center {
+   text-align: center;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 6px;
+}
+
+.rec-section-title .icon {
+   flex-shrink: 0;
+}
+
+.rec-empty {
+   text-align: center;
+   padding: 20px;
+   color: var(--text-muted);
 }
 
 .algorithms-grid {

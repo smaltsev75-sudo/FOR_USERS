@@ -18,15 +18,16 @@ import { icon } from '../utils/icons.js';
  * @returns {string}
  */
 export function generateScaleEditorHTML(scale = {}) {
+    // v8.30.0: inline-style на <textarea> перенесён в `.scale-description--editor`
+    // (см. css/criteria.css). Раньше дублировал параметры между JS-string и CSS.
     let html = '';
     for (let i = 1; i <= 10; i++) {
         const description = scale[i] || '';
         const escaped = escapeHtml(description);
         html += '<div class="scale-item">' +
             '<div class="scale-score">' + i + '</div>' +
-            '<textarea class="scale-description" id="scale_' + i + '" ' +
-            'placeholder="Описание значения шкалы (опционально)" ' +
-            'style="font-size:0.75rem; padding:6px; height:40px; width:100%; box-sizing:border-box;">' +
+            '<textarea class="scale-description scale-description--editor" id="scale_' + i + '" ' +
+            'placeholder="Описание значения шкалы (опционально)">' +
             escaped + '</textarea>' +
             '</div>';
     }
@@ -98,13 +99,20 @@ function buildCriteriaItemHtml(criterion) {
     const safeRationale = escapeHtml(criterion.rationale || '');
     const weight = Number(criterion.weight) || 0;
 
+    // v8.30.0 (a11y): header больше не role=button. Toggle вынесен в отдельную
+    // нативную <button>. Раньше header был role=button + tabindex=0, а внутри
+    // лежали focusable input/buttons — axe-core помечал как «nested interactive»
+    // (WCAG 4.1.2). Теперь grip + weight + actions — siblings toggle-кнопки.
     return `
 <div class="criteria-item" data-id="${id}" data-expanded="false">
-    <div class="criteria-item-header" role="button" tabindex="0" aria-expanded="false" aria-controls="criteriaBody_${id}" data-action="toggleExpand" data-id="${id}">
-        <span class="criteria-item-grip" data-action="dragHandle" aria-label="Перетащить для изменения порядка" title="Перетащить для изменения порядка">${icon('gripVertical')}</span>
-        <span class="criteria-abbreviation" title="Аббревиатура">${safeAbbreviation}</span>
-        <h4 class="criteria-name">${safeName}</h4>
-        <span class="criteria-weight-control" data-no-toggle="true">
+    <div class="criteria-item-header">
+        <span class="criteria-item-grip" data-action="dragHandle" role="img" aria-label="Перетащить для изменения порядка" title="Перетащить для изменения порядка">${icon('gripVertical')}</span>
+        <button type="button" class="criteria-item-toggle-btn" aria-expanded="false" aria-controls="criteriaBody_${id}" data-action="toggleExpand" data-id="${id}" aria-label="Раскрыть критерий ${safeName}">
+            <span class="criteria-abbreviation" title="Аббревиатура">${safeAbbreviation}</span>
+            <span class="criteria-name">${safeName}</span>
+            <span class="criteria-item-chevron" aria-hidden="true">▶</span>
+        </button>
+        <span class="criteria-weight-control">
             <input
                 type="number"
                 class="criteria-weight-input"
@@ -119,11 +127,10 @@ function buildCriteriaItemHtml(criterion) {
             >
             <span class="criteria-weight-suffix">%</span>
         </span>
-        <span class="criteria-actions" data-no-toggle="true">
+        <span class="criteria-actions">
             <button type="button" class="criteria-icon-btn btn-edit-criteria-icon" data-action="editCriteria" data-id="${id}" title="Редактировать критерий" aria-label="Редактировать критерий">${icon('pencil')}</button>
             <button type="button" class="criteria-icon-btn btn-delete-criteria-icon" data-action="deleteCriteria" data-id="${id}" title="Удалить критерий" aria-label="Удалить критерий">${icon('trash')}</button>
         </span>
-        <span class="criteria-item-chevron" aria-hidden="true">▶</span>
     </div>
     <div class="criteria-body" id="criteriaBody_${id}" hidden>
         <p class="criteria-rationale">${safeRationale}</p>
@@ -192,15 +199,16 @@ export function renderCriteriaList(state, _nfs) {
 
     criteriaListEl.innerHTML = html;
 
-    // Восстанавливаем раскрытые карточки (которые пользователь открыл до re-render)
+    // Восстанавливаем раскрытые карточки (которые пользователь открыл до re-render).
+    // v8.30.0: aria-expanded переехал с header (role=button) на .criteria-item-toggle-btn.
     expandedIds.forEach(id => {
         const item = criteriaListEl.querySelector(`.criteria-item[data-id="${id}"]`);
         if (item) {
             item.dataset.expanded = 'true';
             item.classList.add('is-expanded');
-            const header = item.querySelector('.criteria-item-header');
+            const toggleBtn = item.querySelector('.criteria-item-toggle-btn');
             const body = item.querySelector('.criteria-body');
-            if (header) header.setAttribute('aria-expanded', 'true');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
             if (body) body.removeAttribute('hidden');
         }
     });
