@@ -65,12 +65,19 @@ function highlightNewTask(state, taskListEl) {
     if (!state.lastAddedTaskId || state.lastAddedTaskId === lastHandledAddedTaskId) return;
     const addedTaskId = state.lastAddedTaskId;
 
-    // Сначала делаем скролл, затем добавляем подсветку
+    // v8.30.6: ограниченный retry. До v8.30.6 setTimeout(doHighlight, 100) без
+    // лимита крутился вечно, если активный фильтр скрывал созданную задачу —
+    // ресурсы расходовались даже после очистки lastAddedTaskId. Теперь:
+    //  - максимум 20 попыток × 100ms = 2 секунды (более чем достаточно для
+    //    прогрессивного рендера до 1000+ задач, см. progressive renderer в renderNextBatch).
+    //  - перед каждой попыткой проверяем, не сменился ли lastAddedTaskId
+    //    (новая задача создана) — тогда старый цикл сразу выходит.
+    const MAX_HIGHLIGHT_ATTEMPTS = 20;
+    let attempts = 0;
     const doHighlight = () => {
         const newTaskEl = taskListEl.querySelector(`.task-item[data-id="${addedTaskId}"]`);
         if (newTaskEl) {
             newTaskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Небольшая задержка чтобы скролл успел завершиться
             setTimeout(() => {
                 newTaskEl.classList.add('task-item-highlight');
             }, 300);
@@ -81,10 +88,16 @@ function highlightNewTask(state, taskListEl) {
                     el.classList.remove('task-item-highlight');
                 }
             }, 5000);
-        } else {
-            // Если элемент не найден, пробуем ещё раз
-            setTimeout(doHighlight, 100);
+            return;
         }
+        attempts++;
+        if (attempts >= MAX_HIGHLIGHT_ATTEMPTS) {
+            // Задача скрыта фильтром или удалена. Маркируем как обработанную,
+            // чтобы следующий render не зашёл сюда снова с тем же id.
+            lastHandledAddedTaskId = addedTaskId;
+            return;
+        }
+        setTimeout(doHighlight, 100);
     };
 
     doHighlight();

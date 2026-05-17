@@ -1,4 +1,20 @@
 /* print.css */
+
+/* v8.30.6: print-only timestamp рядом с версией приложения (скрыт в обычном UI). */
+.print-only-timestamp {
+    display: none;
+}
+
+@media print {
+    .print-only-timestamp {
+        display: inline !important;
+        margin-left: 6px;
+        font-weight: normal;
+        color: #333 !important;
+        font-size: 0.9em;
+    }
+}
+
 @media print {
     /* ---------- Скрываем всё лишнее ---------- */
     /* v8.30.1: ролевые est-box'ы и criteria-eval-item ВОЗВРАЩЕНЫ на печать —
@@ -493,11 +509,11 @@
         margin-left: 1px;
     }
 
+    /* v8.30.6: «Вклад в Priority Score» (+5,0 и т.п.) не выводим на печати —
+       нагружает строку метрик, при этом ту же информацию читатель восстановит
+       по score×weight/10. Скрываем здесь, а не удаляем из DOM (нужен в UI). */
     .criteria-eval-contribution {
-        display: inline !important;
-        font-size: 8.5pt !important;
-        color: #333 !important;
-        margin-left: 4px !important;
+        display: none !important;
     }
 
     /* Priority Score — inline в конце строки критериев, через левый бордер */

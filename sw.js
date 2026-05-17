@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.5-review-pass-4';
+const CACHE_VERSION = 'sp-v8.30.6-print-finalize-review-pass-5';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -183,8 +183,13 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Локальные ресурсы — Cache-First
+    // v8.30.6: { ignoreSearch: true } для same-origin static assets.
+    // index.html подключает CSS/JS с cache-bust query ?v=X.Y.Z, но precache
+    // хранит чистые пути './css/base.css'. Без ignoreSearch offline-запуск
+    // получает index.html из кэша, но промахивается по './css/base.css?v=...'
+    // и './js/app.js?v=...' → PWA offline без стилей и без логики.
     event.respondWith(
-        caches.match(event.request)
+        caches.match(event.request, { ignoreSearch: true })
             .then(cached => {
                 if (cached) return cached;
                 return fetch(event.request).then(response => {

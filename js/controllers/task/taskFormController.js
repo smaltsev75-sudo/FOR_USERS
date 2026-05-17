@@ -480,15 +480,19 @@ export class TaskFormController {
             this.store.getState().criteria
         );
 
+        // v8.30.6 P1 fix: доменное поле task.estimates → task.est.
+        // До v8.30.6 здесь писалось `estimates` (название локальной переменной),
+        // а normalizeTasks/createTask читают `task.est` → изменения часов через
+        // edit-modal терялись после следующего persist'а. Контракт см. js/domain/task.js.
         this.store.updateTask(this.editId, {
-            title, jira, type, comment, estimates, criteriaEvaluations
+            title, jira, type, comment, est: estimates, criteriaEvaluations
         });
         this._invalidateCaches();
         const editedId = this.editId;
         this.closeEditModal();
 
         if (this._onTaskEdited) {
-            this._onTaskEdited(editedId, { title, jira, type, comment, estimates, criteriaEvaluations });
+            this._onTaskEdited(editedId, { title, jira, type, comment, est: estimates, criteriaEvaluations });
         }
     }
 }

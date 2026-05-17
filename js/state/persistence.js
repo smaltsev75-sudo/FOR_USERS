@@ -6,6 +6,24 @@ import { fixTaskOrder } from '../domain/task.js';
 import { ROLES } from '../utils/constants.js';
 
 const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
+
+/**
+ * v8.30.6: defense-at-load для jira URL.
+ * Форма при создании/edit задачи валидирует URL через validateJiraUrl (только http/https),
+ * но импорт JSON просто `String(task.jira)` — malicious файл с
+ * `jira: 'javascript:alert(1)'` попадал в task.jira, затем рендерился в
+ * `<a href="${jira}">` напрямую. Фильтр здесь снимает риск, оставляя только
+ * http://… / https://… или пустую строку.
+ */
+function sanitizeJiraUrl(raw) {
+    const trimmed = String(raw ?? '').trim();
+    if (!trimmed) return '';
+    // Разрешаем относительные пути (без схемы) и http/https. Всё остальное —
+    // javascript:, data:, vbscript:, file: и т.д. — обнуляем.
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return ''; // любая другая схема
+    return trimmed; // относительный URL — допустим (без схемы → нельзя сделать XSS)
+}
 const DEFAULT_TASK_FILTER = { search: '', type: '' };
 const DEFAULT_TASK_SORT = { by: 'priority', order: 'desc' };
 // v8.29.1: + 'excluded' — для persist состояния 5-й секции (см. store.js).
@@ -139,7 +157,7 @@ function normalizeTasks(tasks = []) {
         return {
             id,
             title: String(task.title ?? '').trim(),
-            jira: String(task.jira ?? '').trim(),
+            jira: sanitizeJiraUrl(task.jira),
             type: normalizeTaskType(task.type),
             comment: String(task.comment ?? '').trim(),
             excluded: task.excluded ? 1 : 0,

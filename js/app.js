@@ -22,7 +22,7 @@ import { KeyboardController } from './controllers/keyboardController.js';
 import { migratePersistedState, serializeStateForStorage } from './state/persistence.js';
 import { ThemeController } from './controllers/themeController.js';
 import { DensityController } from './controllers/densityController.js';
-import { renderAppVersionBadge } from './ui/appVersionBadge.js';
+import { renderAppVersionBadge, bindPrintTimestamp } from './ui/appVersionBadge.js';
 import { showSnackbar } from './ui/snackbar.js';
 
 export class App {
@@ -86,6 +86,7 @@ export class App {
 
     init() {
         renderAppVersionBadge();
+        bindPrintTimestamp();
         this.themeController.init();
         this.densityController.init();
         this.configController.init();

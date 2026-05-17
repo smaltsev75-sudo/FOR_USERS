@@ -1,5 +1,46 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.6) — Print finalize + Review pass 5: PWA offline, jira XSS, edit estimates, retry bound
+
+Пользовательские запросы по печати + пятый проход независимого ревью с 3 P1 и 2 P2 находками.
+
+### Запросы по печати
+
+| Что | Как |
+|---|---|
+| Не выводить «Вклад в Priority Score» (`+5,0` и т.п.) на печати | `.criteria-eval-contribution { display: none }` в [print.css](../css/print.css). В UI остаётся, на печати скрыто. |
+| Добавить дату-время печати после версии в заголовке | Новый `#printTimestamp` рядом с `#appVersion`. `bindPrintTimestamp()` в [appVersionBadge.js](../js/ui/appVersionBadge.js) слушает `beforeprint` и пишет «(дата печати ДД.ММ.ГГГГ ЧЧ:ММ)». Скрыт в обычном UI (`display: none`), виден только при печати. |
+
+### Review pass 5
+
+| Пункт | Было | Стало |
+|---|---|---|
+| **P1 PWA offline ломался на CSS/JS с `?v=` query** | `index.html` подключает CSS через `?v=8.30.5`, но precache хранит чистые пути `./css/base.css`. После offline-перехода `caches.match(event.request)` промахивался по `./css/base.css?v=...` → PWA загружалась без стилей и без `app.js`. | [sw.js](../sw.js): `caches.match(event.request, { ignoreSearch: true })` для same-origin. Cache-bust query больше не ломает offline. |
+| **P1 jira href XSS из импортированного JSON** | `validateJiraUrl` срабатывала только в форме создания/edit; импорт через File → JSON сохранял `task.jira` как сырую строку. `jira: 'javascript:alert(1)'` рендерился в `<a href="...">` напрямую. | [persistence.js](../js/state/persistence.js): `sanitizeJiraUrl()` фильтр на import-boundary — http/https и relative пропускаются, любая другая схема → пустая строка. Unit-тесты в [persistence.jiraSanitize.test.js](../tests/unit/state/persistence.jiraSanitize.test.js) покрывают javascript:/data:/vbscript:/case-insensitive. |
+| **P1/P2 Edit-modal не сохраняет оценки трудозатрат** | `handleSaveEdit()` читал `readCreateTaskEstimates()` в `estimates`, и писал `{ estimates }` в `store.updateTask`. Доменное поле задачи — `task.est` (см. `domain/task.js:42`, `persistence.js:146`). Поле `estimates` сохранялось в state, но при следующем persist'е терялось — `normalizeTasks` читал `est`, а `estimates` молча уходил. | [taskFormController.js](../js/controllers/task/taskFormController.js): `updateTask(id, { est: estimates })` + симметрично в `_onTaskEdited`. Изменения часов через edit modal теперь живут после F5. |
+| **P2 `highlightNewTask` мог крутить retry бесконечно** | `setTimeout(doHighlight, 100)` без лимита. Если активный фильтр скрывал созданную задачу, цикл крутился вечно. | [taskList.js](../js/ui/taskList.js): `MAX_HIGHLIGHT_ATTEMPTS = 20` (2 секунды × 100ms). После лимита `lastHandledAddedTaskId = addedTaskId` — отмечаем как обработанный, чтобы render не зашёл сюда снова. |
+| **P2 ARCHITECTURE.md устарел** | Line 154: «приоритет 80», «приоритет 90» — старая шкала. Line 421: «186 тестов (v8.29.2)» — устаревший счётчик. | Шкала скорректирована (Priority Score 8,0 / 9,0 → VD 0,80 / 0,225). Счётчики тестов убраны, ссылка на RELEASE_NOTES. Добавлено упоминание `print-verify.spec.js`. |
+| **P2 RELEASE_NOTES.md битые относительные ссылки** | 14 ссылок `]( js/`, `]( css/`, `]( tests/` указывали на путь относительно репо-корня, но RELEASE_NOTES.md лежит в `docs/` — github рендерил их как `docs/js/...` → 404. | Bulk fix через perl: `]( js/` → `]( ../js/` и т.д. Все 14 → 52 ссылки с корректным `../`. |
+
+### Метрики
+
+| Метрика | v8.30.5 | v8.30.6 |
+|---|---|---|
+| Unit-тесты | 1130 PASS | **1138 PASS** (+8: jira sanitize) |
+| E2E | 190 PASS | 190 PASS |
+| Lint | clean | clean |
+| npm audit | 0 vulns | 0 vulns |
+| Print: «Вклад» в строке метрик | да | **скрыт** |
+| Print заголовок | без timestamp | **с timestamp** «v8.30.6 (дата печати ДД.ММ.ГГГГ ЧЧ:ММ)» |
+| PWA offline после v8.30.6 | CSS/JS не загружались с cache-bust query | **полная загрузка** благодаря `ignoreSearch: true` |
+
+### P3 (отложено)
+
+- Tooling dependency refresh: `npm outdated` показывает старые Playwright, ESLint, Babel, axe-core, c8. Требует отдельной задачи с полным прогоном e2e после каждого мажорного апа.
+- UserManual.md inline `<style>` блок (60 строк): dead code (DOMPurify strip'ает в in-app, github игнорирует). Удалить безопасно, но требует визуальной верификации.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.5) — Code-review pass 4: error UX, sanitize unification, filename guard, docs sync
 
 Четвёртый проход ревью обнаружил 4 неблокирующих, но реальных пропуска + 4 расхождения документации с реализацией.
@@ -501,11 +542,11 @@ desktop-shortcut'а растеризует иконку через offscreen-ren
 
 ### Что изменилось
 
-- `getOptimizationRecommendations` ([analysis.js](js/domain/selection/analysis.js))
+- `getOptimizationRecommendations` ([analysis.js](../js/domain/selection/analysis.js))
   теперь добавляет сырое поле `percentage: <number>` ко всем `team-*`
   рекомендациям (`team-underload`, `team-overload`, `team-optimal`) —
   чтобы UI мог группировать дубли по `type` и склеивать проценты.
-- В [selectionRecommendations.js](js/ui/selectionRecommendations.js)
+- В [selectionRecommendations.js](../js/ui/selectionRecommendations.js)
   старый dedup по `message` (ломался из-за разных процентов в строке)
   заменён на новый helper `aggregateGeneralRecommendations()`:
   - Группировка по `rec.type`
@@ -751,7 +792,7 @@ BEM-параллелей или дублирующих токен-файлов �
   `title="..."` с пояснением: что измеряется + как интерпретировать
   значение. Hover на любой строке метрики на десктопе, long-press на
   сенсорных устройствах. Тексты — в новой экспортной константе
-  [`METRIC_HINTS`](js/ui/selectionReport.js).
+  [`METRIC_HINTS`](../js/ui/selectionReport.js).
 - **Бейджи в featured-баннере «Рекомендация»** (4 шт.) — те же тексты,
   чтобы при наведении на сжатый бейдж пользователь видел ту же
   расшифровку, что и в развёрнутой карточке ниже.
@@ -1021,32 +1062,32 @@ WCAG-нарушений. После двух проходов: lint clean, 949 u
   `.role-total-numbers`, `.role-total-numbers-row`, `.role-total-numbers--bold`,
   `.progress-bg--spaced`, `.res-grid-header--inputs` — реликты старого roleList,
   заменённого на `team-cap__card` в Stream A v8.21. Очищены пять CSS-файлов
-  ([css/components.css](css/components.css), [css/forms.css](css/forms.css),
-  [css/layout.css](css/layout.css), [css/responsive.css](css/responsive.css),
-  [css/print.css](css/print.css), [css/a11y.css](css/a11y.css),
-  [css/capacity-strip.css](css/capacity-strip.css)).
-- BC-fallback в [js/controllers/roleController.js](js/controllers/roleController.js)
+  ([css/components.css](../css/components.css), [css/forms.css](../css/forms.css),
+  [css/layout.css](../css/layout.css), [css/responsive.css](../css/responsive.css),
+  [css/print.css](../css/print.css), [css/a11y.css](../css/a11y.css),
+  [css/capacity-strip.css](../css/capacity-strip.css)).
+- BC-fallback в [js/controllers/roleController.js](../js/controllers/roleController.js)
   удалён (`getElementById('capacityStrip') || getElementById('roleList')` →
-  `getElementById('capacityStrip')`). Юнит-тест [tests/unit/controllers/roleController.test.js](tests/unit/controllers/roleController.test.js)
+  `getElementById('capacityStrip')`). Юнит-тест [tests/unit/controllers/roleController.test.js](../tests/unit/controllers/roleController.test.js)
   обновлён на новый fixture.
 
 ### Возвращён View toggle в toolbar
 
-- [js/app.js:111-118](js/app.js#L111-L118) явно сбрасывал
+- [js/app.js:111-118](../js/app.js#L111-L118) явно сбрасывал
   `state.ui.viewMode` к `'list'` при старте — защитный clamp от UI-orphan'а,
   потому что после v8.25 toolbar refactor кнопок в DOM не было. Это убивало
   персистентность viewMode при F5 (даже когда пользователь явно выбирал
   «Квадранты»).
 - Восстановлена пара кнопок `#viewModeListBtn` / `#viewModeQuadrantsBtn` в
-  [index.html](index.html) toolbar; CSS уже существовал
-  ([css/task-card.css:1023+](css/task-card.css#L1023)). Clamp снят. Density
+  [index.html](../index.html) toolbar; CSS уже существовал
+  ([css/task-card.css:1023+](../css/task-card.css#L1023)). Clamp снят. Density
   «cozy» по-прежнему клампится — DOM поддерживает только `compact/comfortable`.
 
 ### Фикс WCAG color-contrast (axe-core, 5 нарушений → 0)
 
 - `.matrix-total[data-type="bug|tech"]` percent-цифра — введены усиленные
   токены `--bug-color-strong`, `--tech-color-strong` для **обеих** тем
-  ([css/base.css](css/base.css)), используются только в `.matrix-total*`.
+  ([css/base.css](../css/base.css)), используются только в `.matrix-total*`.
   Контраст с фоном `.total-row` теперь ≥ 4.5:1 (было 2.85–4.26).
 - `.matrix-total__value` (часы) — переключён на `--text-muted-strong` (4.5+:1
   на `.total-row`, было 4.3–4.4).
@@ -1055,7 +1096,7 @@ WCAG-нарушений. После двух проходов: lint clean, 949 u
 
 ### Синхронизирован e2e-suite с v8.25/v8.27 DOM (40 fail → 0)
 
-- **`createTask` helper** в [tests/e2e/planner.spec.js](tests/e2e/planner.spec.js)
+- **`createTask` helper** в [tests/e2e/planner.spec.js](../tests/e2e/planner.spec.js)
   — `selectOption('#newType', type)` → `click('.cf-seg-btn[data-type="..."]')`
   (v8.27 unified form: type стал segmented `<button role="radio">`, не `<select>`).
   Чинит 18 тестов.
