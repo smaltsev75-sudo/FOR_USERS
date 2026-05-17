@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.2-review-pass-2';
+const CACHE_VERSION = 'sp-v8.30.3-print-compact-inline';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -152,13 +152,29 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
 
+    // v8.30.3: cache-poisoning fix — не складывать в cache 404/500/opaque-error
+    // ответы. До v8.30.3 любой неудачный fetch отравлял offline-cache: после
+    // временной 503 от CDN или 404 на новом ассете пользователь видел ошибку
+    // даже после восстановления сети, пока кэш не сбрасывался руками.
+    // Условие cacheable:
+    //   - response.ok (2xx)
+    //   - response.type === 'basic' (same-origin) или 'cors' (явный CORS).
+    //     'opaque' (no-cors) кэшируем только если это известный whitelist —
+    //     для PLANNER нет таких ресурсов, потому опускаем.
+    const isCacheableResponse = (response) =>
+        response &&
+        response.ok &&
+        (response.type === 'basic' || response.type === 'cors');
+
     // Внешние ресурсы (CDN) — Network-First
     if (url.origin !== self.location.origin) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    const clone = response.clone();
-                    caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+                    if (isCacheableResponse(response)) {
+                        const clone = response.clone();
+                        caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+                    }
                     return response;
                 })
                 .catch(() => caches.match(event.request))
@@ -172,8 +188,10 @@ self.addEventListener('fetch', (event) => {
             .then(cached => {
                 if (cached) return cached;
                 return fetch(event.request).then(response => {
-                    const clone = response.clone();
-                    caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+                    if (isCacheableResponse(response)) {
+                        const clone = response.clone();
+                        caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+                    }
                     return response;
                 });
             })

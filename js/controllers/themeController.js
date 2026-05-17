@@ -19,8 +19,11 @@ export class ThemeController {
         this._btn = document.getElementById('themeToggleBtn');
         if (!this._btn) return;
 
-        // Восстанавливаем тему из localStorage (или системные предпочтения)
-        const saved = localStorage.getItem(THEME_KEY);
+        // v8.30.3: try/catch вокруг getItem — Safari private mode и заблокированный
+        // Storage Access бросают SecurityError. Без обёртки init() падал и тогглер
+        // не подключался. Симметрично _applyTheme, где setItem уже в try/catch.
+        let saved = null;
+        try { saved = localStorage.getItem(THEME_KEY); } catch { /* SecurityError → fallback */ }
         const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
         const initial = saved || (prefersDark ? DARK : LIGHT);
         this._applyTheme(initial);

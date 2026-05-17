@@ -275,42 +275,50 @@
         font-weight: normal !important;
     }
 
-    /* ---------- v8.30.2: ДЕТАЛЬНЫЕ ОЦЕНКИ ТРУДОЗАТРАТ ПО РОЛЯМ ---------- */
-    /*
-     * v8.30.1 layout (grid auto-fit + display:contents на est-box-header) был
-     * сломан: input первого бокса визуально вылезал в начало следующей grid-cell —
-     * пользователь видел «UI/UX:    CA:1 ч   0,FE:   5,BE:   2,QA:   3,0 ч».
-     * Числа смещались на одну колонку вправо относительно labels.
+    /* ---------- v8.30.3: КОМПАКТНЫЙ INLINE-LAYOUT КАК В СПИСКЕ ЗАДАЧ ----------
      *
-     * v8.30.2 решение: блочный layout — каждая роль на отдельной строке.
-     * Никаких grid-cell разрывов и flex-shrink сюрпризов.
+     * v8.30.1: grid auto-fit + display:contents → input первого бокса
+     *          вылезал в начало следующей grid-cell.
+     * v8.30.2: блочный layout (каждая роль на своей строке) — лечил смещение,
+     *          но раздувал высоту строки задачи до 12+ строк. Пользователь:
+     *          «почему нельзя все оценки при печати отобразить так как они
+     *          отображаются с списке задач — c минимальным размером высоты».
+     * v8.30.3: inline-flex одна строка для всех ролей, одна строка для критериев.
+     *          Высота задачи: было ~12 строк → стало 4 строки (заголовок + URL +
+     *          оценка трудозатрат + метрики приоритета).
      */
-    .task-estimates {
-        display: block !important;
-        padding-top: 8px !important;
-        margin-top: 8px !important;
-        border-top: 1px dashed #999 !important;
-    }
 
+    /* Inline-метка «Оценка трудозатрат:» */
     .task-estimates-label,
     .criteria-section-label {
+        display: inline-block !important;
         font-weight: bold !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
         text-transform: none !important;
         letter-spacing: 0 !important;
-        margin-bottom: 6px !important;
-        display: block !important;
+        margin-right: 8px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Контейнер всех ролевых est-box'ов — одна горизонтальная строка */
+    .task-estimates {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: baseline !important;
+        gap: 4px 12px !important;
+        padding-top: 5px !important;
+        margin-top: 5px !important;
+        border-top: 1px dashed #999 !important;
+        font-size: 9pt !important;
+        line-height: 1.35 !important;
     }
 
     .task-estimates-grid,
-    .task-estimates-roles,
-    .criteria-row-body,
-    .criteria-evaluation {
-        display: block !important;
+    .task-estimates-roles {
+        display: contents !important;
     }
 
-    /* est-box-header был display:flex — это и ломало layout в grid. */
     .est-box-header {
         display: contents !important;
     }
@@ -319,21 +327,23 @@
         display: none !important;
     }
 
-    /* Ролевой est-box = одна строка: «UI/UX: 5,0 ч» */
+    /* Ролевой est-box: «UI/UX: 5,0ч» в одну линию */
     .est-box:not(.est-box-total) {
-        display: block !important;
-        padding: 1px 0 !important;
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 2px !important;
+        padding: 0 !important;
         border: none !important;
         background: transparent !important;
         min-height: 0 !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
-        line-height: 1.5 !important;
+        white-space: nowrap !important;
     }
 
     .est-box .est-role-label {
-        display: inline-block !important;
-        font-size: 10pt !important;
+        display: inline !important;
+        font-size: 9pt !important;
         font-weight: normal !important;
         color: black !important;
         text-transform: none !important;
@@ -341,7 +351,7 @@
         max-width: none !important;
         overflow: visible !important;
         white-space: nowrap !important;
-        min-width: 80px !important;
+        min-width: 0 !important;
     }
 
     .est-box .est-role-label::after {
@@ -357,35 +367,36 @@
 
     .task-estimates .est-input-container input {
         display: inline-block !important;
-        /* v8.30.2: фиксированная узкая ширина — иначе browser default ~173px
-           создаёт большой пробел между числом и суффиксом «ч». 3.5em покрывает
-           значения до 999,9 включительно. text-align:left прижимает число к
-           левому краю, рядом с label. */
-        width: 3.5em !important;
+        width: 2.6em !important;
         min-width: 0 !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
         color: black !important;
         font-weight: bold !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         text-align: left !important;
     }
 
     .est-box-suffix {
         display: inline !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
-        margin-left: 3px !important;
+        margin-left: 1px !important;
     }
 
-    /* Σ Effort total — тоже отдельной строкой, выделен. */
+    /* Σ Effort total в той же строке, выделен padding'ом и bold'ом */
     .est-box-total {
-        display: block !important;
-        margin-top: 4px !important;
-        padding-top: 4px !important;
-        border-top: 1px solid #ccc !important;
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 3px !important;
+        margin: 0 0 0 8px !important;
+        padding: 0 0 0 8px !important;
+        border-left: 1px solid #ccc !important;
+        border-top: none !important;
         font-weight: bold !important;
+        font-size: 9pt !important;
+        white-space: nowrap !important;
     }
 
     .est-box-total .task-effort-value,
@@ -399,24 +410,38 @@
         display: none !important;
     }
 
-    /* ---------- v8.30.2: МЕТРИКИ ПРИОРИТЕТА ПО КАЖДОМУ КРИТЕРИЮ ---------- */
-    /* Каждый критерий = одна строка: «OKR 40%   8/10   +5,0» */
+    /* ---------- v8.30.3: МЕТРИКИ ПРИОРИТЕТА — одна inline-строка ---------- */
     .criteria-row {
-        display: block !important;
-        padding-top: 8px !important;
-        margin-top: 8px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: baseline !important;
+        gap: 4px 10px !important;
+        padding-top: 5px !important;
+        margin-top: 5px !important;
         border-top: 1px dashed #999 !important;
         page-break-inside: avoid;
+        font-size: 9pt !important;
+        line-height: 1.35 !important;
+    }
+
+    .criteria-row-body,
+    .criteria-evaluation {
+        display: contents !important;
     }
 
     .criteria-eval-item {
-        display: block !important;
-        padding: 1px 0 !important;
+        display: inline-flex !important;
+        /* v8.30.3 fix: base CSS задаёт flex-direction:column для chip-вёрстки —
+           в print обязательно сбрасываем в row, иначе weight/contribution/score
+           укладываются друг под другом и задача снова занимает 4 строки. */
+        flex-direction: row !important;
+        align-items: baseline !important;
+        gap: 2px !important;
+        padding: 0 !important;
         border: none !important;
         background: transparent !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
-        line-height: 1.5 !important;
         white-space: nowrap !important;
     }
 
@@ -425,18 +450,18 @@
     }
 
     .criteria-eval-abbreviation {
-        display: inline-block !important;
+        display: inline !important;
         font-weight: bold !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
-        min-width: 80px !important;
+        min-width: 0 !important;
     }
 
     .criteria-eval-weight {
         display: inline !important;
-        font-size: 9pt !important;
+        font-size: 8.5pt !important;
         color: #333 !important;
-        margin-right: 8px !important;
+        margin: 0 2px !important;
     }
 
     .criteria-eval-weight::before { content: "("; }
@@ -453,7 +478,7 @@
     .criteria-eval-score {
         display: inline !important;
         font-weight: bold !important;
-        font-size: 10pt !important;
+        font-size: 9pt !important;
         color: black !important;
         padding: 0 !important;
         background: transparent !important;
@@ -464,25 +489,30 @@
     .criteria-eval-score::after {
         content: "/10";
         font-weight: normal;
-        font-size: 9pt;
+        font-size: 8.5pt;
         color: #333;
-        margin-left: 2px;
+        margin-left: 1px;
     }
 
     .criteria-eval-contribution {
         display: inline !important;
-        font-size: 9pt !important;
+        font-size: 8.5pt !important;
         color: #333 !important;
-        margin-left: 12px !important;
+        margin-left: 4px !important;
     }
 
-    /* Priority Score итог — отдельной строкой под критериями. */
+    /* Priority Score итог — inline в конце строки критериев, через левый бордер */
     .criteria-row-body .priority-score-container {
-        display: block !important;
-        margin-top: 6px !important;
-        padding-top: 6px !important;
-        border-top: 1px solid #ccc !important;
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 3px !important;
+        margin: 0 0 0 8px !important;
+        padding: 0 0 0 8px !important;
+        border-left: 1px solid #ccc !important;
+        border-top: none !important;
         font-weight: bold !important;
+        font-size: 9pt !important;
+        white-space: nowrap !important;
     }
 
     .priority-score-icon {
@@ -493,5 +523,15 @@
     .priority-score-value {
         display: inline !important;
         color: black !important;
+    }
+
+    /* Сжимаем сам контейнер задачи, чтобы между строками не было лишнего воздуха */
+    .task-item {
+        margin-bottom: 6px !important;
+        padding: 6px 8px !important;
+    }
+
+    .task-row {
+        margin-bottom: 3px !important;
     }
 }

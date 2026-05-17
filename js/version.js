@@ -9,4 +9,4 @@
 // Обновляется через scripts/bump-version.mjs (см. docs/RELEASE_PROCESS.md).
 // Тест tests/unit/version.test.js проверяет, что все источники согласованы.
 
-export const APP_VERSION = 'v8.30.2';
+export const APP_VERSION = 'v8.30.3';

@@ -1,5 +1,34 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.3) — Code-review pass 3: XSS guard, theme private-mode, SW cache-poisoning, jest 30, print compact, UserManual fix
+
+Третий проход ревью + жалоба на печать выявили **6 пропусков** (включая 1 P1 security + 2 P1/P2 reliability) и устаревший раздел UserManual.
+
+### Что починено
+
+| Пункт | Было | Стало |
+|---|---|---|
+| **P1 XSS в форме создания задачи (impact: critical, vector: импорт JSON с malicious критериями)** | `taskFormController.populateCreateCriteriaSelects()` вставлял `${c.abbreviation}` raw в innerHTML, а `c.name` экранировал только кавычки. Импорт критерия с abbreviation `<img src=x onerror=...>` исполнял JS при открытии формы. | Все три поля (`name`, `abbreviation`, числовые `id`/`weight`) проходят через `escapeHtml()` / `parseInt`. Regression-тест [`tests/unit/controllers/taskFormController.xss.test.js`](../tests/unit/controllers/taskFormController.xss.test.js) подаёт malicious payload и проверяет, что в DOM нет `<img>`/`<script>`-узлов и `window.__xss*` sentinel-переменные не установлены. |
+| **P1/P2 Тема ломала старт приложения в Safari private mode** | Head-script в [index.html](../index.html) и `ThemeController.init()` вызывали `localStorage.getItem()` без try/catch. В private/заблокированном Storage Access `getItem` бросает SecurityError ДО загрузки CSS — приложение падало до первого render'а. | Обе точки обёрнуты в try/catch с fallback'ом на `matchMedia('(prefers-color-scheme:dark)')`. Симметрично setItem в `_applyTheme`, который уже был в try/catch с v8.30.2. |
+| **P2 SW кэшировал 404/500 (cache-poisoning)** | `sw.js` клал в кэш ЛЮБОЙ ответ из `fetch()` — включая 4xx/5xx и opaque. Временный сбой CDN → пользователь продолжал видеть error-page до ручного сброса кэша. | Добавлен helper `isCacheableResponse(response)` (`response.ok` + `type === 'basic'/'cors'`). Архитектурный инвариант [`tests/unit/architecture/sw-cache-poisoning.test.js`](../tests/unit/architecture/sw-cache-poisoning.test.js) парсит sw.js и проверяет, что каждый `cache.put` обёрнут guard'ом. |
+| **P2 jsdom warning «Not implemented: navigation» в storage.test.js** | `storage.saveFile()` создавал реальный `<a>` и вызывал `.click()` — jsdom не реализует navigation, поэтому при каждом прогоне теста выводился console.error. | `HTMLAnchorElement.prototype.click` мокается на уровне prototype в обоих тестах `saveFile`. Console чист. |
+| **P3 Tooling drift: jest 29.7 vs jest-environment-jsdom 30.2** | Major-mismatch в Jest-стеке: DEP0205 warning, риск API-расхождений. | Весь стек (jest, babel-jest, jest-environment-jsdom) выровнен на 30.x. Deprecated alias `toBeCalled*` заменён на `toHaveBeenCalled*` в `tests/unit/utils/debounce.test.js`. `npm audit` остался clean. |
+| **Print rendering: огромная высота строки задачи (жалоба пользователя)** | v8.30.2 положил роли и критерии каждый на отдельную строку — задача с 5 ролями + 4 критериями занимала ~12 строк. Пользователь: «почему нельзя как в списке задач — с минимальным размером высоты?». | Переписано на inline-flex: все ролевые оценки в одну строку с `Σ EFFORT` в конце, все критерии в одну строку с `PRIORITY SCORE` в конце. Карточка задачи стала **3 строки** (заголовок + оценки + метрики) вместо 12. Корневая причина высоты — `flex-direction: column` в base CSS `.criteria-eval-item`; в print явно сбрасывается в `row !important`. Верификация: screenshot прогнан через Playwright + Read tool, layout проверен глазами. |
+| **UserManual.md устаревший текст про emoji-иконку** | Раздел «Исключение задачи» описывал переключение иконки на 🙈 (закрытый глаз), хотя реальный UI использует Lucide SVG `eye` / `eye-off` (v8.27+). Кнопка «Удалить всё» описана как «🗑️ Удалить всё» — реально SVG trash. | Оба раздела обновлены: упоминания emoji удалены, описана динамика SVG-иконки и dynamic tooltip с причиной исключения от алгоритма автоотбора. |
+
+### Метрики до/после
+
+| Метрика | Было (v8.30.2) | Стало (v8.30.3) |
+|---|---|---|
+| Unit-тесты | 1125 PASS | **1130 PASS** (+5: XSS regression x2, SW cache invariant x3) |
+| E2E | 190 PASS | **190 PASS** |
+| ESLint | clean | clean |
+| npm audit | 0 vulnerabilities | **0 vulnerabilities** |
+| Jest stack | 29.7 + jsdom 30.2 (mismatch) | **30.4 + 30.4 (aligned)** |
+| Print task card высота | ~12 строк/задача | **3 строки/задача** |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.2) — Code-review pass 2: PWA precache, persist completeness, scale-toggle keyboard, manifest cache-bust + print layout regression-fix
 
 Второй проход независимого ревью обнаружил **5 пропусков** моего self-audit'а

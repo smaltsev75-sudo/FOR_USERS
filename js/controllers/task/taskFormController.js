@@ -15,6 +15,7 @@ import {
 } from './formHelpers.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
 import { ROLES } from '../../utils/constants.js';
+import { escapeHtml } from '../../utils/escapeHtml.js';
 
 /**
  * Handles create/edit modal logic for tasks.
@@ -169,17 +170,24 @@ export class TaskFormController {
         // v8.30.2: inline-styles в labels/selects/grid → CSS-классы.
         // Grid columns задаются через CSS-property --n (динамическое значение,
         // оправдывает inline-style — единственный element с runtime value).
+        // v8.30.3: P1 XSS fix — было `replace(/"/g, '&quot;')` для name (только кавычки)
+        // и raw `${c.abbreviation}` в innerHTML. Malicious импорт критерия с
+        // abbreviation='<img src=x onerror=...>' исполнял скрипт. Теперь escapeHtml
+        // для обоих, плюс id/weight нормализованы как числа в persistence.
         criteria.forEach(c => {
-            const safeName = String(c.name).replace(/"/g, '&quot;');
+            const safeName = escapeHtml(c.name);
+            const safeAbbr = escapeHtml(c.abbreviation);
+            const safeId = Number.parseInt(c.id, 10) || 0;
+            const safeWeight = Number.parseInt(c.weight, 10) || 0;
             labelsHtml += `
                 <div class="create-criteria-label" title="${safeName}">
-                    <span class="create-criteria-weight-badge">${c.weight}%</span>
-                    ${c.abbreviation}
+                    <span class="create-criteria-weight-badge">${safeWeight}%</span>
+                    ${safeAbbr}
                 </div>
             `;
             selectsHtml += `
                 <div>
-                    <select id="criteria_${c.id}" class="criteria-score-select" data-criterion-id="${c.id}" aria-label="${safeName} оценка">
+                    <select id="criteria_${safeId}" class="criteria-score-select" data-criterion-id="${safeId}" aria-label="${safeName} оценка">
                         ${Array.from({ length: 11 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                     </select>
                 </div>
