@@ -205,6 +205,13 @@
     --best-value-bg: rgba(13, 98, 88, 0.2);
 }
 
+/* v8.30.6: print-only timestamp скрыт в обычном UI. Виден только при печати —
+   правило показа живёт в css/print.css (media="print"). Этот rule в base.css,
+   потому что base.css загружается всегда, а print.css только при печати. */
+.print-only-timestamp {
+    display: none;
+}
+
 body {
     background-color: var(--bg-main);
     color: var(--text);

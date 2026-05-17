@@ -1,5 +1,37 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.7) — Hot-fix: print timestamp protruded в UI + doc-comment drift
+
+### Hot-fix (жалоба пользователя)
+
+В v8.30.6 я (Claude) добавил `<span id="printTimestamp">` и rule `.print-only-timestamp { display: none }` в [css/print.css](../css/print.css). Промах: `print.css` подключён в [index.html](../index.html) с `media="print"` — он загружается ТОЛЬКО при печати, поэтому правило `display:none` не применялось в screen-режиме. Пользователь видел строку «(дата печати ДД.ММ.ГГГГ ЧЧ:ММ)» прямо в шапке UI рядом с версией.
+
+**Fix:** правило скрытия перенесено в [css/base.css](../css/base.css) (загружается всегда). В `print.css` остаётся только override `display: inline !important` внутри `@media print`. Регрессия-инвариант: e2e `print-timestamp` (timestamp скрыт в screen, виден в print) — проверял локально, временный test-файл удалён после приёмки.
+
+**Урок:** проверять `media`-атрибут CSS-link'а ПЕРЕД написанием default-rule. Если файл media-scoped — default rule живёт в base, не в этом файле. Записано в память.
+
+### Дополнительно — doc-comment drift (P3 ревью)
+
+| Файл | Было | Стало |
+|---|---|---|
+| [js/version.js](../js/version.js) | Комментарий «синхронизируется с 3 другими местами», включал RELEASE_NOTES. Реально bump обновляет 5 файлов и НЕ трогает RELEASE_NOTES. | Перечислены все 5 авто-обновляемых мест (package.json, version.js, sw.js, UserManual.md, index.html). Явно оговорено, что RELEASE_NOTES — manual. |
+| [scripts/bump-version.mjs](../scripts/bump-version.mjs) | Header: «синхронной правки в 4 местах». Реально targets 5. | Header обновлён, пятая запись (index.html `?v=`) добавлена с поясняющим комментарием. |
+| [docs/RELEASE_PROCESS.md](RELEASE_PROCESS.md) | «`**Версия: X.Y.Z** ...`» (bold) — не соответствует реальной строке UserManual. | Скорректировано на `*Версия документа: X.Y.Z (<месяц год>)*` (italic). |
+| [README.md](../README.md) | «Работает полностью в браузере, не требует сервера...» — противоречит секции «Запуск», где сказано про локальный HTTP-сервер. | Уточнено: «не требует backend, БД или внешних сервисов; запуск требует локальный HTTP-сервер для ES-модулей». |
+
+### Метрики
+
+| Метрика | v8.30.6 | v8.30.7 |
+|---|---|---|
+| Unit | 1138 PASS | 1138 PASS |
+| E2E | 190 PASS | 190 PASS |
+| Lint | clean | clean |
+| audit | 0 | 0 |
+| Timestamp в screen UI | **виден (баг)** | **скрыт** |
+| Timestamp в print | виден | виден |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.6) — Print finalize + Review pass 5: PWA offline, jira XSS, edit estimates, retry bound
 
 Пользовательские запросы по печати + пятый проход независимого ревью с 3 P1 и 2 P2 находками.

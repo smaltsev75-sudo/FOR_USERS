@@ -1,19 +1,7 @@
 /* print.css */
-
-/* v8.30.6: print-only timestamp рядом с версией приложения (скрыт в обычном UI). */
-.print-only-timestamp {
-    display: none;
-}
-
-@media print {
-    .print-only-timestamp {
-        display: inline !important;
-        margin-left: 6px;
-        font-weight: normal;
-        color: #333 !important;
-        font-size: 0.9em;
-    }
-}
+/* v8.30.6: ВНИМАНИЕ — этот файл подключён в index.html с media="print",
+   поэтому все правила здесь применяются ТОЛЬКО при печати. Скрытие
+   `.print-only-timestamp` в обычном UI живёт в base.css (загружается всегда). */
 
 @media print {
     /* ---------- Скрываем всё лишнее ---------- */
@@ -56,6 +44,16 @@
     .criteria-eval-bar-fill,
     .criteria-eval-step {
         display: none !important;
+    }
+
+    /* v8.30.6: print-only timestamp рядом с версией приложения. По умолчанию
+       скрыт через base.css (`display: none`), в print показываем как обычный
+       inline-текст в строке заголовка. */
+    .print-only-timestamp {
+        display: inline !important;
+        margin-left: 6px;
+        font-weight: normal;
+        font-size: 0.9em;
     }
 
     /* ---------- Общие настройки ---------- */
