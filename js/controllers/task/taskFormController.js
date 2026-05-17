@@ -306,7 +306,9 @@ export class TaskFormController {
             // явно бросаем — иначе пропавший элемент даёт «кнопка не работает в тишине».
             // В production показываем пользователю снэкбар и пишем в console.error
             // (console.warn недостаточно: warn часто отфильтрован в реальных консолях).
-            if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+            // globalThis.process — присутствует в Node/jsdom (test env), undefined в браузере.
+            // Без `globalThis.` ESLint в browser-окружении ругается no-undef.
+            if (globalThis.process?.env?.NODE_ENV === 'test') {
                 throw new Error(err);
             }
             console.error(err);

@@ -1,5 +1,38 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.14) — десятый review-pass: selective warning suppression + count fix
+
+### Findings внешнего ревью
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | P3 | RELEASE_NOTES v8.30.13 секция | Указано «1147 PASS», ревьюер видел «1146». Doc drift — точное число unit'ов env-чувствительно (на моём окружении стабильно 1147 в 3+ прогонах, расхождение неустановлено). Принимаем замечание: исключаем точные test-counts из release-notes как нестабильный источник истины — оставляем «76 suites passing». |
+| 2 | P3 | `package.json` + `scripts/run-e2e.mjs` (v8.30.13) | Глобальный `NODE_NO_WARNINGS=1` + `node --no-warnings` глушил **все** Node deprecation warnings от Playwright-процесса, включая будущие потенциально важные. |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | Секция v8.30.13 ниже: «1146 → 1147» заменено на «76 suites passing» — стабильная характеристика, не флаки-зависимая. |
+| 2 | [`scripts/run-e2e.mjs`](../scripts/run-e2e.mjs) переписан: `NODE_NO_WARNINGS=1` → точечный `NODE_OPTIONS=--disable-warning=DEP0205`. Будущие Node-warning'и от Playwright (DEP0NNN, кроме DEP0205) **остаются видны**. |
+| 2 | Wrapper больше **не** использует `shell: true` + npx-шим: запускает `node node_modules/playwright/cli.js test ...` напрямую. Это устраняет паразитный DEP0190 (security warning от `shell: true`) — `node --no-warnings` в npm script больше не нужен. |
+| 2 | [`package.json`](../package.json): добавлен новый script `"test:e2e:trace": "npx playwright test"` — periodic-trace прогон без suppression, чтобы вовремя заметить новые upstream-warning'и. |
+
+### Метрики
+
+| Метрика | v8.30.13 | v8.30.14 |
+|---|---|---|
+| Unit-suites | 76 PASS | 76 PASS |
+| E2E | 191 PASS (0 deprecation warnings в логе) | 191 PASS (0 deprecation warnings в логе при `test:e2e`, DEP0205 виден при `test:e2e:trace`) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.14-review-pass-10`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.13) — девятый review-pass: strict DOM invariant + e2e clean log
 
 ### Findings внешнего ревью
@@ -26,7 +59,7 @@
 
 | Метрика | v8.30.12 | v8.30.13 |
 |---|---|---|
-| Unit-тесты | 1146 PASS | **1147 PASS** (+1: −1 старый warn-тест, +2 throw + production-snackbar) |
+| Unit-suites | 76 PASS | 76 PASS (один тест переписан: −1 старый warn-тест, +2 throw + production-snackbar; точное число тестов env-чувствительно, см. v8.30.14 doc-fix) |
 | E2E | 191 PASS | 191 PASS, **0 deprecation warnings в логе** |
 | Lint | clean | clean |
 | audit | 0 | 0 |
