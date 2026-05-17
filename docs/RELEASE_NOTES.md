@@ -1,5 +1,51 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.8) — Tooling refresh + UserManual.md cleanup
+
+Закрытие двух ранее отложенных P3 debts (см. v8.30.5 и v8.30.6 release notes).
+
+### UserManual.md cleanup
+
+| Что | Как |
+|---|---|
+| Inline `<style>` блок (60 строк CSS в начале файла) | **Удалён.** DOMPurify USE_PROFILES html=true всё равно strip'ал `<style>` в in-app help → стили никогда не применялись там. На github страница рендерится без inline CSS-блоков. Эквивалентные правила (`.formula`, `.help-content table` и т.д.) уже живут в [css/help.css](../css/help.css) с актуальной темизацией через `var(--*)`. |
+| `<div class="user-manual">` обёртка | Удалена (рудимент inline-style, без CSS не имела смысла). |
+| Dead classes `.note`, `emoji-icon` | Удалены — в markdown не использовались. |
+
+**Верификация:** временный e2e-тест проверил: in-app help-модалка открывается, headings/tables/`.formula` рендерятся со стилями из `css/help.css`, в DOM нет `<style>` элемента. Скриншот просмотрен через Read tool — визуально идентично pre-v8.30.8.
+
+### Tooling refresh
+
+| Пакет | Было | Стало |
+|---|---|---|
+| `@playwright/test` | 1.58.2 | **1.60.0** (minor) |
+| `@axe-core/playwright` | 4.11.1 | **4.11.3** (patch) |
+| `@babel/preset-env` | 7.29.0 | **7.29.5** (patch) |
+| `eslint` | 10.0.2 | **10.4.0** (minor) |
+| `globals` | 17.3.0 | **17.6.0** (minor) |
+| `babel-plugin-istanbul` | 6.1.1 | **удалён** (dead dep — jest использует `coverageProvider: 'v8'`, istanbul не вызывался) |
+| `c8` | 10.1.3 | **удалён** (dead dep — coverage делает jest, c8 не было ни в одном скрипте) |
+
+**Новая хромиум-сборка** для Playwright 1.60: `Chrome Headless Shell 148.0.7778.96` (`chromium-headless-shell v1223`).
+
+Полный прогон после upgrade: **unit 1138 PASS, e2e 190 PASS, lint clean, npm audit 0 vulns, npm outdated пусто.**
+
+**Note**: `Node DEP0205 module.register() is deprecated` warning остался — приходит из `babel-jest@30.4` runtime, фикс ожидает обновления самим babel-jest. Не блокер.
+
+### Метрики
+
+| Метрика | v8.30.7 | v8.30.8 |
+|---|---|---|
+| Unit | 1138 PASS | 1138 PASS |
+| E2E | 190 PASS | 190 PASS |
+| Lint | clean | clean |
+| audit | 0 | 0 |
+| `npm outdated` | 7 deps | **пусто** |
+| UserManual.md размер | 580 строк (60 dead CSS) | 521 строка |
+| Dead devDependencies | 2 (`babel-plugin-istanbul`, `c8`) | **0** |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.7) — Hot-fix: print timestamp protruded в UI + doc-comment drift
 
 ### Hot-fix (жалоба пользователя)
