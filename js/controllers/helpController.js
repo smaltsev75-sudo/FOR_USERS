@@ -19,7 +19,9 @@ import { sanitizeHtml } from '../utils/sanitize.js';
 export class HelpController {
     /**
      * @param {Object} globalApi — глобальный объект (window), используется для
-     *   доступа к marked и DOMPurify (загружаются лениво через CDN).
+     *   доступа к marked и DOMPurify (загружаются лениво из локального
+     *   ./js/vendor/marked.min.js и ./js/vendor/purify.min.js — оба ассета
+     *   precache'ятся Service Worker'ом, см. sw.js ASSETS_TO_CACHE).
      */
     constructor(globalApi = globalThis) {
         this.globalApi = globalApi;

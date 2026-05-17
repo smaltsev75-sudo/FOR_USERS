@@ -1,5 +1,42 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.12) — восьмой review-pass: doc/test drift cleanup
+
+### Findings внешнего ревью (после v8.30.11)
+
+P1/P2 нет. 4 P3 drift'а — все ловятся правилами, которые уже были применены в v8.30.11, но не распространены на смежные места.
+
+| # | Уровень | Источник | Что |
+|---|---|---|---|
+| A | P3 | [UserManual.md:512](UserManual.md#L512) | FAQ «без сети встроенная справка откроется в **упрощённом формате**» — устарело после v8.30.11 precache UserManual.md. |
+| B | P3 | [helpController.js:21-22](../js/controllers/helpController.js#L21) | JSDoc «marked и DOMPurify загружаются лениво через **CDN**» — реальность с v8.20-х: локальные `./js/vendor/*.min.js`. |
+| C | P3 | [RELEASE_PROCESS.md:27-35](RELEASE_PROCESS.md#L27) | Перечислены только 5 мест синхронизации (без `app.js?v=`), хотя bump-script с v8.30.11 обновляет 6. |
+| D | P3 | [bumpVersion.test.js:18-34](../tests/unit/scripts/bumpVersion.test.js#L18) | Smoke-тест regex'ов покрывал 4 target'а — оба `index.html` target'а (manifest + app.js) НЕ тестировались. |
+
+### Что починено
+
+| # | Файл | Изменение |
+|---|---|---|
+| A | [UserManual.md (FAQ)](UserManual.md) | «работает оффлайн... включая **полную** встроенную справку, закэшированную Service Worker'ом наравне с остальными ассетами». |
+| B | [helpController.js JSDoc](../js/controllers/helpController.js) | «загружаются лениво из локального `./js/vendor/marked.min.js` и `./js/vendor/purify.min.js` — оба ассета precache'ятся Service Worker'ом». |
+| C | [RELEASE_PROCESS.md синхронизационная таблица](RELEASE_PROCESS.md) | Добавлена строка про `app.js?v=vX.Y.Z` cache-bust (v8.30.11). |
+| D | [bumpVersion.test.js](../tests/unit/scripts/bumpVersion.test.js) | Smoke-тест покрывает **все 6 target'ов**, плюс новый тест-инвариант: шапка bump-script упоминает корректное N == count(targets). |
+
+### Метрики
+
+| Метрика | v8.30.11 | v8.30.12 |
+|---|---|---|
+| Unit-тесты | 1143 PASS | **1146 PASS** (+3 — 2 новых regex target'а + 1 invariant на шапку bump-script) |
+| E2E | 191 PASS | 191 PASS |
+| Lint | clean | clean |
+| audit | 0 | 0 |
+
+### Hard-reload предупреждение
+
+⚠ **Ctrl+Shift+R** перед запуском. DevTools → Application → Service Workers → **Unregister**. Изменён CACHE_VERSION (`sp-v8.30.12-review-pass-8-doc-drift`).
+
+---
+
 ## Версия: май 2026 (обновление 8.30.11) — седьмой review-pass: PWA offline-справка + drift-фиксы
 
 ### Findings внешнего ревью
