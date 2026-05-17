@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.10-excluded-priority-display';
+const CACHE_VERSION = 'sp-v8.30.11-review-pass-7';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -113,7 +113,9 @@ const ASSETS_TO_CACHE = [
     './js/utils/escapeHtml.js',
     './js/utils/icons.js',
     './js/utils/lruCache.js',
-    './js/utils/sanitize.js'
+    './js/utils/sanitize.js',
+    // Документация (offline-справка F1 — v8.30.11)
+    './docs/UserManual.md'
 ];
 
 // Установка: кэшируем все статические ресурсы.

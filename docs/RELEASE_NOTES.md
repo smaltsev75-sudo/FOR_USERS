@@ -1,5 +1,43 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.11) — седьмой review-pass: PWA offline-справка + drift-фиксы
+
+### Findings внешнего ревью
+
+| # | Уровень | Источник | Что |
+|---|---|---|---|
+| 1 | **P2** | [helpController.js:62](../js/controllers/helpController.js#L62) ↔ [sw.js:10](../sw.js#L10) | `docs/UserManual.md` отсутствовал в `ASSETS_TO_CACHE` → если пользователь установил PWA и ушёл offline до первого открытия справки (F1), markdown не в кэше → справка ломается. README обещает «полную оффлайн-работу включая справку». |
+| 2 | P3 | [RELEASE_NOTES.md:99 (v8.30.8)](#) | DEP0205 warning атрибутирован babel-jest, реальный источник — `node_modules/playwright/lib/common/index.js`. |
+| 3 | P3 | [ARCHITECTURE.md:224](ARCHITECTURE.md#L224) ↔ [store.js:60](../js/state/store.js#L60) | «Защита от мутаций» переоценивала контракт: реально shallow freeze, вложенные структуры остаются мутабельными. |
+| 4 | P3 | [index.html:688](../index.html#L688) ↔ [bump-version.mjs:49](../scripts/bump-version.mjs#L49) | `app.js?v=v8.22.3-reorg-docs-folder` — 8 версий назад. Bump-script обновлял только `manifest.json?v=`. |
+
+### Что починено
+
+| # | Файл | Изменение |
+|---|---|---|
+| 1 | [sw.js:117-118](../sw.js#L117) | Добавлен `./docs/UserManual.md` в `ASSETS_TO_CACHE`. CACHE_VERSION → `sp-v8.30.11-review-pass-7`. |
+| 1 | [tests/unit/architecture/precache-coverage.test.js:66-75](../tests/unit/architecture/precache-coverage.test.js#L66) | Новый invariant-тест: `docs/UserManual.md` обязан быть в precache (offline-справка F1). |
+| 2 | [docs/RELEASE_NOTES.md (v8.30.8 секция)](#) | Атрибуция DEP0205 исправлена: Playwright, не babel-jest. |
+| 3 | [docs/ARCHITECTURE.md:224](ARCHITECTURE.md#L224) | Контракт `Store.getState()` теперь явно описывает shallow-freeze, мутации вложенных структур, дисциплину через сеттеры. |
+| 4 | [scripts/bump-version.mjs:73-79](../scripts/bump-version.mjs#L73) | Bump-script теперь обновляет 6 мест: добавлен `app.js?v=vX.Y.Z` в index.html. После запуска bump → app.js cache-bust автоматически синхронен с релизом. |
+
+### Метрики
+
+| Метрика | v8.30.10 | v8.30.11 |
+|---|---|---|
+| Unit-тесты | 1142 PASS | **1143 PASS** (+1 invariant — UserManual в precache) |
+| E2E | 191 PASS | 191 PASS |
+| Lint | clean | clean |
+| audit | 0 | 0 |
+| Bump-script targets | 5 мест | **6 мест** (добавлен app.js?v=) |
+
+### Hard-reload предупреждение
+
+⚠ **Ctrl+Shift+R** перед запуском (Cmd+Shift+R на macOS).
+DevTools → Application → Service Workers → **Unregister** (изменён CACHE_VERSION в sw.js, добавлен новый ассет в precache).
+
+---
+
 ## Версия: май 2026 (обновление 8.30.10) — Priority Score в карточках исключённых задач
 
 ### Жалоба пользователя
@@ -96,7 +134,7 @@
 
 Полный прогон после upgrade: **unit 1138 PASS, e2e 190 PASS, lint clean, npm audit 0 vulns, npm outdated пусто.**
 
-**Note**: `Node DEP0205 module.register() is deprecated` warning остался — приходит из `babel-jest@30.4` runtime, фикс ожидает обновления самим babel-jest. Не блокер.
+**Note**: `Node DEP0205 module.register() is deprecated` warning остался. Источник — `node_modules/playwright/lib/common/index.js` (виден в stack-trace e2e-прогона), не babel-jest, как было ошибочно атрибутировано ранее. Фикс ожидает обновления самим Playwright. Не блокер.
 
 ### Метрики
 
