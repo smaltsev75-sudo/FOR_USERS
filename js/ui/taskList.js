@@ -324,7 +324,31 @@ function getCriteriaScoreLevel(score) {
 }
 
 function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) {
-    if (criteria.length === 0 || task.excluded) return '';
+    if (criteria.length === 0) return '';
+
+    // v8.30.10: для исключённых задач показываем компактный read-only Priority Score
+    // без stepper'ов и chip'ов критериев — пользователь видит итоговый приоритет
+    // и может верифицировать корректность сортировки по приоритету. Раньше для
+    // excluded возвращалась пустая строка → priority в карточке не показывался,
+    // и сортировка excluded-секции «выглядела случайной».
+    if (task.excluded) {
+        const lvl = getPriorityLevel(priorityScore);
+        const lbl = getPriorityLabel(lvl);
+        return `
+            <div class="criteria-row criteria-row--excluded">
+                <div class="criteria-section-label">Приоритет</div>
+                <div class="criteria-row-body">
+                    <div class="priority-score-container priority-score-${lvl}" title="Приоритет: ${escapeHtml(lbl)} (${nfs.formatNumber(priorityScore, 1)})">
+                        <span class="priority-score-icon" aria-hidden="true">${icon('barChart')}</span>
+                        <span class="priority-score-meta">
+                            <span class="priority-score-label">Priority Score</span>
+                        </span>
+                        <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore, 1)}">${nfs.formatNumber(priorityScore, 1)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     // v8.27.2: <select> заменён на stepper [−] N [+] + spinbutton-фокусируемый
     // дисплей. Контракт события — CustomEvent('criteria-score-change') с

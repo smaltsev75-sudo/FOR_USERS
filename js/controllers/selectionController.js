@@ -1,7 +1,7 @@
 // js/controllers/selectionController.js
 
 import { messageService } from '../services/message.js';
-import { calculateCapacityByRole } from '../domain/role.js';
+import { calculateCapacityByRole, calculateRoleLoad } from '../domain/role.js';
 import { compareAlgorithms } from '../domain/selection/index.js';
 import { fixTaskOrder } from '../domain/task.js';
 import {
@@ -108,10 +108,25 @@ export class SelectionController {
         const loadingEl = document.getElementById('selectionLoadingIndicator');
         const autoSelectBtn = document.getElementById('autoSelectBtn');
 
-        setSelectionLoadingState(loadingEl, autoSelectBtn, true);
-
         const originalTasks = this.store.getState().tasks;
         const capacityByRole = this.calculateCapacityByRole();
+
+        // v8.30.9: precondition — если ни одна роль не перегружена (effort > capacity)
+        // по текущему плану (не-исключённые задачи), показываем info и НЕ запускаем
+        // алгоритмы. Сравнение строгое (>), без alert_threshold — порог влияет только
+        // на UI-подсветку capacity-strip, не на бизнес-решение «нужен ли отбор».
+        const roles = this.store.getState().roles;
+        const overloadedRoles = roles.filter(role => {
+            const load = calculateRoleLoad(role.id, originalTasks, false);
+            const cap = capacityByRole[role.id] || 0;
+            return load > cap;
+        });
+        if (overloadedRoles.length === 0) {
+            messageService.showMessage('Текущий состав спринта уже сбалансирован, корректировка не требуется');
+            return;
+        }
+
+        setSelectionLoadingState(loadingEl, autoSelectBtn, true);
 
         const tasksWithPriority = buildTasksWithPriority(originalTasks, this.criteriaManager, this.store.getState().roles);
 
