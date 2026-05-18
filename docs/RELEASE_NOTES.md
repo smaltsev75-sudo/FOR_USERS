@@ -10,7 +10,7 @@
 | 2 | P3 | `package-lock.json` line 3, 9 | `version: 8.30.7` против `package.json: 8.30.14` — release/metadata drift. |
 | 3 | P3 | `docs/RELEASE_NOTES.md` line 25 | Указано «76 PASS», фактический прогон после coverage-uplift коммита `2d74162` — 77 suites / 1195 tests. |
 | 4 | P3 | `docs/UserManual.md` lines 241, 248 | Описан старый Capacity Strip + отдельная строка FTE/отпуск; реальный UI — Team Capacity Dashboard, inputs внутри карточек ролей. |
-| 5 | P3 | `docs/UserManual.md` line 259 | «dot-индикатор (8px кружок)» — устарел, реальный UI рендерит буквенный `.task-type-indicator` (B/T/U). |
+| 5 | P3 | `docs/UserManual.md` line 259 | «dot-индикатор (8px кружок)» — устарел; реальный видимый UI рендерит `.task-type-badge` (иконка + полное название типа), а буквенный `.task-type-indicator` скрыт CSS-ом для backward-compat e2e тестов ([css/task-card.css:196](../css/task-card.css#L196)). |
 
 ### Что починено
 
@@ -20,7 +20,7 @@
 | 2 | `package-lock.json` resynced: version 8.30.7 → 8.30.15 (бывший lock drift). |
 | 3 | Coverage-uplift коммит `2d74162` добавил +48 unit-тестов в 4 модуля (app.js, taskListGrouped, teamCapacity, selectionReport). Branch coverage по этим модулям: 60.77% → 85.9%. Метрики в таблице ниже отражают фактический прогон (77 suites / 1195 tests). |
 | 4 | [`docs/UserManual.md`](UserManual.md) §«Планирование спринта»: блок «Capacity Strip» переписан как «Team Capacity Dashboard» (карточки ролей с inputs внутри), убрана отдельная строка FTE/отпуск под полосой. |
-| 5 | [`docs/UserManual.md`](UserManual.md) описание карточки задачи: «dot-индикатор (8px кружок)» → буквенный индикатор типа (B — Bug, T — Tech, U — User Story) в коробке цвета типа. |
+| 5 | [`docs/UserManual.md`](UserManual.md) описание карточки задачи: «dot-индикатор (8px кружок)» → бейдж типа `.task-type-badge` (иконка + полное название: User Story / Bug / Tech). Скрытый `.task-type-indicator` упомянут отдельно как backward-compat для e2e. |
 
 ### Метрики
 
