@@ -1,23 +1,52 @@
 # Release Notes
 
-## Версия: май 2026 (обновление 8.30.14) — десятый review-pass + maintenance: warnings, coverage, DOMPurify sync, doc drift
+## Версия: май 2026 (обновление 8.30.15) — post-merge maintenance: DOMPurify 3.4.5 + lock sync + coverage uplift + doc drift
 
-### Findings внешнего ревью (review pass 10)
+### Findings внешнего ревью
 
 | # | Уровень | Где | Что |
 |---|---|---|---|
-| 1 | P3 | RELEASE_NOTES v8.30.13 секция | Указано «1147 PASS», ревьюер видел «1146». Doc drift — точное число unit'ов env-чувствительно. Принимаем замечание: исключаем точные test-counts ниже как нестабильный источник истины — оставляем число suites. |
+| 1 | P2 | `js/vendor/purify.min.js` vs `package-lock.json` | Vendored DOMPurify 3.4.2 дрейфовал от audited npm-зависимости (lock 3.4.4, upstream 3.4.5). `npm audit` контролирует только npm-pin, не vendored copy → security-библиотека могла устаревать незаметно. |
+| 2 | P3 | `package-lock.json` line 3, 9 | `version: 8.30.7` против `package.json: 8.30.14` — release/metadata drift. |
+| 3 | P3 | `docs/RELEASE_NOTES.md` line 25 | Указано «76 PASS», фактический прогон после coverage-uplift коммита `2d74162` — 77 suites / 1195 tests. |
+| 4 | P3 | `docs/UserManual.md` lines 241, 248 | Описан старый Capacity Strip + отдельная строка FTE/отпуск; реальный UI — Team Capacity Dashboard, inputs внутри карточек ролей. |
+| 5 | P3 | `docs/UserManual.md` line 259 | «dot-индикатор (8px кружок)» — устарел, реальный UI рендерит буквенный `.task-type-indicator` (B/T/U). |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | DOMPurify обновлён: npm-зависимость `^3.4.4 → ^3.4.5`, vendored [`js/vendor/purify.min.js`](../js/vendor/purify.min.js) пересобран из `node_modules/dompurify/dist/`. Версия в header'е jar'а проверена (`DOMPurify 3.4.5`). Sourcemap [`purify.min.js.map`](../js/vendor/purify.min.js.map) добавлен. |
+| 2 | `package-lock.json` resynced: version 8.30.7 → 8.30.15 (бывший lock drift). |
+| 3 | Coverage-uplift коммит `2d74162` добавил +48 unit-тестов в 4 модуля (app.js, taskListGrouped, teamCapacity, selectionReport). Branch coverage по этим модулям: 60.77% → 85.9%. Метрики в таблице ниже отражают фактический прогон (77 suites / 1195 tests). |
+| 4 | [`docs/UserManual.md`](UserManual.md) §«Планирование спринта»: блок «Capacity Strip» переписан как «Team Capacity Dashboard» (карточки ролей с inputs внутри), убрана отдельная строка FTE/отпуск под полосой. |
+| 5 | [`docs/UserManual.md`](UserManual.md) описание карточки задачи: «dot-индикатор (8px кружок)» → буквенный индикатор типа (B — Bug, T — Tech, U — User Story) в коробке цвета типа. |
+
+### Метрики
+
+| Метрика | v8.30.14 | v8.30.15 |
+|---|---|---|
+| Unit-suites | 76 PASS | 77 PASS (+1 — coverage uplift) |
+| Unit-tests | ≈1147 | 1195 (+48) |
+| E2E | 191 PASS | 191 PASS |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns (DOMPurify vendored синхрон с npm 3.4.5) |
+| Branch coverage (4 модуля) | 60.77% | 85.9% |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.15-maintenance`.
+
+---
+
+## Версия: май 2026 (обновление 8.30.14) — десятый review-pass: selective warning suppression + count fix
+
+### Findings внешнего ревью
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | P3 | RELEASE_NOTES v8.30.13 секция | Указано «1147 PASS», ревьюер видел «1146». Doc drift — точное число unit'ов env-чувствительно (на моём окружении стабильно 1147 в 3+ прогонах, расхождение неустановлено). Принимаем замечание: исключаем точные test-counts из release-notes как нестабильный источник истины — оставляем «76 suites passing». |
 | 2 | P3 | `package.json` + `scripts/run-e2e.mjs` (v8.30.13) | Глобальный `NODE_NO_WARNINGS=1` + `node --no-warnings` глушил **все** Node deprecation warnings от Playwright-процесса, включая будущие потенциально важные. |
-
-### Findings внешнего ревью (post-merge maintenance pass)
-
-| # | Уровень | Где | Что |
-|---|---|---|---|
-| 3 | P2 | `js/vendor/purify.min.js` vs `package-lock.json` | Vendored DOMPurify 3.4.2 дрейфовал от audited npm-зависимости (lock 3.4.4, upstream 3.4.5). `npm audit` контролирует только npm-pin, не vendored copy → security-библиотека могла устаревать незаметно. |
-| 4 | P3 | `package-lock.json` line 3, 9 | `version: 8.30.7` против `package.json: 8.30.14` — release/metadata drift. |
-| 5 | P3 | `docs/RELEASE_NOTES.md` line 25 | Указано «76 PASS», фактический прогон после coverage-uplift коммита `2d74162` — 77 suites / 1195 tests. |
-| 6 | P3 | `docs/UserManual.md` lines 241, 248 | Описан старый Capacity Strip + отдельная строка FTE/отпуск; реальный UI — Team Capacity Dashboard, inputs внутри карточек ролей. |
-| 7 | P3 | `docs/UserManual.md` line 259 | «dot-индикатор (8px кружок)» — устарел, реальный UI рендерит буквенный `.task-type-indicator` (B/T/U). |
 
 ### Что починено
 
@@ -27,20 +56,15 @@
 | 2 | [`scripts/run-e2e.mjs`](../scripts/run-e2e.mjs) переписан: `NODE_NO_WARNINGS=1` → точечный `NODE_OPTIONS=--disable-warning=DEP0205`. Будущие Node-warning'и от Playwright (DEP0NNN, кроме DEP0205) **остаются видны**. |
 | 2 | Wrapper больше **не** использует `shell: true` + npx-шим: запускает `node node_modules/playwright/cli.js test ...` напрямую. Это устраняет паразитный DEP0190 (security warning от `shell: true`) — `node --no-warnings` в npm script больше не нужен. |
 | 2 | [`package.json`](../package.json): добавлен новый script `"test:e2e:trace": "npx playwright test"` — periodic-trace прогон без suppression, чтобы вовремя заметить новые upstream-warning'и. |
-| 3 | DOMPurify обновлён: npm-зависимость `^3.4.4 → ^3.4.5`, vendored [`js/vendor/purify.min.js`](../js/vendor/purify.min.js) пересобран из `node_modules/dompurify/dist/`. Версия в header'е jar'а проверена (`DOMPurify 3.4.5`). |
-| 4 | `package-lock.json` resynced: version 8.30.7 → 8.30.14 (бывший lock drift). |
-| 5 | Coverage-uplift коммит `2d74162` добавил +48 unit-тестов в 4 модуля (app.js, taskListGrouped, teamCapacity, selectionReport). Branch coverage по этим модулям: 60.77% → 85.9%. Метрики в таблице ниже обновлены под фактический прогон (77 suites / 1195 tests). |
-| 6 | [`docs/UserManual.md`](UserManual.md) §«Планирование спринта»: блок «Capacity Strip» переписан как «Team Capacity Dashboard» (карточки ролей с inputs внутри), убрана отдельная строка FTE/отпуск под полосой. |
-| 7 | [`docs/UserManual.md`](UserManual.md) описание карточки задачи: «dot-индикатор (8px кружок)» → буквенный индикатор типа (B — Bug, T — Tech, U — User Story) в коробке цвета типа. |
 
 ### Метрики
 
-| Метрика | v8.30.13 | v8.30.14 (review 10) | v8.30.14 (post-merge maintenance) |
-|---|---|---|---|
-| Unit-suites | 76 PASS | 76 PASS | 77 PASS |
-| E2E | 191 PASS (0 deprecation warnings в логе) | 191 PASS (0 deprecation warnings в логе при `test:e2e`, DEP0205 виден при `test:e2e:trace`) | 191 PASS |
-| Lint | clean | clean | clean |
-| audit | 0 vulns | 0 vulns | 0 vulns (DOMPurify vendored синхрон с npm 3.4.5) |
+| Метрика | v8.30.13 | v8.30.14 |
+|---|---|---|
+| Unit-suites | 76 PASS | 76 PASS |
+| E2E | 191 PASS (0 deprecation warnings в логе) | 191 PASS (0 deprecation warnings в логе при `test:e2e`, DEP0205 виден при `test:e2e:trace`) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
 
 ### Hard-reload
 

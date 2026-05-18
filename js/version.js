@@ -13,4 +13,4 @@
 //
 // Тест tests/unit/version.test.js проверяет согласованность auto-updated мест.
 
-export const APP_VERSION = 'v8.30.14';
+export const APP_VERSION = 'v8.30.15';
