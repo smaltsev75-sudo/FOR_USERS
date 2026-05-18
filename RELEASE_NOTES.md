@@ -31,16 +31,38 @@
 | 4 | [`css/print.css`](../css/print.css): удалён мёртвый блок `.task-type-indicator { width: 40px; ... }` (clip/clip-path/position не сбрасывал) + child-rules `.task-type-indicator i / .fas / .fa { display: none }` (родительский элемент visually-hidden, дети мёртвые). |
 | 5 | Legacy naming в комментариях обновлён: «Team Capacity Dashboard legacy hooks» в `css/capacity-strip.css`, `js/controllers/capacityStripController.js`. В `tests/e2e/planner.spec.js:1012` добавлен комментарий поясняющий, что `describe('Capacity Strip')` сохранён для backward-compat истории прогонов. |
 
-### Метрики (review pass 11)
+### Метрики (review pass 11+)
 
-| Метрика | До pass 11 | После pass 11 |
+> Точное число тестов меняется при каждом invariant-добавлении — здесь не
+> фиксируется (был источник doc drift). Текущее количество смотри в `npm test`
+> output на HEAD. Качественные метрики ниже стабильны.
+
+| Метрика | До pass 11 | После pass 11+ |
 |---|---|---|
-| Unit-suites | 77 PASS / 1195 tests | 77 PASS / **1199 tests** (+4 invariants: транзитивный JS-precache, JS-exists-on-disk, CSS-cache-bust=APP_VERSION, bump-script 7-й target) |
+| Unit-suites | 77 PASS | 77 PASS |
 | E2E | 191 PASS | 191 PASS |
 | Lint | clean | clean |
 | audit | 0 vulns | 0 vulns |
-| PWA precache JS-modules | 26 (минус 2 импортируемых) | 28 (все импортируемые покрыты) |
-| CSS cache-bust drift | 4 разных группы (`3`/`4`/`1`/`v8.22.2`) | unified `v8.30.15` (двигается через bump) |
+| PWA precache JS-modules | 26 (минус 2 импортируемых) | все импортируемые покрыты + транзитивный invariant |
+| CSS cache-bust drift | 4 разных группы (`3`/`4`/`1`/`v8.22.2`) | unified `v8.30.15` (двигается через bump + invariant) |
+
+### Pass 12 (doc drift cleanup + invariant guards)
+
+| # | Что починено |
+|---|---|
+| 1 | `docs/RELEASE_PROCESS.md`: 7-й bump-target (CSS) + актуальный формат заголовка release-notes. |
+| 2 | `js/version.js` шапка 5 → 7 мест синхронизации (drift в комментариях source-of-truth после v8.30.11 + v8.30.15 добавлений). |
+| 3 | Dual heading v8.30.15 → один `##` с двумя phase'ами. |
+| 4 | E2E `describe('Capacity Strip')` → `describe('Team Capacity Dashboard (legacy Capacity Strip hooks)')`. Unit `describe('renderCapacityStrip')` → `describe('Team Capacity Dashboard — renderCapacityStrip alias (legacy)')`. |
+| 5 | Invariants на N мест в шапках `js/version.js` и `docs/RELEASE_PROCESS.md` — теперь синхронность шапок проверяется at-commit. |
+
+### Pass 13 (test-comment drift + naming guard)
+
+| # | Что починено |
+|---|---|
+| 1 | `tests/unit/controllers/capacityStripController.test.js`: убрано «v8.14.1» (несоответствие — Team Capacity Dashboard introduced в v8.21). |
+| 2 | `tests/unit/ui/capacityStrip.test.js`: убрано «(v8.14.1)» из title теста. |
+| 3 | **Новый invariant** `tests/unit/architecture/version-naming-consistency.test.js`: запрещает упоминания `v8.14.1` в `js/`+`css/`+`tests/`. Если кто-то снова добавит — `npm test` падает. |
 
 ### Hard-reload
 
