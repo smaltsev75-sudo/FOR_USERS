@@ -2,7 +2,15 @@
 
 ## Версия: май 2026 (обновление 8.30.15) — review pass 11 + post-merge maintenance
 
-### Findings внешнего ревью (review pass 11)
+> v8.30.15 — единая версия с двумя последовательными «фазами» в одном тег-релизе:
+> сначала **baseline** (post-merge maintenance: DOMPurify 3.4.5, lock sync,
+> coverage uplift, doc drift), затем **review pass 11** (PWA precache holes,
+> CSS cache-bust unified, Team Capacity Dashboard version unified, print/legacy
+> cleanup). GitHub Release tag `v8.30.15` retargeted на финальный commit
+> (см. §17 глобального CLAUDE.md). Подсекции ниже идут в хронологическом
+> порядке: сначала **финальная** review pass 11, затем **baseline**.
+
+### Фаза 2: Findings внешнего ревью (review pass 11)
 
 | # | Уровень | Где | Что |
 |---|---|---|---|
@@ -38,11 +46,9 @@
 
 DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.15-maintenance`. После pass 11 кэш браузера получит свежие CSS благодаря унифицированному `?v=v8.30.15`.
 
----
+### Фаза 1: baseline (post-merge maintenance: DOMPurify 3.4.5 + lock sync + coverage uplift + doc drift)
 
-## Версия: май 2026 (обновление 8.30.15) — post-merge maintenance: DOMPurify 3.4.5 + lock sync + coverage uplift + doc drift
-
-### Findings внешнего ревью
+#### Findings внешнего ревью (baseline)
 
 | # | Уровень | Где | Что |
 |---|---|---|---|
@@ -52,7 +58,7 @@ DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R
 | 4 | P3 | `docs/UserManual.md` lines 241, 248 | Описан старый Capacity Strip + отдельная строка FTE/отпуск; реальный UI — Team Capacity Dashboard, inputs внутри карточек ролей. |
 | 5 | P3 | `docs/UserManual.md` line 259 | «dot-индикатор (8px кружок)» — устарел; реальный видимый UI рендерит `.task-type-badge` (иконка + полное название типа), а буквенный `.task-type-indicator` скрыт CSS-ом для backward-compat e2e тестов ([css/task-card.css:196](../css/task-card.css#L196)). |
 
-### Что починено
+#### Что починено (baseline)
 
 | # | Изменение |
 |---|---|
@@ -62,9 +68,9 @@ DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R
 | 4 | [`docs/UserManual.md`](UserManual.md) §«Планирование спринта»: блок «Capacity Strip» переписан как «Team Capacity Dashboard» (карточки ролей с inputs внутри), убрана отдельная строка FTE/отпуск под полосой. |
 | 5 | [`docs/UserManual.md`](UserManual.md) описание карточки задачи: «dot-индикатор (8px кружок)» → бейдж типа `.task-type-badge` (иконка + полное название: User Story / Bug / Tech). Скрытый `.task-type-indicator` упомянут отдельно как backward-compat для e2e. |
 
-### Метрики
+#### Метрики (baseline)
 
-| Метрика | v8.30.14 | v8.30.15 |
+| Метрика | v8.30.14 | v8.30.15 baseline |
 |---|---|---|
 | Unit-suites | 76 PASS | 77 PASS (+1 — coverage uplift) |
 | Unit-tests | ≈1147 | 1195 (+48) |
