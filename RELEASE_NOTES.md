@@ -1,5 +1,45 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.15) — review pass 11 + post-merge maintenance
+
+### Findings внешнего ревью (review pass 11)
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P2** | `sw.js:93` ASSETS_TO_CACHE | `js/ui/appVersionBadge.js` и `js/version.js` импортируются на старте ([js/app.js:25](../js/app.js#L25) → ui/appVersionBadge.js → version.js), но НЕ в precache → offline-старт получал fetch-error. Конфликт с обещанием «полной оффлайн-работы». |
+| 2 | P3 | `index.html:25-46` | CSS cache-bust query застрял на смеси `?v=3` / `?v=4` / `?v=1` / `?v=v8.22.2` при текущей версии 8.30.15. bump-скрипт обновлял только manifest и app.js, CSS не двигал. |
+| 3 | P3 | `README.md:20` / `docs/ARCHITECTURE.md:32` / `docs/UserManual.md:247` / `index.html:221` / `js/ui/index.js:14` / `js/utils/icons.js:50` | Drift по версии появления Team Capacity Dashboard: называли v8.21 / v8.28+ / v8.14.1 / v8.14 в разных местах. Историческая правда (RELEASE_NOTES v8.21): introduced in v8.21. |
+| 4 | P4 | `css/print.css:217-226` | Print-правило пытается показать legacy `.task-type-indicator` (`width: 40px; display: flex !important`), но не сбрасывает `clip` / `clip-path` / `position` / `overflow` из `task-card.css:194-205` → computed `clip-path: inset(50%)` остаётся, indicator невидим. `.task-type-badge` при этом виден — print-контракт вводил в заблуждение. |
+| 5 | P4 | `css/capacity-strip.css:2` / `js/controllers/capacityStripController.js:3` / `tests/e2e/planner.spec.js:1014` | Legacy naming drift: «Unified Capacity Strip» / «Capacity Strip controller» / `describe('Capacity Strip')` для live Team Capacity Dashboard. Файлы намеренно сохранены под legacy именами как dual-class hooks, но описания вводили в заблуждение. |
+| 6 | P4 | branch coverage | `taskListGrouped.js` 60%, `capacityStripController.js` 62.5%, `appVersionBadge.js` 62.5%, `utils.js` 60%. Informational — оставлено для следующего hardening-pass'а. |
+
+### Что починено (review pass 11)
+
+| # | Изменение |
+|---|---|
+| 1 | [`sw.js`](../sw.js) ASSETS_TO_CACHE: добавлены `./js/ui/appVersionBadge.js` и `./js/version.js`. Расширен [`tests/unit/architecture/precache-coverage.test.js`](../tests/unit/architecture/precache-coverage.test.js) — теперь транзитивно обходит ВСЕ relative-импорты из `js/app.js` и требует чтобы каждый достижимый JS-модуль был в precache. Плюс инвариант «JS-модули в ASSETS_TO_CACHE реально существуют на диске». Регрессия теперь падает at-commit. |
+| 2 | Унифицированный CSS cache-bust: все 22 CSS-ссылки в [`index.html`](../index.html) получили `?v=v8.30.15`. [`scripts/bump-version.mjs`](../scripts/bump-version.mjs) расширен 7-м target'ом (global regex по `<link rel="stylesheet" href="css/*.css?v=...">`). Тест-инвариант в `precache-coverage.test.js` (CSS query === APP_VERSION) + [`bumpVersion.test.js`](../tests/unit/scripts/bumpVersion.test.js) (regex smoke). |
+| 3 | Team Capacity Dashboard унифицирован на `v8.21` в 6 местах: README.md, docs/ARCHITECTURE.md, docs/UserManual.md (×3 — список разделов, «Индикаторы перегрузки», заключительный абзац), index.html, js/ui/index.js, js/utils/icons.js. |
+| 4 | [`css/print.css`](../css/print.css): удалён мёртвый блок `.task-type-indicator { width: 40px; ... }` (clip/clip-path/position не сбрасывал) + child-rules `.task-type-indicator i / .fas / .fa { display: none }` (родительский элемент visually-hidden, дети мёртвые). |
+| 5 | Legacy naming в комментариях обновлён: «Team Capacity Dashboard legacy hooks» в `css/capacity-strip.css`, `js/controllers/capacityStripController.js`. В `tests/e2e/planner.spec.js:1012` добавлен комментарий поясняющий, что `describe('Capacity Strip')` сохранён для backward-compat истории прогонов. |
+
+### Метрики (review pass 11)
+
+| Метрика | До pass 11 | После pass 11 |
+|---|---|---|
+| Unit-suites | 77 PASS / 1195 tests | 77 PASS / **1199 tests** (+4 invariants: транзитивный JS-precache, JS-exists-on-disk, CSS-cache-bust=APP_VERSION, bump-script 7-й target) |
+| E2E | 191 PASS | 191 PASS |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+| PWA precache JS-modules | 26 (минус 2 импортируемых) | 28 (все импортируемые покрыты) |
+| CSS cache-bust drift | 4 разных группы (`3`/`4`/`1`/`v8.22.2`) | unified `v8.30.15` (двигается через bump) |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.15-maintenance`. После pass 11 кэш браузера получит свежие CSS благодаря унифицированному `?v=v8.30.15`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.15) — post-merge maintenance: DOMPurify 3.4.5 + lock sync + coverage uplift + doc drift
 
 ### Findings внешнего ревью

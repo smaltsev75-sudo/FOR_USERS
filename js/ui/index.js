@@ -11,7 +11,7 @@ import { updateCreateFormTotal } from './createForm.js';
 export function renderApp(state, deps = {}) {
     const nfs = getNFS(deps.nfs);
     renderHeader(state);
-    // Team Capacity Dashboard (v8.14.1) — premium-карточки, объединяющие
+    // Team Capacity Dashboard (v8.21) — premium-карточки, объединяющие
     // gauge + 5 cards (иконка+bar+inputs). Заменяет capacityStrip + roleList.
     renderTeamCapacity(state, nfs, deps.capacityPreview || {});
     renderMatrix(state, nfs);

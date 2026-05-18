@@ -202,7 +202,7 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
 | `selection-report.css` | Отчёт автоотбора: featured-баннер рекомендации, 3 алгоритм-карточки, метрик-бары, легаси `.comparison-table` (v8.28) |
 | `task-card.css` | Карточка задачи: density tokens (`--task-row-*`), `.task-type-badge` (иконка + полное название типа), `.task-type-indicator` (скрытый, backward-compat e2e), hover-only actions, sticky-headers для quadrants (v8.14) |
-| `team-capacity.css` | Team Capacity Dashboard (v8.28+): header с gauge, сетка карточек ролей с inputs FTE%/Отпуск внутри, levels success/warning/danger, preview overlay при drag, single-iteration overload pulse |
+| `team-capacity.css` | Team Capacity Dashboard (v8.21): header с gauge, сетка карточек ролей с inputs FTE%/Отпуск внутри, levels success/warning/danger, preview overlay при drag, single-iteration overload pulse |
 | `capacity-strip.css` | Legacy 5-сегментная Capacity Strip (v8.14): сохранён как dual-class hooks `cap-segment*` для backward-compat e2e/unit тестов; live UI рендерит `js/ui/teamCapacity.js` |
 | `print.css` | Печать |
 | `animations.css` | Keyframes, drag-состояния, highlight pulse |

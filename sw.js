@@ -91,6 +91,7 @@ const ASSETS_TO_CACHE = [
     // JS — types
     './js/types/contracts.js',
     // JS — ui
+    './js/ui/appVersionBadge.js',
     './js/ui/createForm.js',
     './js/ui/criteriaList.js',
     './js/ui/header.js',
@@ -105,6 +106,8 @@ const ASSETS_TO_CACHE = [
     './js/ui/snackbar.js',
     './js/ui/taskList.js',
     './js/ui/utils.js',
+    // JS — version (single source of truth, imported by ui/appVersionBadge.js)
+    './js/version.js',
     // JS — utils
     './js/utils/appConfig.js',
     './js/utils/constants.js',

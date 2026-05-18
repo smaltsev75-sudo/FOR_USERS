@@ -1,5 +1,8 @@
 /* css/capacity-strip.css
-   Unified Capacity Strip — replaces the legacy 5-progress-bar block.
+   LEGACY: 5-segment Capacity Strip (v8.14). Live UI с v8.21 — Team Capacity
+   Dashboard (см. css/team-capacity.css + js/ui/teamCapacity.js). Этот файл
+   сохранён как dual-class hooks `cap-segment*` для backward-compat
+   существующих e2e/unit тестов, на которые опирается живой dashboard.
    Layer hint: components-level styles. Uses tokens from base.css.
 */
 

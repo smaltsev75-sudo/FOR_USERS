@@ -214,24 +214,15 @@
         background: #eee !important;
     }
 
-    .task-type-indicator {
-        width: 40px;
-        height: 24px;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        border: 1px solid #000;
-        background: #eee !important;
-    }
+    /* .task-type-indicator скрыт visually-hidden в task-card.css:194-205 для
+       backward-compat e2e. В печати показываем .task-type-badge (иконка +
+       полное название типа) — повторное «показывание» indicator'а в print без
+       сброса clip/clip-path/position не работало (computed clip-path: inset(50%)
+       оставался) и вводило в заблуждение. Block удалён в v8.30.15 polish. */
 
     /* Заменяем иконки текстом */
-
-    .task-type-indicator i,
-    .task-type-indicator .fas,
-    .task-type-indicator .fa {
-        display: none !important;
-    }
+    /* Бывшие child-rules для .task-type-indicator i / .fas / .fa удалены в
+       v8.30.15 — сам indicator visually-hidden (clipping), child rules мёртвые. */
 
     .task-title {
         font-weight: bold;
