@@ -127,7 +127,15 @@ export class FileController {
 
                         if (migratedState.numberFormatSettings) {
                             this.nfs.decimalSeparator = migratedState.numberFormatSettings.decimalSeparator || ',';
-                            this.nfs.saveSettings();
+                            // v8.30.24 (P3.7): проверяем status; raньше игнор
+                            // приводил к «импорт показывает успех, но separator
+                            // не сохранился». Контракт уже выработан в App.saveToLS.
+                            const saveResult = this.nfs.saveSettings();
+                            if (saveResult && saveResult.ok === false) {
+                                messageService.showMessage(
+                                    `Не удалось сохранить настройки формата чисел (${saveResult.error}). Импортированный разделитель действует до перезагрузки.`
+                                );
+                            }
                         }
 
                         if (migratedState.criteria && migratedState.criteria.length > 0) {

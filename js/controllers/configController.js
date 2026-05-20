@@ -114,14 +114,14 @@ export class ConfigController {
             holidaysInput.addEventListener('blur', (e) => this.handleHolidaysChange(e));
         }
 
-        // Коэффициент доступности
+        // Коэффициент доступности (decimal, ≤ 2 знака — live cap через handleInput).
         const availCoefInput = document.getElementById('cfgAvailCoef');
         if (availCoefInput) {
             availCoefInput.addEventListener('input', (e) => this.handleAvailCoefInput(e));
             availCoefInput.addEventListener('blur', (e) => this.handleAvailCoefChange(e));
         }
 
-        // Порог предупреждения о перегрузке
+        // Порог предупреждения о перегрузке (integer).
         const alertInput = document.getElementById('cfgAlert');
         if (alertInput) {
             alertInput.addEventListener('blur', (e) => this.handleAlertChange(e));
@@ -173,7 +173,7 @@ export class ConfigController {
         syncInputValue(endDateInput, endDate);
 
         const availCoefInput = document.getElementById('cfgAvailCoef');
-        syncInputValue(availCoefInput, this.nfs.formatNumber(availCoef, 1));
+        syncInputValue(availCoefInput, this.nfs.formatNumber(availCoef));
 
         const alertInput = document.getElementById('cfgAlert');
         syncInputValue(alertInput, String(alertThreshold));
@@ -316,24 +316,27 @@ export class ConfigController {
      * Обработка ввода коэффициента доступности (в реальном времени).
      */
     handleAvailCoefInput(e) {
+        // v8.30.24: live cap через handleInput (P1.1 fix).
+        this.nfs.handleInput(e.target);
         const raw = e.target.value?.trim();
         if (!raw) return;
 
         const num = this.nfs.parseNumber(raw);
-        if (isNaN(num) || num < 0 || num > 100) return;
+        if (num < 0 || num > 100) return;
         this.applyAvailCoef(num);
     }
 
     handleAvailCoefChange(e) {
         const num = this.nfs.parseNumber(e.target.value);
-        if (isNaN(num) || num < 0 || num > 100) {
+        if (num < 0 || num > 100) {
             messageService.showMessage('Коэффициент доступности должен быть числом от 0 до 100');
-            // Откат к предыдущему значению
-            e.target.value = this.nfs.formatNumber(this.store.getState().config?.availCoef ?? 93.5, 1);
+            // Откат к предыдущему значению.
+            e.target.value = this.nfs.formatNumber(this.store.getState().config?.availCoef ?? 93.5);
             return;
         }
-        const availCoef = this.nfs.roundToDecimals(num, 1);
-        e.target.value = this.nfs.formatNumber(availCoef, 1);
+        // v8.30.24: cap ≤ 2 знака (раньше принудительно 1).
+        const availCoef = this.nfs.roundToDecimals(num, 2);
+        e.target.value = this.nfs.formatNumber(availCoef);
         this.applyAvailCoef(availCoef);
     }
 

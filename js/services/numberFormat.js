@@ -15,6 +15,16 @@ function clampDecimals(decimals) {
     return n;
 }
 
+// v8.30.24: убрать trailing zeros после форматирования fixed-precision.
+// `8,50` → `8,5`, `8,00` → `8`. Decimal-separator agnostic.
+function trimTrailingZerosFromFormatted(formatted, separator) {
+    if (!formatted.includes(separator)) return formatted;
+    let result = formatted;
+    while (result.endsWith('0')) result = result.slice(0, -1);
+    if (result.endsWith(separator)) result = result.slice(0, -1);
+    return result;
+}
+
 export class NumberFormatService {
     /**
      * @param {string} [initialSeparator] - Начальный разделитель десятичных знаков.
@@ -42,12 +52,7 @@ export class NumberFormatService {
 
     /**
      * Сохраняет настройки в localStorage.
-     * v8.30.2: возвращает status-объект `{ok, error}` (тот же контракт что в
-     * storageService.save). Раньше localStorage.setItem мог throw'нуть
-     * QuotaExceededError / SecurityError, и App.saveToLS прерывался на этой
-     * строке — даже после fix v8.30.0 (там я починил storageService.save,
-     * но забыл соседнюю persist-точку в numberFormat). Caller (App.saveToLS)
-     * теперь видит result и при !ok показывает snackbar.
+     * v8.30.2: возвращает {ok, error} status-объект.
      * @returns {{ok: true} | {ok: false, error: string}}
      */
     saveSettings() {
@@ -62,36 +67,80 @@ export class NumberFormatService {
     }
 
     /**
-     * Форматирует число с заданным числом знаков после запятой.
-     * v8.30.22: decimals аргумент clamp'ится к [0, MAX_DECIMALS=2]. Любые
-     * caller'ы, передающие 3+, получают 2. Также non-finite значения
-     * (NaN, ±Infinity) возвращают "0<separator>0" — defense-at-display
-     * против чисел, которые могли прорваться из арифметики.
+     * Форматирует число для отображения.
+     *
+     * v8.30.24: дефолт **2 знака + trim trailing zeros**. Это закрывает
+     * внешний аудит P1.2 — раньше дефолт был 1 знак, и карточки задач
+     * показывали 1,23 как 1,2 (визуально другое число).
+     *
+     * Поведение: 1.23 → "1,23"; 8 → "8"; 8.5 → "8,5"; 8.50 → "8,5";
+     * 12.75 → "12,75". Если нужен fixed формат с trailing — передать
+     * `{trimTrailingZeros: false}`: formatNumber(5, 1, {trimTrailingZeros:false}) → "5,0".
+     *
+     * decimals аргумент по-прежнему clamp'ится к [0, MAX_DECIMALS=2].
+     * Non-finite (NaN, ±Infinity) → "0".
+     *
+     * @param {*} value
+     * @param {number} [decimals=2]
+     * @param {{trimTrailingZeros?: boolean}} [options]
      */
-    formatNumber(value, decimals = 1) {
+    formatNumber(value, decimals = 2, options = {}) {
+        const trimTrailingZeros = options.trimTrailingZeros !== false; // default true
         if (value === undefined || value === null || !Number.isFinite(Number(value))) {
-            return '0' + this.decimalSeparator + '0';
+            return trimTrailingZeros ? '0' : ('0' + this.decimalSeparator + '0').replace(this.decimalSeparator + '0', this.decimalSeparator + '0');
         }
         const cappedDecimals = clampDecimals(decimals);
         const num = parseFloat(value);
-        const formatted = num.toFixed(cappedDecimals);
-        return formatted.replace('.', this.decimalSeparator);
+        const formatted = num.toFixed(cappedDecimals).replace('.', this.decimalSeparator);
+        if (!trimTrailingZeros || cappedDecimals === 0) return formatted;
+        return trimTrailingZerosFromFormatted(formatted, this.decimalSeparator);
     }
 
+    /**
+     * Строгий парсер числа из пользовательского input.
+     *
+     * v8.30.24: внешний аудит P2.3 — старый parseFloat принимал мусор
+     * ('1abc' → 1, '1.2.3' → 1.2, '1 234,56' → 1). Теперь:
+     *   1. trim whitespace по краям.
+     *   2. strip thousands-separator (space или alt-separator при mixed).
+     *   3. нормализация decimal-separator к '.'.
+     *   4. **whole-string match** регекса `^-?\d+(\.\d+)?$` — любой
+     *      посторонний символ → 0 (не частичный parseFloat).
+     *
+     * Возвращает 0 для невалидного input — это контракт, на который
+     * полагаются `parseInteger`-fallback'ы и handle*Change методы в
+     * controller'ах.
+     */
     parseNumber(str) {
-        if (!str || str.trim() === '') return 0;
-        // Normalize: replace the configured decimal separator with '.',
-        // then replace any remaining ',' with '.' (handles both separators).
-        // Using replaceAll to handle multiple occurrences (e.g. group separators).
-        let normalized = str;
-        if (this.decimalSeparator !== '.') {
-            // e.g. decimalSeparator = ',' → replace ',' with '.'
-            normalized = normalized.replaceAll(this.decimalSeparator, '.');
+        if (str === null || str === undefined) return 0;
+        let normalized = String(str).trim();
+        if (!normalized) return 0;
+
+        // Strip space (thousands separator из Excel paste).
+        normalized = normalized.replace(/\s/g, '');
+
+        const hasDot = normalized.includes('.');
+        const hasComma = normalized.includes(',');
+
+        if (hasDot && hasComma) {
+            // Mixed: alt-separator (тот, что НЕ настроен как decimal) — thousands.
+            const altSeparator = this.decimalSeparator === ',' ? '.' : ',';
+            normalized = normalized.split(altSeparator).join('');
+            // После strip остаётся только configured separator → к точке.
+            normalized = normalized.replace(',', '.');
+        } else if (hasComma) {
+            // Только запятая → decimal (даже если configured separator = '.').
+            // Сохраняет user-friendly cross-separator input.
+            normalized = normalized.replace(',', '.');
         }
-        // Remove any remaining commas (used as group separators or alternate decimal)
-        normalized = normalized.replace(',', '.');
+        // Только точка или нет разделителя — leave as is.
+
+        // Strict whole-string match. Любой посторонний символ или несколько
+        // точек → невалидно → 0 (контракт для controller'ов).
+        if (!/^-?\d+(\.\d+)?$/.test(normalized)) return 0;
+
         const num = parseFloat(normalized);
-        return isNaN(num) ? 0 : num;
+        return Number.isFinite(num) ? num : 0;
     }
 
     parseInteger(str) {
@@ -104,9 +153,7 @@ export class NumberFormatService {
 
     /**
      * Округляет до N знаков после запятой.
-     * v8.30.22: decimals аргумент clamp'ится к [0, MAX_DECIMALS=2]; non-finite
-     * (NaN, ±Infinity) → 0 — иначе `Math.round(Infinity * 100) / 100` возвращает
-     * Infinity и отравляет state.
+     * v8.30.22: decimals clamp'ится к [0, MAX_DECIMALS=2]; non-finite → 0.
      */
     roundToDecimals(value, decimals = 1) {
         if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
@@ -119,36 +166,27 @@ export class NumberFormatService {
      * Live-input handler: убирает запрещённые символы, нормализует разделитель
      * к точке и ограничивает дробную часть MAX_DECIMALS знаками.
      *
-     * v8.30.22: добавлен truncate дробной части — пользователь физически не
-     * может ввести 3+ знака. Trailing dot (`1.`) сохраняется как mid-typing.
-     *
-     * v8.30.23: locale-aware paste. Если в строке встретились ОБА `.` И `,`
-     * (типичный paste из Excel — `1.234,56`), alt-separator (тот, что НЕ
-     * настроен как decimal) считается thousands и стрипается. Иначе раньше
-     * `1.234,56` (decimal=',') превращался в `1,23` — потеря 1233 единиц.
-     * Если в строке только один тип разделителя — старая логика (он
-     * считается decimal).
+     * v8.30.22: добавлен truncate дробной части.
+     * v8.30.23: locale-aware — если ОБА `.` И `,`, alt-separator стрипается
+     *           как thousands.
      */
     handleInput(element) {
+        if (!element) return;
         let value = element.value;
         value = value.replace(/[^\d.,]/g, '');
 
-        // Locale-aware mixed-separator handling (v8.30.23).
         const hasDot = value.includes('.');
         const hasComma = value.includes(',');
         if (hasDot && hasComma) {
             const altSeparator = this.decimalSeparator === ',' ? '.' : ',';
-            // Strip alt-separator (treated as thousands).
             value = value.split(altSeparator).join('');
         }
 
-        // Normalize remaining commas to dot (universal internal form).
         value = value.replace(/,/g, '.');
         const parts = value.split('.');
         if (parts.length > 2) {
             value = parts[0] + '.' + parts.slice(1).join('');
         }
-        // Truncate fractional part to MAX_DECIMALS (after merge of multiple dots).
         const dotIdx = value.indexOf('.');
         if (dotIdx !== -1) {
             const intPart = value.slice(0, dotIdx);
@@ -161,9 +199,28 @@ export class NumberFormatService {
     }
 
     formatInputOnBlur(element) {
+        if (!element) return;
         const parsed = this.parseNumber(element.value);
-        if (!isNaN(parsed)) {
-            element.value = this.formatNumber(parsed);
-        }
+        element.value = this.formatNumber(parsed);
+    }
+
+    /**
+     * Подключает live-cap + blur-format к decimal input element одной
+     * строкой. v8.30.24: внешний аудит P1.1 — handleInput жил в коде, но
+     * не вызывался ни в одном production code-path. Этот helper делает
+     * подключение явным и обязательным.
+     *
+     * Использование (в controller'ах):
+     *   nfs.wireDecimalInput(document.getElementById('cfgAvailCoef'));
+     *   nfs.wireDecimalInput(document.getElementById('h_uiux'));
+     *
+     * Архитектурный invariant: для каждого decimal input в HTML должен
+     * существовать вызов `wireDecimalInput` или эквивалент в init-методе
+     * controller'а. См. tests/unit/architecture/decimal-input-wired.test.js.
+     */
+    wireDecimalInput(element) {
+        if (!element || typeof element.addEventListener !== 'function') return;
+        element.addEventListener('input', (e) => this.handleInput(e.target));
+        element.addEventListener('blur', (e) => this.formatInputOnBlur(e.target));
     }
 }

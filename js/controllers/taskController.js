@@ -80,25 +80,25 @@ export class TaskController {
             });
         }
 
-        // Обработчики событий для полей оценки (обновить общие затраты и формат)
+        // Обработчики событий для полей оценки трудозатрат.
+        // v8.30.24: live cap через nfs.handleInput (раньше handleInput жил
+        // в коде, но не вызывался — внешний аудит P1.1). Blur округляет до
+        // 2 знаков и форматирует через formatNumber (trim trailing zeros).
         ROLES.map(r => `h_${r.id}`).forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', (e) => {
-                    const val = parseFloat(e.target.value);
-                    if (val < 0) {
-                        e.target.value = 0;
-                    }
+                    this.nfs.handleInput(e.target); // live cap ≤ 2 знака
+                    // Защита от отрицательного — после strict parse.
+                    const val = this.nfs.parseNumber(e.target.value);
+                    if (val < 0) e.target.value = '0';
                     this._form.updateCreateFormTotal();
                 });
                 el.addEventListener('blur', (e) => {
-                    const raw = e.target.value;
-                    let num = this.nfs.parseNumber(raw);
-                    if (isNaN(num) || num < 0) {
-                        num = 0;
-                    }
-                    num = Math.round(num * 10) / 10;
-                    e.target.value = this.nfs.formatNumber(num, 1);
+                    let num = this.nfs.parseNumber(e.target.value);
+                    if (num < 0) num = 0;
+                    num = this.nfs.roundToDecimals(num, 2);
+                    e.target.value = num === 0 ? '' : this.nfs.formatNumber(num);
                     this._form.updateCreateFormTotal();
                 });
             }
@@ -143,6 +143,16 @@ export class TaskController {
 
             taskList.addEventListener('change', (e) => {
                 if (e.target.dataset.action === 'updateEst') this.handleUpdateEst(e);
+            });
+
+            // v8.30.24: live cap для inline est inputs через делегацию `input`
+            // event (P1.1 fix — раньше handleInput не вызывался ни в одном
+            // production code-path). DOM ephemeral — делегация на родителе
+            // корректнее, чем listener-in-render.
+            taskList.addEventListener('input', (e) => {
+                if (e.target.dataset.action === 'updateEst') {
+                    this.nfs.handleInput(e.target);
+                }
             });
 
             // v8.27.2: stepper-кнопки criteria-eval вместо <select>.

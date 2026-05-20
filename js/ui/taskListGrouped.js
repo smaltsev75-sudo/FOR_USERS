@@ -176,7 +176,7 @@ function formatGroupSummary(count, effort, capacityPct, nfs) {
         : { formatNumber: (n, d = 0) => Number(n).toFixed(d) };
 
     const tasksText = formatTaskCount(count);
-    const effortText = `${safeNfs.formatNumber(effort, 1)}ч`;
+    const effortText = `${safeNfs.formatNumber(effort)}ч`;
     const pctText = `${safeNfs.formatNumber(capacityPct, 0)}%`;
 
     return `

@@ -1,5 +1,81 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.24) — второй внешний аудит: precision cap стал реальным контрактом
+
+> Аудитор за минуты доказал, что декларированный в v8.30.22 «cap ≤ 2 знака» был частичным UI-фильтром: `handleInput` жил в коде, но не вызывался ни в одном production code-path; `formatNumber` дефолт=1 → карточки показывали `1,23` как `1,2`; `parseNumber` принимал мусор `1abc → 1`. 7 пунктов, все починены одной волной + сквозной e2e в Chromium.
+
+### Findings внешнего аудита
+
+| # | Severity | Что нашёл |
+|---|---|---|
+| 1 | **P1** | `handleInput` не подключён ни в одном controller. Реальный ввод шёл через `parseFloat`/`parseNumber` без cap. |
+| 2 | **P1** | `formatNumber` default = 1 знак. Карточка задачи / edit modal / blur — все показывали 1 знак. `1,23` отображалось как `1,2`. |
+| 3 | **P2** | `parseNumber` через `parseFloat`: `1abc → 1`, `1.2.3 → 1.2`, `1 234,56 → 1`. |
+| 4 | **P2** | Integer-only поля (Дни/Праздники/Вес критерия/FTE/Alert) противоречили заявлению «все числовые поля». |
+| 5 | **P2** | Архитектурный тест ловил только `N > 2`, не проверял подключение `handleInput`. |
+| 6 | **P3** | UserManual обещал «третий знак физически не появляется» — неверно (см. #1). |
+| 7 | **P3** | `fileController` импорт не проверял `saveSettings()` status — расхождение с контрактом `App.saveToLS`. |
+
+### Что починено
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`js/services/numberFormat.js`](../js/services/numberFormat.js) | Новый `wireDecimalInput(element)` helper: подключает `input` + `blur` listeners одной строкой. `parseNumber` строгий: whole-string regex `^-?\d+(\.\d+)?$`, мусор → 0; thousands (space/alt-separator) поддержан. |
+| 2 | [`js/services/numberFormat.js`](../js/services/numberFormat.js) | `formatNumber` дефолт **2 знака + trim trailing zeros**: `1.23 → "1,23"`, `8 → "8"`, `8.5 → "8,5"`, `8.50 → "8,5"`, `12.75 → "12,75"`. Опциональный `{trimTrailingZeros: false}` для legacy fixed-формата. |
+| 3 | [`js/controllers/taskController.js`](../js/controllers/taskController.js) | `h_*` input event теперь зовёт `nfs.handleInput(e.target)` ДО других вычислений. Делегация `taskList → input` обрабатывает inline est cells (DOM ephemeral, render-recreated). Blur clamp negative → 0 + `roundToDecimals(_, 2)` + format default. |
+| 4 | [`js/controllers/configController.js`](../js/controllers/configController.js) | `handleAvailCoefInput` начинается с `nfs.handleInput`; `roundToDecimals(_, 2)` вместо `_, 1`; `formatNumber` без явного `1`. |
+| 5 | [`js/controllers/task/taskListHandler.js`](../js/controllers/task/taskListHandler.js) | `handleUpdateEst` округляет до 2 знаков через `nfs.roundToDecimals(value, 2)` перед записью в Store — чтобы priority/effort расчёты не работали с arithmetic precision из inline input. |
+| 6 | Display callers ([`ui/taskList.js`](../js/ui/taskList.js), [`ui/taskListGrouped.js`](../js/ui/taskListGrouped.js), [`controllers/task/taskFormController.js`](../js/controllers/task/taskFormController.js)) | Все `formatNumber(_, 1)` для effort/priorityScore/criteria-contribution заменены на default. |
+| 7 | [`js/controllers/fileController.js`](../js/controllers/fileController.js) | Проверка `saveResult.ok === false` после `nfs.saveSettings()` в импорте + snackbar при fail. Контракт симметричен с `App.saveToLS::_notifyPersistFailure`. |
+| 8 | [`tests/unit/architecture/decimal-input-wired.test.js`](../tests/unit/architecture/decimal-input-wired.test.js) | **Новый архитектурный инвариант**: для каждого `<input ... inputmode="decimal">` в HTML — проверка наличия `handleInput`/`wireDecimalInput` в каком-либо controller'е. Whitelist для integer-only полей (`cfgAlert`). Делегация `data-action="updateEst"` тоже проверена. |
+| 9 | [`docs/UserManual.md`](UserManual.md) | «третий знак физически не появляется» → «третий знак отбрасывается при вводе live». Уточнено: cap применяется к **полям с десятичной точностью** (Effort/Priority Score/Коэффициент доступности), целочисленные поля (Дни/Праздники/FTE/Вес критерия/Alert) дробной части не позволяют. |
+| 10 | [`tests/unit/services/numberFormat.test.js`](../tests/unit/services/numberFormat.test.js) | +27 тестов: default decimals=2 + trim, parseNumber strict (10 cases: мусор, thousands, locale-aware), wireDecimalInput (3 cases), legacy formatNumber update. |
+| 11 | [`tests/e2e/planner.spec.js`](../tests/e2e/planner.spec.js) | **End-to-end в Chromium**: «preserves 2 decimals in inline effort cell (1,23 → "1,23")» и «truncates fractional > 2 digits live on input (1,234 → "1,23")». Закрывает §6.ter — parse-check ≠ runs OK. |
+
+### Что НЕ изменилось (явная декларация)
+
+- **Integer-only поля** (Дни спринта / Праздники / FTE / Вес критерия / Порог алерта). Это **осознанный контракт**: дни спринта дробными не бывают. UserManual теперь явно описывает это разделение.
+- **Storage normalizer** (`normalizeNumber` в `state/persistence.js`). Арифметика в state может хранить произвольную точность, но любой её выход в UI/input проходит через capped formatter или `roundToDecimals(_, 2)` на save (`handleUpdateEst`).
+- **Сторонние процентовые форматтеры** (`fmt1`/`fmt2` в `selectionReport.js`, `barWidth.toFixed(1)` для CSS variables) — для UI-геометрии и отчёта остались как были, ≤ 2 знаков, инвариант не нарушен.
+
+### Adversarial-проход (§3.ter глобального CLAUDE.md)
+
+| Ось | Вектор | Поведение |
+|---|---|---|
+| Альтернативные entry points | live input, paste из Excel `1.234,56`, blur, programmatic state mutation | все закрыты (handleInput, parseNumber, roundToDecimals) |
+| Encoding | thousands `1 234,56`, mixed `1.234,56`, cross-separator `1,5` при decimal=`.` | корректно парсятся |
+| Boundary | `1.`, `12.99999`, `0.00001`, `-5,5`, `1abc`, `1.2.3` | mid-typing dot сохранён, truncate работает, мусор → 0 |
+| Failure modes | `Infinity`, `-Infinity`, `NaN` | `formatNumber` → `"0"`, `roundToDecimals` → 0 |
+| External actor | malicious JSON import с `effort: 1.234567` | persistence хранит raw, но любое отображение → `1,23` |
+
+### Pre-commit
+
+| Метрика | v8.30.23 | v8.30.24 |
+|---|---|---|
+| Unit-suites | 84 PASS | **85 PASS** (+1 invariant decimal-input-wired) |
+| Unit-tests | 1311 | **1338** (+27) |
+| E2E (Playwright Chromium) | 191 PASS | **193 PASS** (+2: `1,23` preserve + live truncate) |
+| ESLint | clean | clean |
+| `npm audit --omit=dev` | 0 vulns | 0 vulns |
+| `package-lock.json` ↔ `package.json` | sync | sync (auto через bump) |
+
+### End-to-end в реальном Chromium
+
+- В новой задаче ввод `1,23` в FE-effort cell → blur → `1,23` остаётся, карточка показывает `1,23`.
+- Ввод `1,234` → live truncate до `1,23` без blur.
+- Paste `1.234,56` → `1234,56` (thousands stripped, в v8.30.23 уже было).
+
+### Hard-reload обязателен
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**.
+`CACHE_VERSION` → `sp-v8.30.24-decimal-cap-wireup`.
+
+### Урок процессный
+
+Вторая итерация по той же теме за сутки. Аудитор первым же утверждением сказал главное: «cap есть, но не подключён». Я в RELEASE_NOTES v8.30.22 явно написал «не трогаю storage normalizer, минимизирую blast radius» — это и был **red flag** (см. memory `feedback_user_says_systemic_means_contract_not_filter`). Калибровка: «ограничим X для <данных>» = контракт; чинить на ВСЕХ entry points сразу. §6.ter «end-to-end verification, не parse-check» — теперь покрыт реальным Chromium-тестом.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.23) — внешний аудит precision cap: симметричный guard + locale-aware paste
 
 > Внешний аудит сразу после v8.30.22. P1 не найдено по новому коду, но **3 серьёзных P2 — мой self-audit miss**: cap работал только в UI-input, импорты/persistence/paste пропускали `1.234` и хуже. Релиз закрывает все доказанные дыры.

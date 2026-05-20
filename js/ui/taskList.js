@@ -338,12 +338,12 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
             <div class="criteria-row criteria-row--excluded">
                 <div class="criteria-section-label">Приоритет</div>
                 <div class="criteria-row-body">
-                    <div class="priority-score-container priority-score-${lvl}" title="Приоритет: ${escapeHtml(lbl)} (${nfs.formatNumber(priorityScore, 1)})">
+                    <div class="priority-score-container priority-score-${lvl}" title="Приоритет: ${escapeHtml(lbl)} (${nfs.formatNumber(priorityScore)})">
                         <span class="priority-score-icon" aria-hidden="true">${icon('barChart')}</span>
                         <span class="priority-score-meta">
                             <span class="priority-score-label">Priority Score</span>
                         </span>
-                        <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore, 1)}">${nfs.formatNumber(priorityScore, 1)}</span>
+                        <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore)}">${nfs.formatNumber(priorityScore)}</span>
                     </div>
                 </div>
             </div>
@@ -371,7 +371,7 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
                     <span class="criteria-eval-abbreviation" title="${criterionNameSafe}">${escapeHtml(criterion.abbreviation)}</span>
                     <span class="mobile-criteria-abbreviation" title="${criterionNameSafe}">${mobileAbbreviation}</span>
                     <span class="criteria-eval-weight" title="Вес критерия">${criterion.weight}%</span>
-                    <span class="criteria-eval-contribution" title="Вклад в Priority Score (score × weight / 10)">+${nfs.formatNumber(value, 1)}</span>
+                    <span class="criteria-eval-contribution" title="Вклад в Priority Score (score × weight / 10)">+${nfs.formatNumber(value)}</span>
                 </div>
                 <div class="criteria-eval-stepper"
                      role="spinbutton"
@@ -403,12 +403,12 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
             <div class="criteria-section-label">Метрики приоритета</div>
             <div class="criteria-row-body">
                 <div class="criteria-evaluation">${criteriaRows}</div>
-                <div class="priority-score-container priority-score-${level}" title="Приоритет: ${escapeHtml(label)} (${nfs.formatNumber(priorityScore, 1)})">
+                <div class="priority-score-container priority-score-${level}" title="Приоритет: ${escapeHtml(label)} (${nfs.formatNumber(priorityScore)})">
                     <span class="priority-score-icon" aria-hidden="true">${icon('barChart')}</span>
                     <span class="priority-score-meta">
                         <span class="priority-score-label">Priority Score</span>
                     </span>
-                    <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore, 1)}">${nfs.formatNumber(priorityScore, 1)}</span>
+                    <span class="priority-score-value" data-value="${nfs.formatNumber(priorityScore)}">${nfs.formatNumber(priorityScore)}</span>
                 </div>
             </div>
         </div>
@@ -446,7 +446,7 @@ export function createTaskElement(task, taskEvaluations, index, roles, criteria,
     const priorityLabel = getPriorityLabel(priorityLevel);
     const typeBadgeHtml = buildTypeBadgeHtml(vm);
     const statusBadgeHtml = buildStatusBadgeHtml(vm);
-    const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel, nfs.formatNumber(priorityScore, 1));
+    const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel, nfs.formatNumber(priorityScore));
 
     if (vm.excluded) el.classList.add('excluded');
     el.classList.add(`priority-${priorityLevel}`);

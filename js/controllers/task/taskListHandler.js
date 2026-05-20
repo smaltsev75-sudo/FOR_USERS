@@ -44,8 +44,11 @@ export class TaskListHandler {
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === taskId);
         if (!task || task.excluded) return;
+        // v8.30.24: live cap уже применён через taskList render (input listener
+        // подключает nfs.handleInput). Здесь — округление в state до 2 знаков,
+        // чтобы priority/effort расчёты не работали с raw arithmetic-precision.
         let value = this.nfs.parseNumber(input.value) || 0;
-        value = Math.max(0, value);
+        value = Math.max(0, this.nfs.roundToDecimals(value, 2));
         const newEst = { ...task.est, [roleId]: value };
         this.store.updateTask(taskId, { est: newEst });
         this._cache.invalidate();

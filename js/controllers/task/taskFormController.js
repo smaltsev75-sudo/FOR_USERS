@@ -219,7 +219,7 @@ export class TaskFormController {
         const priorityScore = totalWeight > 0 ? totalScore / totalWeight : 0;
         const el = document.getElementById('createPriorityScoreHeader');
         if (el) {
-            el.textContent = `Priority Score: ${this.nfs.formatNumber(priorityScore, 1)}`;
+            el.textContent = `Priority Score: ${this.nfs.formatNumber(priorityScore)}`;
         }
     }
 
@@ -405,7 +405,7 @@ export class TaskFormController {
             const input = document.getElementById(`h_${role.id}`);
             if (input) {
                 const v = estimates[role.id];
-                input.value = (v !== null && v !== undefined && v !== 0) ? this.nfs.formatNumber(v, 1) : '';
+                input.value = (v !== null && v !== undefined && v !== 0) ? this.nfs.formatNumber(v) : '';
             }
         });
 
