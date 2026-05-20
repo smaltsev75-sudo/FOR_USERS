@@ -29,7 +29,7 @@ export class FileController {
                 this.saveToFile();
             });
         } else {
-            messageService.showMessage('❌ saveBtn не найден');
+            messageService.showMessage('Ошибка: кнопка «Сохранить» не найдена в DOM');
         }
 
         if (loadBtn) {
@@ -37,7 +37,7 @@ export class FileController {
                 this.loadFromFile();
             });
         } else {
-            messageService.showMessage('❌ loadBtn не найден');
+            messageService.showMessage('Ошибка: кнопка «Загрузить» не найдена в DOM');
         }
     }
 

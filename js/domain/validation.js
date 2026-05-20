@@ -10,8 +10,12 @@ import { APP_CONFIG } from '../utils/appConfig.js';
  */
 export function validateTitle(title) {
     if (!title || !title.trim()) return { valid: false, message: 'Название задачи обязательно для заполнения' };
-    if (title.length < APP_CONFIG.VALIDATION.TITLE_MIN_LENGTH) return { valid: false, message: 'Название задачи должно содержать не менее 5 символов' };
-    if (title.length > APP_CONFIG.VALIDATION.TITLE_MAX_LENGTH) return { valid: false, message: 'Название задачи должно содержать не более 150 символов' };
+    // v8.30.20: длина считается по trimmed-значению. До v8.30.19 длина бралась
+    // от сырой строки — вызывающий код, который не trim'ил сам, считал
+    // '   ab   ' (raw.length=8) валидным, что является дыркой контракта.
+    const trimmed = title.trim();
+    if (trimmed.length < APP_CONFIG.VALIDATION.TITLE_MIN_LENGTH) return { valid: false, message: 'Название задачи должно содержать не менее 5 символов' };
+    if (trimmed.length > APP_CONFIG.VALIDATION.TITLE_MAX_LENGTH) return { valid: false, message: 'Название задачи должно содержать не более 150 символов' };
     return { valid: true };
 }
 

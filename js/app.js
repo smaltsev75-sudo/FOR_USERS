@@ -215,14 +215,30 @@ export async function bootstrapApp() {
     // v8.30.19: acquire async (Web Locks API внутри) — обязательно await.
     const lock = await acquireInstanceLock(mine);
     if (!lock.ok) {
-        renderBlockedScreen({
-            mode: 'conflict',
-            mine,
-            other: lock.conflict || {
-                version: '(неизвестно)',
-                storageVersion: APP_CONFIG.STORAGE_VERSION
-            }
-        });
+        // v8.30.20 P2 #5 self-review: до фикса ЛЮБОЙ !lock.ok рендерился как
+        // mode='conflict'. Для QuotaExceededError / SecurityError из instanceLock
+        // metadata-записи это давало ложное «уже открыта другая вкладка»,
+        // хотя реальная причина — проблема со storage. Различаем:
+        //   - lock.conflict !== null → другая вкладка реально активна → 'conflict'
+        //   - lock.error === 'LockUnavailable' → Web Locks вернул null, но
+        //     registry ещё пуст (race window, другая вкладка пока не успела
+        //     записать metadata) → всё равно 'conflict' с заглушкой версии
+        //   - lock.error любой другой (Storage*) → 'lock-storage-error'
+        const isStorageError = lock.conflict === null
+            && lock.error
+            && lock.error !== 'LockUnavailable';
+        if (isStorageError) {
+            renderBlockedScreen({ mode: 'lock-storage-error', mine, error: lock.error });
+        } else {
+            renderBlockedScreen({
+                mode: 'conflict',
+                mine,
+                other: lock.conflict || {
+                    version: '(неизвестно)',
+                    storageVersion: APP_CONFIG.STORAGE_VERSION
+                }
+            });
+        }
         return null;
     }
 
@@ -242,19 +258,26 @@ export async function bootstrapApp() {
             return null;
         }
 
-        if (Number.isFinite(savedVersion) && savedVersion < APP_CONFIG.STORAGE_VERSION) {
-            // v8.30.19: P1 self-review v8.30.18 — раньше результат saveBackup
-            // не проверялся. При quota/SecurityError backup не записывался,
-            // миграция всё равно шла и перештамповывала version поверх raw
-            // → исходное состояние теряется без шанса recovery. Теперь при
-            // !ok рендерится отдельный mode='backup-failed' с инструкцией
-            // скачать JSON вручную, а App НЕ запускается.
-            const backupResult = storageService.saveBackup(rawSaved, savedVersion);
+        // v8.30.20 P2 #6 self-review: до фикса backup создавался ТОЛЬКО при
+        // `Number.isFinite(savedVersion) && savedVersion < STORAGE_VERSION`.
+        // Legacy JSON без `version` поля или с NaN/null/нечисловой версией
+        // НЕ бэкапился, но миграция (migratePersistedState) всё равно
+        // нормализовала state и при первом save перештамповывала raw →
+        // исходное состояние терялось. Теперь backup срабатывает на любой
+        // нетекущей версии (включая NaN — fromVersion=0 как legacy-marker).
+        // Также corrupt JSON бэкапим — пользователь может захотеть посмотреть
+        // raw для recovery.
+        const needsBackup = (parsed === null)
+            || (!Number.isFinite(savedVersion))
+            || (savedVersion !== APP_CONFIG.STORAGE_VERSION);
+        if (needsBackup) {
+            const fromVersion = Number.isFinite(savedVersion) ? savedVersion : 0;
+            const backupResult = storageService.saveBackup(rawSaved, fromVersion);
             if (backupResult && !backupResult.ok) {
                 renderBlockedScreen({
                     mode: 'backup-failed',
                     mine,
-                    savedVersion,
+                    savedVersion: fromVersion,
                     error: backupResult.error || 'StorageError'
                 });
                 lock.release();
@@ -268,7 +291,7 @@ export async function bootstrapApp() {
 
 if (typeof window !== 'undefined' && !window.__PLANNER_DISABLE_AUTOBOOT__) {
     bootstrapApp().catch((err) => {
-        // eslint-disable-next-line no-console -- bootstrap failure нельзя проглатывать
+        // bootstrap failure нельзя проглатывать (no-console уже off в eslint.config)
         console.error('[bootstrapApp] неперехваченная ошибка:', err);
     });
 }

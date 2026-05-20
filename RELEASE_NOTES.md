@@ -1,5 +1,71 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.20) — внешний код-аудит: lint, lockfile, legacy backup, error-mode
+
+> Пользователь провёл собственный код-аудит v8.30.19 и нашёл 7 пунктов, включая P1-блокер (`npm run lint` падал — я даже не запускал его перед коммитом) и lockfile drift (регрессировал второй раз). Это уже **второй внешний аудит, ловящий мой брак подряд** после моего «успешного» self-review. Этот релиз закрывает все 7.
+
+### Findings внешнего аудита
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P1 blocker** | [js/services/instanceLock.js:239,305](../js/services/instanceLock.js) | `heartbeatHandle != null` в двух местах — eslint `eqeqeq` требует `!==`. **`npm run lint` падал**. Я не запускал lint перед `git push`, отрапортовал «1273/1273 PASS» (только Jest). |
+| 2 | P2 | [package-lock.json:3](../package-lock.json) | lockfile дрейфовал на `8.30.15`, при этом `package.json` уже `8.30.19`. `scripts/bump-version.mjs` не трогал lockfile, `tests/unit/version.test.js` не проверял. Регрессия после v8.30.14→15. |
+| 3 | P2 | [js/app.js:233](../js/app.js) (v8.30.19) | backup срабатывал только при `Number.isFinite(savedVersion) && savedVersion < STORAGE_VERSION`. Для legacy JSON без `version` поля (NaN), с `version: null` или нечисловой — backup НЕ создавался, но `App()` всё равно нормализовал и при первом `save` перетирал raw → данные пользователя терялись без recovery. |
+| 4 | P2 | [js/app.js:219](../js/app.js) (v8.30.19) | Любой `!lock.ok` рендерился как `mode: 'conflict'`. Для `QuotaExceededError`/`SecurityError` из `instanceLock` metadata-записи пользователь видел ложное «уже открыта другая вкладка», хотя реальная причина — storage. |
+| 5 | P3 | [js/app.js:271](../js/app.js) (v8.30.19) | Лишний `// eslint-disable-next-line no-console` — правило `no-console` уже `off` в config'е, лишний disable давал eslint warning. |
+| 6 | P3 | [js/domain/validation.js:13](../js/domain/validation.js) | `validateTitle` считал длину **до** `trim()`. UI передавал уже trim-значение, но экспортированный валидатор принимал `validateTitle('   ab   ')` (raw.length=8) как valid — дырка контракта. |
+| 7 | P3 | [js/controllers/fileController.js:32](../js/controllers/fileController.js) | Эмодзи `❌` в `messageService.showMessage('❌ saveBtn не найден')` — нарушение проектного правила «эмодзи в UI запрещены». |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | **`heartbeatHandle != null` → `!== null`** в обоих местах (`acquireViaWebLocks` + `acquireViaRegistryFallback`). `npm run lint` clean. |
+| 2 | **Lockfile sync автоматизирован**: [`scripts/bump-version.mjs`](../scripts/bump-version.mjs) теперь после regex-правок вызывает `npm install --package-lock-only --no-audit --no-fund` через `spawnSync` (с `shell:true` для Windows-совместимости). Это синхронизирует `root.version` и `packages[""].version` в lockfile без скачивания `node_modules`. **Архитектурный инвариант** в [`tests/unit/version.test.js`](../tests/unit/version.test.js) теперь проверяет `package-lock.json` == `package.json` версии at-commit. Регрессия теперь падает в тестах. |
+| 3 | **[`js/app.js`](../js/app.js) `bootstrapApp`**: backup срабатывает теперь при ЛЮБОЙ нетекущей `savedVersion` (включая NaN/null/нечисловой). Если `Number.isFinite(savedVersion)` — `fromVersion = savedVersion`; иначе `fromVersion = 0` (legacy marker). Также corrupt JSON бэкапим — у пользователя должна быть возможность recovery raw. |
+| 4 | **Новый mode `'lock-storage-error'`** в [`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js): отдельный заголовок «Не удалось обратиться к локальному хранилищу» с именем ошибки (`escapeHtml`) и инструкцией (освободить место, выйти из инкогнито, отключить строгую блокировку). `bootstrapApp` теперь различает: `conflict !== null || error === 'LockUnavailable'` → mode `'conflict'`; иначе (`Storage*Error`) → mode `'lock-storage-error'`. |
+| 5 | **Удалён лишний `eslint-disable-next-line no-console`** в `app.js`. |
+| 6 | **`validateTitle` считает длину по `trim()`**. Добавлены 3 теста (whitespace-padded short fails / whitespace-padded long fails / whitespace-padded valid passes). |
+| 7 | **Эмодзи `❌` заменены** на text: «Ошибка: кнопка «Сохранить» не найдена в DOM» / «Ошибка: кнопка «Загрузить» не найдена в DOM». |
+
+### Новые тесты
+
+| Файл | Что |
+|---|---|
+| [tests/unit/version.test.js](../tests/unit/version.test.js) | **+1 describe** «package-lock.json version» (2 теста): файл существует + root/packages-version совпадают с package.json. |
+| [tests/unit/app.bootstrap.test.js](../tests/unit/app.bootstrap.test.js) | **новый файл** — целевой тест `bootstrapApp()`: 12 тестов, покрывают все ветки backup (`savedVersion === current`, `< current`, NaN, нечисловой, null, corrupt JSON, отсутствует rawSaved) + 3 mode'а (conflict / lock-storage-error / LockUnavailable race) + `backup-failed`. До этого `bootstrapApp` проверялся только архитектурным grep-инвариантом. |
+| [tests/unit/domain/validation.test.js](../tests/unit/domain/validation.test.js) | **+3 теста** на trim-aware length check для `validateTitle`. |
+
+### Тестовое покрытие
+
+| Метрика | v8.30.19 | v8.30.20 |
+|---|---|---|
+| Unit-suites | 82 PASS | **83 PASS** (+1: app.bootstrap) |
+| Unit-tests | 1256 | **1273** (+17) |
+| Lint | падал (2 errors + 1 warning) | **clean** |
+| audit | 0 vulns | 0 vulns |
+| package-lock.json | drift на v8.30.15 | **в sync с package.json** + invariant-тест |
+
+### End-to-end в реальном Chromium
+
+- Первая вкладка v8.30.20 захватывает Web Lock, registry с правильной версией ✓
+- Вторая вкладка получает blocked screen, обе версии `v8.30.20` в `<dl>` ✓
+- `document.activeElement === reloadBtn` (focus management по-прежнему работает) ✓
+- Заголовок «Уже открыта другая вкладка приложения» — корректный mode для conflict ✓
+- Lint clean, 1273/1273 unit-тестов PASS, lockfile == package.json
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.20`.
+
+### Memory + процессный урок
+
+Создана память **`feedback-pre-commit-full-check`**: перед `git commit` запускать **все** автоматические проверки — `npm run lint` + `npm test` + verify lockfile + `npm audit`, не только Jest. Отчёт «1256/1256 PASS» не означает «lint clean» — это разные линии защиты. Связанная память — `feedback-button-must-fulfill-its-label` (тот же класс: рапорт «done» без полной проверки). При крупном рефакторинге (как acquire async + Web Locks в v8.30.19) — гонять ВСЁ.
+
+`MEMORY.md` обновлён.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.19) — self-review fix-pass: Web Locks API + saveBackup check + 4 P2
 
 > Пользователь спросил «ты проверил качество своего кода?» — это вынудило сделать настоящее самостоятельное ревью v8.30.16–18 по 8 осям проектного CLAUDE.md. Нашёл 7 проблем, из них 2 P1 (реальные сценарии потери данных, обещанные защиты были неполные). Этот релиз закрывает все 7.

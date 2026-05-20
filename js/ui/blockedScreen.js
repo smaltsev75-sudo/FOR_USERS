@@ -83,6 +83,7 @@ export function renderBlockedScreen(args, opts = {}) {
     let body;
     if (args.mode === 'future-storage') body = renderFutureStorageBody(args);
     else if (args.mode === 'backup-failed') body = renderBackupFailedBody(args);
+    else if (args.mode === 'lock-storage-error') body = renderLockStorageErrorBody(args);
     else body = renderConflictBody(args);
 
     overlay.innerHTML = `
@@ -140,6 +141,24 @@ function renderConflictBody(args) {
             <dt>Уже активна:</dt>
             <dd>${otherV}</dd>
         </dl>
+    `;
+}
+
+function renderLockStorageErrorBody(args) {
+    const errorName = escapeHtml(String(args.error ?? 'StorageError'));
+    return `
+        <h1 id="${HEADING_ID}" class="blocked-screen__title">
+            Не удалось обратиться к локальному хранилищу
+        </h1>
+        <p class="blocked-screen__lead">
+            Приложение не смогло прочитать или записать данные о запущенных
+            вкладках в локальное хранилище браузера (${errorName}). Это могло
+            произойти из-за переполнения хранилища, режима инкогнито со
+            строгой блокировкой или ограничений безопасности браузера.
+            Освободите место в хранилище (например, очистите кэш), отключите
+            строгий блок третьих сторон для этой страницы или используйте
+            обычное окно, а затем нажмите «Попробовать снова».
+        </p>
     `;
 }
 

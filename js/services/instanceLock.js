@@ -236,7 +236,7 @@ async function acquireViaWebLocks(opts) {
     function releaseImpl() {
         if (released) return;
         released = true;
-        if (heartbeatHandle != null) {
+        if (heartbeatHandle !== null) {
             try { clearScheduledInterval(heartbeatHandle); } catch { /* ignore */ }
             heartbeatHandle = null;
         }
@@ -302,7 +302,7 @@ async function acquireViaRegistryFallback(opts) {
     function releaseImpl() {
         if (released) return;
         released = true;
-        if (heartbeatHandle != null) {
+        if (heartbeatHandle !== null) {
             try { clearScheduledInterval(heartbeatHandle); } catch { /* ignore */ }
             heartbeatHandle = null;
         }
