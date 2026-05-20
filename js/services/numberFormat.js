@@ -118,13 +118,32 @@ export class NumberFormatService {
     /**
      * Live-input handler: убирает запрещённые символы, нормализует разделитель
      * к точке и ограничивает дробную часть MAX_DECIMALS знаками.
-     * v8.30.22: добавлен truncate дробной части — чтобы пользователь физически
-     * не мог ввести 3+ знака после запятой. Если он уже ввёл точку и пока
-     * НЕ ввёл цифры (`1.`), trailing dot сохраняется — иначе мешает печатать.
+     *
+     * v8.30.22: добавлен truncate дробной части — пользователь физически не
+     * может ввести 3+ знака. Trailing dot (`1.`) сохраняется как mid-typing.
+     *
+     * v8.30.23: locale-aware paste. Если в строке встретились ОБА `.` И `,`
+     * (типичный paste из Excel — `1.234,56`), alt-separator (тот, что НЕ
+     * настроен как decimal) считается thousands и стрипается. Иначе раньше
+     * `1.234,56` (decimal=',') превращался в `1,23` — потеря 1233 единиц.
+     * Если в строке только один тип разделителя — старая логика (он
+     * считается decimal).
      */
     handleInput(element) {
         let value = element.value;
-        value = value.replace(/[^\d.,]/g, '').replace(/,/g, '.');
+        value = value.replace(/[^\d.,]/g, '');
+
+        // Locale-aware mixed-separator handling (v8.30.23).
+        const hasDot = value.includes('.');
+        const hasComma = value.includes(',');
+        if (hasDot && hasComma) {
+            const altSeparator = this.decimalSeparator === ',' ? '.' : ',';
+            // Strip alt-separator (treated as thousands).
+            value = value.split(altSeparator).join('');
+        }
+
+        // Normalize remaining commas to dot (universal internal form).
+        value = value.replace(/,/g, '.');
         const parts = value.split('.');
         if (parts.length > 2) {
             value = parts[0] + '.' + parts.slice(1).join('');

@@ -1,5 +1,67 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.23) — внешний аудит precision cap: симметричный guard + locale-aware paste
+
+> Внешний аудит сразу после v8.30.22. P1 не найдено по новому коду, но **3 серьёзных P2 — мой self-audit miss**: cap работал только в UI-input, импорты/persistence/paste пропускали `1.234` и хуже. Релиз закрывает все доказанные дыры.
+
+### Findings внешнего аудита
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P2** | [`js/state/persistence.js:263`](../js/state/persistence.js) `normalizeNumber` | **Лимит 2 знаков не был системным инвариантом.** UI-input cap работал, но JSON-импорт и `migratePersistedState` пропускали raw `priorityScore: 1.234567` / `est.fe: 8.123` в state без округления. Контракт ассиметричен между ввод и load. |
+| 2 | **P2** | [`js/services/numberFormat.js::handleInput`](../js/services/numberFormat.js) | **Paste `1.234,56` превращался в `1,23`** (потеря 1233 единиц). Excel/Sheets вставляют числа с thousands-separator. Старый `handleInput` менял все `,` на `.`, склеивал точки, обрезал до 2 знаков фракции. На реальном вводе из Excel — катастрофа. Регресс существовал до v8.30.22, но новый truncate его обострил. |
+| 3 | **P3** | [`tests/unit/`](../tests/) | **Тесты покрывали только UI-input helper'ы**, не bundle/import paths, не paste edge cases. Архитектурный grep ловил `.toFixed(N>2)`, но не «отсутствие cap'а на entry-point». |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | [`js/state/persistence.js`](../js/state/persistence.js): `normalizeNumber` теперь принимает optional `decimals` параметр и защищён от non-finite (`!Number.isFinite(parsed) → fallback`). Применён cap **decimals=2** для всех floating-point persistent полей: `config.availCoef`, `task.priorityScore`, `task.est[role]`, `criteriaEvaluations[].value`. Любой entry-point данных в state (startup load, file import, save → load round-trip) теперь даёт ≤ 2 знаков. |
+| 2 | [`js/services/numberFormat.js::handleInput`](../js/services/numberFormat.js): добавлена locale-aware mixed-separator логика. Если в строке встретились ОБА `.` И `,` (paste из Excel), alt-separator (тот, что НЕ настроен как decimal) считается thousands и стрипается. `1.234,56` (decimal=',') → `1234.56`. `1.234.567,89` → `1234567.89`. Если только один тип — старая логика. |
+| 3 | [`tests/unit/services/numberFormat.test.js`](../tests/unit/services/numberFormat.test.js): **+7 тестов** на locale-aware paste — оба направления (decimal=',' и decimal='.'), однократный и множественный thousands-separator, edge case со склейкой и фракцией одновременно (`1.234,56789 → 1234.56`). |
+| 4 | [`tests/unit/state/persistence.test.js`](../tests/unit/state/persistence.test.js): **+6 тестов** на symmetric cap. Покрывают `availCoef`, `priorityScore`, `est[role]`, `criteriaEvaluations.value`, Infinity guard, JSON import с raw 1.234567 → round до 1.23. |
+
+### Symmetric guard (§3.quat глобального CLAUDE.md)
+
+Этот аудит — прямой пример «асимметрия — bypass». UI-cap я поставил, контракт data-validation на persistence — нет. Внешний аудит нашёл это за минуты. Теперь cap'нуто на ВСЕХ entry points:
+
+| Entry point | Где cap | Как |
+|---|---|---|
+| User input | `handleInput` (live) | `[^\d.,]` strip + locale-aware separator + truncate frac to 2 |
+| Programmatic create / update | `roundToDecimals(_, 2)` (в Store-сеттерах опционально) | best-effort, не enforced runtime |
+| Startup load из localStorage | `migratePersistedState` → `normalizeNumber(_, _, _, _, 2)` | hard cap |
+| File import (JSON) | `migratePersistedState` (тот же) | hard cap |
+| Save в localStorage | `serializeStateForStorage` → те же normalize-функции | hard cap |
+| postMessage / BroadcastChannel | n/a в PLANNER (lock only) | — |
+
+### Тестовое покрытие
+
+| Метрика | v8.30.22 | v8.30.23 |
+|---|---|---|
+| Unit-suites | 84 PASS | **84 PASS** |
+| Unit-tests | 1298 | **1311** (+13) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+| lockfile sync | в sync | в sync |
+
+### Adversarial-проход
+
+- **Encoding** `1.234,56` (Excel paste) → `1234.56` ✓ (P2 #2)
+- **Альтернативные entry points** — все 6 каналов выше проверены ✓ (P2 #1)
+- **Race** — n/a, normalize sync
+- **Boundary** — Infinity / -Infinity / NaN → fallback ✓
+- **External actor** — malicious JSON `{priorityScore: 1e100}` → fallback 0 (не пробивает max) ✓
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.23-precision-symmetric-guard`.
+
+### Урок процессный
+
+Это **второй внешний аудит подряд после моего self-review** (после v8.30.22). Это **прямой self-audit miss** — я в RELEASE_NOTES v8.30.22 написал «не трогаю storage normalizer, минимизирую blast radius». Это был неправильный выбор — критерий «системный инвариант» требует симметрии, а не точечного фикса. Аудитор не задумался, на каком слое cap должен жить — он просто проверил все entry points. Принцип §3.quat работает: **симметричный guard или bypass**. Записываю в память.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.22) — ограничение точности чисел: ≤ 2 знаков после запятой
 
 > Пользовательский запрос: «ограничим точность знаков после запятой для чисел — не более 2 знаков». Раньше дефолт `NumberFormatService` принимал любой `decimals` аргумент (включая 3+), а live-input `handleInput` пропускал произвольное количество цифр после точки. Теперь обе функции `clamp` decimals к `[0, MAX_DECIMALS=2]`, а `handleInput` обрезает дробную часть прямо во время ввода.

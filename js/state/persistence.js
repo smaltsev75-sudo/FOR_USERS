@@ -100,7 +100,7 @@ function normalizeConfig(config = {}, defaults) {
         ...config,
         days: normalizeInteger(config.days, defaults.days, 1),
         holidays: normalizeInteger(config.holidays, defaults.holidays ?? 0, 0),
-        availCoef: normalizeNumber(config.availCoef, defaults.availCoef, 0, 100),
+        availCoef: normalizeNumber(config.availCoef, defaults.availCoef, 0, 100, 2),
         alert: normalizeInteger(config.alert, defaults.alert, 0),
         product: String(config.product ?? defaults.product),
         startDate: String(config.startDate ?? defaults.startDate ?? ''),
@@ -164,7 +164,7 @@ function normalizeTasks(tasks = []) {
             est: normalizeTaskEst(task.est),
             exclusionReason: String(task.exclusionReason ?? ''),
             criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
-            priorityScore: normalizeNumber(task.priorityScore, 0)
+            priorityScore: normalizeNumber(task.priorityScore, 0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, 2)
         };
     });
     return fixTaskOrder(normalized);
@@ -172,7 +172,7 @@ function normalizeTasks(tasks = []) {
 
 function normalizeTaskEst(est = {}) {
     return Object.fromEntries(
-        ROLES.map(r => [r.id, normalizeNumber(est?.[r.id], 0, 0)])
+        ROLES.map(r => [r.id, normalizeNumber(est?.[r.id], 0, 0, Number.POSITIVE_INFINITY, 2)])
     );
 }
 
@@ -204,7 +204,7 @@ function normalizeCriteriaEvaluations(evaluations = {}) {
         const item = evaluations[key] || {};
         normalized[key] = {
             score: normalizeInteger(item.score, 0, 0, 10),
-            value: normalizeNumber(item.value, 0, 0)
+            value: normalizeNumber(item.value, 0, 0, Number.POSITIVE_INFINITY, 2)
         };
     });
     return normalized;
@@ -260,8 +260,31 @@ function normalizeInteger(value, fallback, min = Number.MIN_SAFE_INTEGER, max = 
     return Math.max(min, Math.min(max, parsed));
 }
 
-function normalizeNumber(value, fallback, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY) {
+/**
+ * Нормализует число для persistence.
+ * v8.30.23: добавлен optional `decimals` параметр и защита от non-finite.
+ * Внешний аудит (P1): UI cap не работал symmetrically — JSON-import и
+ * migrate пропускали raw 1.234567. Теперь все floating-point поля при
+ * load прогоняются через decimals=2.
+ *
+ * @param {*} value
+ * @param {number} fallback
+ * @param {number} [min]
+ * @param {number} [max]
+ * @param {number|null} [decimals] — если задан, результат округляется до
+ *   стольких знаков после запятой (используется для floating-point полей,
+ *   которые должны соответствовать UI-инварианту ≤ 2 знаков).
+ */
+function normalizeNumber(value, fallback, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, decimals = null) {
     const parsed = Number(value);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
+    // Defense-at-load: Infinity / NaN из импорта (например деление на 0
+    // в исходной версии) НЕ должны попадать в state. Возвращаем fallback,
+    // чтобы Math.max/Math.min не растягивал бесконечность до max.
+    if (!Number.isFinite(parsed)) return fallback;
+    let result = Math.max(min, Math.min(max, parsed));
+    if (decimals !== null && Number.isFinite(decimals) && decimals >= 0) {
+        const factor = 10 ** Math.floor(decimals);
+        result = Math.round(result * factor) / factor;
+    }
+    return result;
 }
