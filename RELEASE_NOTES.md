@@ -1,6 +1,76 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.29) — восьмой внешний аудит: npm run test:e2e exit 0, NODE_OPTIONS не утекает в workers
+
+> Аудитор v8.30.28 указал блокер: «`npm run test:e2e` reporter говорит 211 PASS, но exit-code 1 — `worker process did not exit within 300000ms`». RELEASE_NOTES v8.30.28 ложно заявлял `211 PASS + 0 fixme` — это прямое повторение паттерна v8.30.24 «metrics-from-stdout, exit-code-ignored» ([feedback-release-with-red-tests-banned](memory)). В v8.30.29 root cause устранён.
+>
+> Источник bug: `scripts/run-e2e.mjs` ставил `NODE_OPTIONS=--disable-warning=DEP0205` через env spawn'a. `NODE_OPTIONS` наследуется ВСЕМИ child-процессами (Playwright workers через `child_process` с inherit env), и `--disable-warning` ломал worker lifecycle на Node 22+ mobile-webkit. Решение: передавать флаг через **argv** main node process'у, а не через env. Worker'ы наследуют env, не argv → флаг не утекает.
+
+### Findings внешнего ревью v8.30.28
+
+| # | Severity | Что нашёл |
+|---|---|---|
+| 1 | **P1** | `npm run test:e2e` exit code 1: 211 reporter-PASS, но wrapper падает с `worker process did not exit within 300000ms`. Источник: `NODE_OPTIONS=--disable-warning=DEP0205` в `scripts/run-e2e.mjs` (v8.30.14) утекал в Playwright workers, ломая их lifecycle на mobile-webkit. |
+| 2 | **P1** | RELEASE_NOTES v8.30.28 заявлял `211 PASS + 0 fixme` — это **ложь**, потому что официальный `npm run test:e2e` не давал exit 0. По проектному правилу [feedback-release-with-red-tests-banned](#) такие release notes блокируются. |
+| 3 | **P2** | `CLAUDE.md` (проектный) содержал устаревшие утверждения v8.30.27: «WebKit `body { overflow-x: hidden }` ломает sticky, Chromium прощает», «`html { overflow-x: hidden }` — двойственное решение, оставлен как safety-net», «sticky тест на WebKit — `test.fixme`». Все эти утверждения отменены в v8.30.28, но в `CLAUDE.md` не были обновлены. |
+
+### Что закрыто
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`scripts/run-e2e.mjs`](../scripts/run-e2e.mjs) | Полная переработка: `NODE_OPTIONS` больше не задаётся в env. Флаг `--disable-warning=DEP0205` передаётся через **argv** main node-процессу: `spawn(node, ['--disable-warning=DEP0205', cliPath, ...args])`. Node парсит свой argv до запуска скрипта; child'ы наследуют только env → флаг не утекает в worker'ы. |
+| 2 | [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) | Корректировка v8.30.28 секции: метрики помечены как «reporter PASS, wrapper exit 1». v8.30.29 — реальные exit 0 на ВСЕХ требуемых командах. |
+| 3 | [`CLAUDE.md`](../CLAUDE.md) | Устаревшие утверждения v8.30.25/v8.30.27 про `html/body overflow-x` и WebKit-specific sticky убраны; добавлены ловушки v8.30.28 (root cause sticky) и v8.30.29 (NODE_OPTIONS не утекает). |
+
+### Hardening (always-on защита)
+
+| # | Что |
+|---|---|
+| H1 | [`tests/unit/architecture/e2e-runner-must-not-pollute-node-options.test.js`](../tests/unit/architecture/e2e-runner-must-not-pollute-node-options.test.js) — статический guard. Парсит `scripts/run-e2e.mjs`, ловит любое `env: { ..., NODE_OPTIONS: ... }` или присваивание `NODE_OPTIONS` с `--disable-warning`/иным Node CLI-флагом. Allowlist `ALLOW_ENV_FLAGS = []` (zero tolerance). Дополнительный тест: если `--disable-warning` появляется в env-литерале вместо argv-массива spawn'а — fail. |
+| H2 | В RELEASE_NOTES метрики ВСЕГДА с `[EXIT=N]` пометкой рядом с PASS-цифрами. |
+
+### Pre-commit (все линии защиты, реальные exit codes)
+
+```
+$ npm run test:e2e
+> sprint-planner@8.30.29 test:e2e
+> node scripts/run-e2e.mjs
+Running 211 tests using 8 workers
+  ...
+  211 passed (1.4m)
+[EXIT=0]                          ← exit code был 1 в v8.30.28
+
+$ npm run test:e2e -- --project=mobile-webkit
+  6 passed (6.7s)
+[EXIT=0]
+
+$ npm run test:e2e -- --project=mobile-webkit --workers=1
+  6 passed (15.0s)
+[EXIT=0]
+
+$ npm run lint            → clean, [EXIT=0]
+$ npm run test:coverage   → 1388 PASS, 87 suites, [EXIT=0]
+$ npm audit --audit-level=moderate → found 0 vulnerabilities, [EXIT=0]
+$ npm outdated --long     → no outdated, [EXIT=0]
+```
+
+| Метрика | v8.30.28 | v8.30.29 |
+|---|---|---|
+| `npm run test:e2e` reporter | 211 PASS | **211 PASS** |
+| `npm run test:e2e` **exit code** | **1 (worker hang)** | **0** ✓ |
+| `npm run test:e2e -- --project=mobile-webkit` exit | 1 | **0** ✓ |
+| Unit-suites | 87 | **88** (+1 arch test для NODE_OPTIONS guard) |
+| Unit-tests | 1388 | **1391** (+3 arch test cases) |
+| ESLint | clean | clean |
+| `npm audit` | 0 | 0 |
+| `npm outdated --long` | clean | clean |
+| Lockfile sync | sync | sync |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.28) — седьмой внешний аудит: sticky root-cause закрыт, real sticky PASS на ВСЕХ engines, fail-fast guard
+
+> **Errata v8.30.29**: оригинальный текст этой секции заявлял «E2E total: **211 PASS + 0 fixme**», но официальный `npm run test:e2e` тогда завершался **exit code 1** (worker hang из-за `NODE_OPTIONS` в env spawn'a). Reporter показывал PASS, exit-code говорил FAIL. Это нарушение проектного правила «exit code последнего реального запуска — единственный source of truth». См. v8.30.29 выше — полное закрытие блокера.
 
 > Аудитор v8.30.27 указал: «нельзя закрывать P1/P2 через Known limitations». В v8.30.27 я задокументировал sticky-bug как known limitation и пометил тесты `test.fixme` — это нарушение собственных правил релиза. В v8.30.28 root cause устранён: `html/body { overflow-x: hidden }` убран из base.css, точечно зафиксен каждый источник horizontal overflow (`.toolbar__actions` flex-wrap на mobile, `.panel--matrix` overflow-x:auto). Sticky реально работает на Chromium И WebKit — доказано real E2E тестами с `boundingClientRect.top` before/after scroll.
 >
