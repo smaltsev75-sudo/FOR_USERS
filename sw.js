@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.15-maintenance';
+const CACHE_VERSION = 'sp-v8.30.16';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -39,6 +39,7 @@ const ASSETS_TO_CACHE = [
     './css/toolbar.css',
     './css/config-panel.css',
     './css/a11y.css',
+    './css/blocked-screen.css',
     './css/print.css',
     // JS — app entry
     './js/app.js',
@@ -82,6 +83,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/task.js',
     './js/domain/validation.js',
     // JS — services
+    './js/services/instanceLock.js',
     './js/services/message.js',
     './js/services/numberFormat.js',
     './js/services/storage.js',
@@ -92,6 +94,7 @@ const ASSETS_TO_CACHE = [
     './js/types/contracts.js',
     // JS — ui
     './js/ui/appVersionBadge.js',
+    './js/ui/blockedScreen.js',
     './js/ui/createForm.js',
     './js/ui/criteriaList.js',
     './js/ui/header.js',

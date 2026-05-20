@@ -1,0 +1,107 @@
+/* css/blocked-screen.css
+ *
+ * v8.30.16: full-screen overlay экрана блокировки. Используется только когда
+ * приложение НЕ запускается (instanceLock конфликт или downgrade-guard).
+ * Перекрывает остальной DOM по z-index, чтобы пользователь физически не мог
+ * взаимодействовать с .container (App при этом и так не инициализирован).
+ *
+ * Использует базовые токены из base.css — работает в обеих темах.
+ */
+
+.blocked-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(16px, 4vw, 32px);
+    background: var(--modal-overlay-bg);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    overflow-y: auto;
+}
+
+.blocked-screen__card {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px var(--shadow-xl);
+    padding: clamp(20px, 4vw, 36px);
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+}
+
+.blocked-screen__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--warning-bg-light);
+    color: var(--warning);
+    margin-bottom: 16px;
+}
+
+.blocked-screen__title {
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0 0 12px;
+    color: var(--text);
+}
+
+.blocked-screen__lead {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0 0 20px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.blocked-screen__versions {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 6px 12px;
+    margin: 0 auto 24px;
+    width: max-content;
+    max-width: 100%;
+    text-align: left;
+    font-size: 13px;
+}
+
+.blocked-screen__versions dt {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.blocked-screen__versions dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.blocked-screen__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.blocked-screen__actions .export-btn {
+    min-width: 160px;
+    min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blocked-screen {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}

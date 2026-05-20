@@ -1,5 +1,64 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.16) — instance lock + downgrade-guard + pre-migration backup
+
+> v8.30.16 закрывает класс «потеря данных при двух одновременных вкладках одного браузера» (`localStorage` last-writer-wins) и одновременно ставит две защитные сетки вокруг той же storage-поверхности: запрет downgrade-загрузки (старая версия читает более новое сохранение) и автоматический raw-snapshot перед миграцией. Все три части срабатывают **до** `new App()` — раньше любой попытки контроллеров читать или менять состояние.
+
+### Findings внешнего ревью
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P1** | весь стек persist | Две вкладки одного браузера на одном origin разделяют `localStorage`. Каждая держит in-memory snapshot, каждое автосохранение — `setItem('sprintPlannerData', JSON.stringify(state))` без CAS/version-check. Активное окно «проигрывает» — после ближайшего автосохранения второй вкладки правки молча исчезают, F5 показывает финальное состояние «победителя». Воспроизводимо за <60 секунд. |
+| 2 | P2 | `js/state/persistence.js:50-73` | `migratePersistedState` всегда штампует `version: APP_CONFIG.STORAGE_VERSION` поверх raw → если миграция случайно повреждает поля (вставленный новый required-default, сужение enum), исходное состояние **уже невосстановимо** из localStorage — `version` затёрт, raw перезаписан при первом же save. Нет аварийного выхода. |
+| 3 | P2 | downgrade-path | Если на машине уже сохранены данные более новой `STORAGE_VERSION`, старая версия (например, после rollback ZIP'а из GitHub Release v8.30.14) запустится, спокойно нормализует state своим старым нормализатором — и тихо выкинет неизвестные поля. После F5 пользователь обнаруживает потери. Никаких guard'ов на «savedVersion > my STORAGE_VERSION» не было. |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | Новый сервис [`js/services/instanceLock.js`](../js/services/instanceLock.js): реестр живых экземпляров в `localStorage['planner.instances']` (`{instanceId: {version, storageVersion, firstSeenAt, lastHeartbeat}}`) с heartbeat 2 сек и stale-timeout 8 сек. Политика **first-active-wins**: latecomer (любая вторая вкладка) блокируется независимо от версии — даже two-tabs одной версии теряют данные. Heartbeat-тики prune'ят чужие записи, не воскрешают свою после release. BroadcastChannel hello/leave вспомогательный (только для будущей UX-индикации; решение о блокировке принимается по реестру). `release()` идемпотентен, вызывается на `beforeunload`. Версии-параметры конструируются вызывающим из `APP_VERSION` + `APP_CONFIG.STORAGE_VERSION`. |
+| 2 | Новый UI-overlay [`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js) + стили [`css/blocked-screen.css`](../css/blocked-screen.css): full-screen `role="alertdialog"` + `aria-modal="true"` + `aria-labelledby` на заголовок. Два режима: `conflict` (другая вкладка уже активна) и `future-storage` (сохранение из более новой версии — downgrade-guard). Все версии и числа проходят через `escapeHtml` (см. `feedback_attribute_escape_is_not_html_escape` — innerHTML без escape был причиной P1 v8.30.3). Кнопки «Попробовать снова» (reload) / «Закрыть вкладку» (`window.close`). Reduced-motion отключает `backdrop-filter`. |
+| 3 | Новый `bootstrapApp()` в [`js/app.js`](../js/app.js): async-обёртка, выполняемая до `new App()`. Порядок шагов: (a) `acquireInstanceLock(version, storageVersion)`; при `!lock.ok` — `renderBlockedScreen('conflict')`, return null. (b) `storageService.loadRaw()` + парс `version`; если `savedVersion > STORAGE_VERSION` — `renderBlockedScreen('future-storage')` + `lock.release()`, return null. (c) Если `savedVersion < STORAGE_VERSION` — `storageService.saveBackup(rawSaved, savedVersion)` ДО `new App()`, чтобы raw-snapshot оставался доступен после разрушительной миграции. Auto-boot guard: `if (!window.__PLANNER_DISABLE_AUTOBOOT__) bootstrapApp().catch(...)` — позволяет тестам выключать авто-запуск. |
+| 4 | [`js/services/storage.js`](../js/services/storage.js): добавлены `loadRaw()` (сырая строка без `JSON.parse`, для backup ДО миграции) и `saveBackup(raw, fromVersion)` → `sprintPlannerData.backup` с метаданными `{ts, fromVersion, data}`. Контракт `{ok, error}` единообразен с `save()` (см. `feedback_storage_status_contract`). |
+| 5 | Архитектурный инвариант [`tests/unit/architecture/bootstrap-acquires-lock-before-load.test.js`](../tests/unit/architecture/bootstrap-acquires-lock-before-load.test.js): grep'ит тело `bootstrapApp` и требует порядок `acquireInstanceLock` → `renderBlockedScreen` → `saveBackup` → `new App()`, async-сигнатуру, auto-boot guard + `.catch`. Если кто-то рефакторит bootstrap и переставит порядок (например, `new App()` выше `acquire`), инвариант падает at-commit. |
+| 6 | Раздел «Когда возникает экран блокировки» в [`docs/UserManual.md`](UserManual.md): объяснение для пользователя, почему запрещён одновременный запуск, как себя ведёт UI, что делать при «застрявшей» записи (heartbeat 8 сек → авто-сброс), какие сценарии **не** блокируются (разные браузеры, разные origin), и отдельный абзац про режим «future-storage». |
+| 7 | [`sw.js`](../sw.js) ASSETS_TO_CACHE расширен: `./css/blocked-screen.css`, `./js/services/instanceLock.js`, `./js/ui/blockedScreen.js` — иначе offline-старт без интернета не покажет blocked screen и упадёт на fetch-error. CACHE_VERSION → `sp-v8.30.16`. [`index.html`](../index.html) подключает `css/blocked-screen.css?v=v8.30.16`, manifest cache-bust → `?v=8.30.16`. |
+
+### Тестовое покрытие
+
+| Файл | Тестов | Что проверяет |
+|---|---:|---|
+| [`tests/unit/services/instanceLock.test.js`](../tests/unit/services/instanceLock.test.js) | 19 | acquire/release/heartbeat/BroadcastChannel/stale-prune/конфликт по версии и storageVersion/QuotaExceeded путь/bindUnload |
+| [`tests/unit/services/storage.backup.test.js`](../tests/unit/services/storage.backup.test.js) | новый | loadRaw + saveBackup контракт `{ok, error}` |
+| [`tests/unit/ui/blockedScreen.test.js`](../tests/unit/ui/blockedScreen.test.js) | новый | conflict / future-storage режимы, ARIA-атрибуты, escapeHtml версий, поведение «Попробовать снова» / «Закрыть вкладку», идемпотентность повторного рендера |
+| [`tests/unit/architecture/bootstrap-acquires-lock-before-load.test.js`](../tests/unit/architecture/bootstrap-acquires-lock-before-load.test.js) | 9 | архитектурный инвариант порядка bootstrap-фаз + async-сигнатура + auto-boot guard |
+
+### End-to-end verification (по §6.ter)
+
+Не просто «unit-тесты passed». Реальный сценарий проверен в браузере на A4-viewport-агностичном пути:
+
+1. Открыта `http://localhost:8123/index.html` — приложение запустилось, в `localStorage['planner.instances']` появился instance с `version: v8.30.16, storageVersion: 12`, heartbeat обновляется.
+2. Открыта вторая вкладка `http://localhost:8123/index.html?tab2` — **показан blocked screen** с заголовком «Уже открыта другая вкладка приложения», корректные `role="alertdialog"` / `aria-modal="true"` / `aria-labelledby="blockedScreenTitle"`, обе версии в `<dl>` отрисованы как `v8.30.16`, кнопки «Попробовать снова» / «Закрыть вкладку» на месте. Реестр содержит только первую вкладку — вторая **не** записала себя.
+3. Скриншот зафиксирован в `.playwright-mcp/v8.30.16-blocked-screen-verified.png`.
+
+### Метрики
+
+| Метрика | v8.30.15 | v8.30.16 |
+|---|---|---|
+| Unit-suites | 77 PASS | **82 PASS** (+5 — 4 новых + расширение app.integration) |
+| Unit-tests | 1195 | **1255** (+60) |
+| Архитектурных инвариантов в `tests/unit/architecture/` | прежние | +1 (`bootstrap-acquires-lock-before-load.test.js`) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+| PWA precache: новые JS-модули | — | `instanceLock.js`, `blockedScreen.js` (offline-старт показывает блок-скрин) |
+| PWA precache: новые CSS | — | `blocked-screen.css` |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.16`. Без этого старый SW отдаст предыдущий `app.js` без `bootstrapApp()`, и две вкладки снова смогут запуститься одновременно — это была первая ловушка, в которую я попал при verify (см. §8 проектного CLAUDE.md и end-to-end-секцию выше).
+
+---
+
 ## Версия: май 2026 (обновление 8.30.15) — review pass 11 + post-merge maintenance
 
 > v8.30.15 — единая версия с двумя последовательными «фазами» в одном тег-релизе:

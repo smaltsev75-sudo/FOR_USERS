@@ -24,6 +24,10 @@ import { ThemeController } from './controllers/themeController.js';
 import { DensityController } from './controllers/densityController.js';
 import { renderAppVersionBadge, bindPrintTimestamp } from './ui/appVersionBadge.js';
 import { showSnackbar } from './ui/snackbar.js';
+import { acquire as acquireInstanceLock } from './services/instanceLock.js';
+import { renderBlockedScreen } from './ui/blockedScreen.js';
+import { APP_VERSION } from './version.js';
+import { APP_CONFIG } from './utils/appConfig.js';
 
 export class App {
     /**
@@ -183,10 +187,71 @@ export class App {
 
 }
 
-export function bootstrapApp() {
+/**
+ * v8.30.16: bootstrap-фаза, которая обязана отработать ДО `new App()`.
+ *
+ * 1. instanceLock.acquire — защищает от одновременной работы нескольких
+ *    экземпляров (даже одной версии): два экземпляра с общим localStorage
+ *    теряют расчёты через last-writer-wins, см. js/services/instanceLock.js.
+ * 2. Downgrade-guard — если в storage сохранение из БОЛЕЕ НОВОЙ версии
+ *    (savedVersion > APP_CONFIG.STORAGE_VERSION), не запускаемся, чтобы старый
+ *    нормализатор не выбросил неизвестные поля. См. js/state/persistence.js.
+ * 3. Backup ДО миграции — если savedVersion < APP_CONFIG.STORAGE_VERSION,
+ *    raw-snapshot сохраняется в `sprintPlannerData.backup` ДО разрушительной
+ *    миграции (нормализаторы перештампуют version поверх raw).
+ *
+ * Возвращает `App` при успешном запуске или `null` при заблокированном.
+ * Async чтобы (а) явно показать порядок «acquire → check → new App», (б)
+ * оставить расширение для будущих async-проверок без ломания API.
+ *
+ * @returns {Promise<App|null>}
+ */
+export async function bootstrapApp() {
+    const mine = {
+        version: APP_VERSION,
+        storageVersion: APP_CONFIG.STORAGE_VERSION
+    };
+
+    const lock = acquireInstanceLock(mine);
+    if (!lock.ok) {
+        renderBlockedScreen({
+            mode: 'conflict',
+            mine,
+            other: lock.conflict || {
+                version: '(неизвестно)',
+                storageVersion: APP_CONFIG.STORAGE_VERSION
+            }
+        });
+        return null;
+    }
+
+    const rawSaved = storageService.loadRaw();
+    if (rawSaved) {
+        let parsed = null;
+        try { parsed = JSON.parse(rawSaved); } catch { /* corrupt JSON — App.createInitialState fallback */ }
+        const savedVersion = (parsed && typeof parsed === 'object') ? Number(parsed.version) : NaN;
+
+        if (Number.isFinite(savedVersion) && savedVersion > APP_CONFIG.STORAGE_VERSION) {
+            renderBlockedScreen({
+                mode: 'future-storage',
+                mine,
+                savedVersion
+            });
+            lock.release();
+            return null;
+        }
+
+        if (Number.isFinite(savedVersion) && savedVersion < APP_CONFIG.STORAGE_VERSION) {
+            storageService.saveBackup(rawSaved, savedVersion);
+        }
+    }
+
     return new App();
 }
 
 if (typeof window !== 'undefined' && !window.__PLANNER_DISABLE_AUTOBOOT__) {
-    bootstrapApp();
+    bootstrapApp().catch((err) => {
+        // eslint-disable-next-line no-console -- bootstrap failure нельзя проглатывать
+        console.error('[bootstrapApp] неперехваченная ошибка:', err);
+    });
 }

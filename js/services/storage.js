@@ -4,8 +4,15 @@
 // Раньше QuotaExceededError / SecurityError проглатывались — пользователь
 // получал «успешное» сохранение и терял рабочий день после F5. Теперь вызывающая
 // сторона (app.saveToLS) реагирует на `!ok` и показывает snackbar.
+//
+// v8.30.16: loadRaw() + saveBackup() — backup-фаза перед миграцией. Нужна
+// потому что migratePersistedState всегда перештампует поверх raw
+// `version: APP_CONFIG.STORAGE_VERSION` (см. js/state/persistence.js:50-73), и
+// raw уже потерян. bootstrapApp вызывает saveBackup ДО new App().
 
 /** @typedef {{ ok: true } | { ok: false, error: string }} SaveResult */
+
+export const BACKUP_STORAGE_KEY = 'sprintPlannerData.backup';
 
 export const storageService = {
     /**
@@ -29,6 +36,45 @@ export const storageService = {
             return saved ? JSON.parse(saved) : null;
         } catch {
             return null;
+        }
+    },
+
+    /**
+     * v8.30.16: возвращает сырую строку localStorage['sprintPlannerData'] без
+     * JSON.parse. Нужна для backup ДО миграции (после migratePersistedState
+     * raw уже невосстановим — `version` штампуется поверх).
+     * @returns {string|null}
+     */
+    loadRaw() {
+        try {
+            return localStorage.getItem('sprintPlannerData');
+        } catch {
+            return null;
+        }
+    },
+
+    /**
+     * v8.30.16: пишет один общий backup-ключ `sprintPlannerData.backup` с
+     * метаданными `{ts, fromVersion, data}` ДО разрушительной миграции.
+     * Перезаписывает предыдущий backup — одиночный контракт.
+     *
+     * @param {string} raw           сырая строка из loadRaw()
+     * @param {number} fromVersion   значение `version` из raw (для recovery-метки)
+     * @param {{ now?: () => number }} [opts]
+     * @returns {SaveResult}
+     */
+    saveBackup(raw, fromVersion, opts = {}) {
+        if (typeof raw !== 'string' || !raw) {
+            return { ok: false, error: 'InvalidArgument' };
+        }
+        const now = (opts && typeof opts.now === 'function') ? opts.now : Date.now;
+        try {
+            const payload = { ts: now(), fromVersion, data: raw };
+            localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(payload));
+            return { ok: true };
+        } catch (err) {
+            const name = (err && (err.name || err.message)) || 'StorageError';
+            return { ok: false, error: String(name) };
         }
     },
 
