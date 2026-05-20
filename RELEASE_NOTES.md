@@ -1,5 +1,47 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.17) — кнопка «Закрыть вкладку» получает рабочую инструкцию
+
+> Hotfix к v8.30.16. На обычной вкладке браузер по спецификации HTML тихо игнорирует `window.close()` для окон, которые он не открывал сам — пользователю казалось, что кнопка «Закрыть вкладку» в blocked screen «сломана». Чинится не на стороне браузера (это нельзя обойти), а на стороне UX: кнопка остаётся (для PWA-окон она работает), но при клике дополнительно раскрывается ранее скрытая подсказка с реальным shortcut.
+
+### Findings (от пользователя)
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | P2 | [`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js) | Кнопка «Закрыть вкладку» в overlay вызывает `window.close()`. По спецификации HTML (Window API: `close()`) браузер закрывает только окна, открытые скриптом (`window.open`, PWA standalone). Для вкладки, открытой вручную (Ctrl+T, ссылка, новая вкладка) Chromium/Firefox/Safari **тихо игнорируют вызов** и пишут в console: `Scripts may close only the windows that were opened by them.` Пользователь видит «кнопка не работает». |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | [`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js): default `onClose` теперь (а) пытается `window.close()` в `try/catch` (работает для PWA-окна), (б) **независимо от исхода** снимает атрибут `hidden` со скрытой подсказки `#blockedScreenCloseHint`. Пользователь после клика немедленно видит инструкцию с shortcut: «Если вкладка не закрылась — нажмите `Ctrl` + `W` (или `⌘` + `W` на macOS). Браузер запрещает закрывать вкладки, открытые вручную, программно.» Если пользователь передал свой `onClose` через `opts.onClose`, контракт не меняется — раскрытие hint остаётся обязанностью default-обработчика. |
+| 2 | [`css/blocked-screen.css`](../css/blocked-screen.css): новый блок `.blocked-screen__close-hint` (margin-top + muted-color + центрирование) и `.blocked-screen__close-hint kbd` (моноширинная гарнитура, тонкая рамка, лёгкая тень — стандартная kbd-стилизация). |
+| 3 | [`docs/UserManual.md`](UserManual.md) раздел «Когда возникает экран блокировки» дополнен абзацем «Про кнопку „Закрыть вкладку“»: объясняет, что в PWA-окне она работает, на обычной вкладке — программно нельзя, и что появится подсказка. |
+| 4 | [`tests/unit/ui/blockedScreen.test.js`](../tests/unit/ui/blockedScreen.test.js) +3 теста: hint присутствует и `hidden` до клика; клик «Закрыть вкладку» пытается `window.close` и снимает `hidden`; default `onClose` не падает, если `window.close` бросает SecurityError, при этом hint всё равно раскрывается (user-facing инструкция важнее success/throw close-вызова). |
+
+### Тестовое покрытие
+
+| Метрика | v8.30.16 | v8.30.17 |
+|---|---|---|
+| Unit-suites | 82 PASS | 82 PASS |
+| Unit-tests | 1255 | **1258** (+3) |
+| Архитектурные инварианты | прежние | прежние |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+
+### End-to-end verification (по §6.ter)
+
+1. Открыт `http://localhost:8123/index.html` — первая вкладка захватила lock, registry содержит `version: v8.30.17, storageVersion: 12`, heartbeat обновляется.
+2. Открыта вторая вкладка `?tab2` — blocked screen показан, hint **скрыт** (`hidden` атрибут присутствует). Это подтверждает, что подсказка не «маячит» лишним шумом для пользователей, которые сразу переключаются на первую вкладку.
+3. Клик «Закрыть вкладку» во второй вкладке — вкладка не закрылась (как и ожидаемо в обычном browser-tab-контексте), но hint **появился**: видны kbd-элементы `Ctrl`, `W`, `⌘`, `W`, computed `display: block`, `hidden` снят.
+4. Скриншот: `.playwright-mcp/v8.30.17-close-hint-after-click.png`.
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.17`. Без этого старый SW отдаст `blockedScreen.js` от v8.30.16 без hint-элемента.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.16) — instance lock + downgrade-guard + pre-migration backup
 
 > v8.30.16 закрывает класс «потеря данных при двух одновременных вкладках одного браузера» (`localStorage` last-writer-wins) и одновременно ставит две защитные сетки вокруг той же storage-поверхности: запрет downgrade-загрузки (старая версия читает более новое сохранение) и автоматический raw-snapshot перед миграцией. Все три части срабатывают **до** `new App()` — раньше любой попытки контроллеров читать или менять состояние.

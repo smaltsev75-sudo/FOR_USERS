@@ -21,4 +21,4 @@
 // Тест tests/unit/scripts/bumpVersion.test.js проверяет, что эта шапка
 // упоминает корректное N мест — синхронно с шапкой bump-version.mjs.
 
-export const APP_VERSION = 'v8.30.16';
+export const APP_VERSION = 'v8.30.17';

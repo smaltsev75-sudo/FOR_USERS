@@ -13,6 +13,7 @@ import { escapeHtml } from '../utils/escapeHtml.js';
 
 export const BLOCKED_SCREEN_ID = 'blockedScreen';
 const HEADING_ID = 'blockedScreenTitle';
+const CLOSE_HINT_ID = 'blockedScreenCloseHint';
 
 /**
  * @typedef {Object} BlockedScreenConflictArgs
@@ -45,9 +46,22 @@ export function renderBlockedScreen(args, opts = {}) {
     const onReload = typeof opts.onReload === 'function'
         ? opts.onReload
         : () => { if (typeof location !== 'undefined') location.reload(); };
+    // v8.30.17: window.close() по спецификации HTML работает только для окон,
+    // открытых скриптом (PWA standalone, window.open). На обычной вкладке
+    // браузер тихо игнорирует — пользователь считает кнопку «сломанной».
+    // Default onClose всё равно пытается close (для PWA-окна это работает),
+    // и независимо от исхода раскрывает скрытую подсказку с shortcut.
     const onClose = typeof opts.onClose === 'function'
         ? opts.onClose
-        : () => { if (typeof window !== 'undefined') window.close(); };
+        : () => {
+            try {
+                if (typeof window !== 'undefined' && typeof window.close === 'function') {
+                    window.close();
+                }
+            } catch { /* cross-origin/SecurityError — игнорируем, hint всё равно раскроем */ }
+            const hint = document.getElementById(CLOSE_HINT_ID);
+            if (hint) hint.removeAttribute('hidden');
+        };
 
     const existing = document.getElementById(BLOCKED_SCREEN_ID);
     if (existing) existing.remove();
@@ -78,6 +92,11 @@ export function renderBlockedScreen(args, opts = {}) {
                 <button type="button" class="export-btn" data-action="reload">Попробовать снова</button>
                 <button type="button" class="export-btn" data-action="close">Закрыть вкладку</button>
             </div>
+            <p id="${CLOSE_HINT_ID}" class="blocked-screen__close-hint" role="status" aria-live="polite" hidden>
+                Если вкладка не закрылась — нажмите <kbd>Ctrl</kbd>&nbsp;+&nbsp;<kbd>W</kbd>
+                (или <kbd>⌘</kbd>&nbsp;+&nbsp;<kbd>W</kbd> на macOS). Браузер запрещает закрывать
+                вкладки, открытые вручную, программно.
+            </p>
         </div>
     `;
 
