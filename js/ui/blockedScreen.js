@@ -26,7 +26,18 @@ const CLOSE_HINT_ID = 'blockedScreenCloseHint';
  * @property {{ version: string, storageVersion: number }} mine
  * @property {number} savedVersion
  *
- * @typedef {BlockedScreenConflictArgs | BlockedScreenFutureArgs} BlockedScreenArgs
+ * v8.30.19: добавлен режим 'backup-failed' — рендерится, когда bootstrapApp
+ * не смог записать pre-migration backup (storageService.saveBackup вернул
+ * !ok). Запуск App блокируется, чтобы миграция не перештамповала raw без
+ * recovery-точки. Пользователю предлагается скачать JSON вручную.
+ *
+ * @typedef {Object} BlockedScreenBackupFailedArgs
+ * @property {'backup-failed'} mode
+ * @property {{ version: string, storageVersion: number }} mine
+ * @property {number} savedVersion
+ * @property {string} error
+ *
+ * @typedef {BlockedScreenConflictArgs | BlockedScreenFutureArgs | BlockedScreenBackupFailedArgs} BlockedScreenArgs
  *
  * @typedef {Object} BlockedScreenOpts
  * @property {HTMLElement} [mount]   куда монтировать (default: document.body)
@@ -69,9 +80,10 @@ export function renderBlockedScreen(args, opts = {}) {
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', HEADING_ID);
 
-    const body = (args.mode === 'future-storage')
-        ? renderFutureStorageBody(args)
-        : renderConflictBody(args);
+    let body;
+    if (args.mode === 'future-storage') body = renderFutureStorageBody(args);
+    else if (args.mode === 'backup-failed') body = renderBackupFailedBody(args);
+    else body = renderConflictBody(args);
 
     overlay.innerHTML = `
         <div class="blocked-screen__card">
@@ -97,6 +109,15 @@ export function renderBlockedScreen(args, opts = {}) {
     overlay.querySelector('[data-action="reload"]').addEventListener('click', () => onReload());
 
     mount.appendChild(overlay);
+
+    // v8.30.19: focus management для role="alertdialog" + aria-modal="true"
+    // (P2 self-review v8.30.18). Без этого после монтирования focus оставался
+    // в фоновом DOM, screen reader / Tab уходили в неинициализированный
+    // app DOM. Переводим focus на единственную кнопку «Попробовать снова».
+    const firstButton = overlay.querySelector('button');
+    if (firstButton && typeof firstButton.focus === 'function') {
+        try { firstButton.focus(); } catch { /* ignore — focus в jsdom может бросить */ }
+    }
 }
 
 function renderConflictBody(args) {
@@ -118,6 +139,31 @@ function renderConflictBody(args) {
             <dd>${myV}</dd>
             <dt>Уже активна:</dt>
             <dd>${otherV}</dd>
+        </dl>
+    `;
+}
+
+function renderBackupFailedBody(args) {
+    const errorName = escapeHtml(String(args.error ?? 'StorageError'));
+    const savedV = escapeHtml(String(args.savedVersion ?? ''));
+    const currentV = escapeHtml(String(args.mine?.storageVersion ?? ''));
+    return `
+        <h1 id="${HEADING_ID}" class="blocked-screen__title">
+            Не удалось создать резервную копию данных
+        </h1>
+        <p class="blocked-screen__lead">
+            Перед миграцией формата приложение пытается сохранить копию исходного
+            состояния в браузере, чтобы можно было откатиться, если что-то пойдёт
+            не так. Сейчас сделать копию не получилось (${errorName}). Чтобы не
+            потерять данные, приложение НЕ запускается. Откройте предыдущую
+            версию или скачайте текущее сохранение через файл-менеджер браузера,
+            затем очистите место в хранилище и попробуйте снова.
+        </p>
+        <dl class="blocked-screen__versions">
+            <dt>Версия сохранения:</dt>
+            <dd>${savedV}</dd>
+            <dt>Версия приложения:</dt>
+            <dd>${currentV}</dd>
         </dl>
     `;
 }

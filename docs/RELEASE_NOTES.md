@@ -1,5 +1,79 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.19) — self-review fix-pass: Web Locks API + saveBackup check + 4 P2
+
+> Пользователь спросил «ты проверил качество своего кода?» — это вынудило сделать настоящее самостоятельное ревью v8.30.16–18 по 8 осям проектного CLAUDE.md. Нашёл 7 проблем, из них 2 P1 (реальные сценарии потери данных, обещанные защиты были неполные). Этот релиз закрывает все 7.
+
+### Findings self-review v8.30.16–18 (с file:line)
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P1** | [`js/services/instanceLock.js:126-148`](../js/services/instanceLock.js) (v8.30.18) | TOCTOU race в `acquire`. `localStorage.setItem` не атомарен между вкладками. Две вкладки, запускаемые почти одновременно (Ctrl+Shift+R дважды, middle-click дважды), могли **обе** пройти sequence `read → prune → write empty → conflict=null → write self` и обе записать себя в registry. Сценарий потери данных, ради которого писался lock, возвращался при worst-case race window. |
+| 2 | **P1** | [`js/app.js:244-246`](../js/app.js) (v8.30.18) | `bootstrapApp` вызывал `storageService.saveBackup(...)` и **не проверял `.ok`**. При `QuotaExceededError`/`SecurityError` backup НЕ создан, но миграция всё равно шла и перештамповывала `version` поверх raw → исходное состояние пользователя уничтожено без шанса recovery. |
+| 3 | P2 | [`css/blocked-screen.css:120`](../css/blocked-screen.css) (v8.30.17) | `background: var(--bg)` — токена не существует. Есть `--bg-main` и `--bg-card`. kbd-фон сваливался в transparent → визуально kbd-элементы выглядели не как «клавиши». Я смотрел скриншот в e2e, но не присматривался к деталям. |
+| 4 | P2 | `js/services/instanceLock.js:153-164,190-191` (v8.30.16) | BroadcastChannel `hello/leave` — dead code. `postMessage` отправлялся, никто не подписан. Не помогал решать race, путал читателя кода. |
+| 5 | P2 | [`js/ui/blockedScreen.js:55-90`](../js/ui/blockedScreen.js) (v8.30.16) | Нет focus management для `role="alertdialog"` + `aria-modal="true"`. После `appendChild` фокус оставался в фоновом DOM, screen reader / Tab уходили в неинициализированный app. WCAG 2.1 нарушение. |
+| 6 | P3 | `tests/unit/services/instanceLock.test.js` (v8.30.16) | Нет теста на race condition в acquire. Только последовательные вызовы. После фикса P1 — добавил с mock Web Locks. |
+| 7 | P3 | `js/services/instanceLock.js:184-188` (v8.30.16) | TOCTOU lite в `releaseImpl`: read→delete→write мог потерять чужую запись. Mitigated с Web Locks: release атомарен внутри callback'а. |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | **Web Locks API как primary в [`js/services/instanceLock.js`](../js/services/instanceLock.js)**. `acquire` теперь async, использует `navigator.locks.request(LOCK_RESOURCE_NAME, {mode:'exclusive', ifAvailable:true}, callback)`. Если callback получает `lock !== null`, мы первая вкладка; держим lock через unresolved promise. Если `lock === null` — кто-то уже держит, мы заблокированы. localStorage registry остался только для **UI-метаданных** — показать blocked screen с версией конфликтующей вкладки (Web Locks API сам по себе «кто держит» не сообщает). Fallback на registry-only mechanism для окружений без `navigator.locks` (jsdom, очень старые браузеры). Параметр `locksApi` инжектируется в тестах. |
+| 2 | **Race-инвариант в [`tests/unit/services/instanceLock.test.js`](../tests/unit/services/instanceLock.test.js)**: «два параллельных `acquire` через общий `locksApi` — ровно ОДИН получает `ok:true`». До фикса P1 такого теста не существовало; теперь регрессия ловится at-commit. |
+| 3 | **[`js/app.js`](../js/app.js) `bootstrapApp`**: `await acquireInstanceLock(mine)` (acquire async), плюс проверка `saveBackup.ok` — при `!ok` рендерится **новый mode `'backup-failed'`** в blocked screen с инструкцией скачать JSON вручную, `lock.release()`, return `null`. App НЕ запускается, чтобы миграция не перештамповала raw. |
+| 4 | **[`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js) новый mode `'backup-failed'`**: заголовок «Не удалось создать резервную копию данных», тело с именем ошибки (через `escapeHtml`), инструкция. + после `appendChild` overlay автоматически переводит фокус на единственную кнопку «Попробовать снова» (`role="alertdialog"` теперь корректно работает с screen reader / клавиатурой). |
+| 5 | **[`css/blocked-screen.css`](../css/blocked-screen.css)**: `var(--bg)` → `var(--bg-main)` для kbd-фона. Токен определён в обеих темах (`base.css`). |
+| 6 | **BroadcastChannel dead code удалён** из `instanceLock.js`. `CHANNEL_NAME` константа и весь `postMessage` обработка убраны. С Web Locks API они не нужны. |
+| 7 | **+2 теста в [`tests/unit/ui/blockedScreen.test.js`](../tests/unit/ui/blockedScreen.test.js)**: focus management (после рендера `document.activeElement === reloadBtn`); backup-failed mode рендерится с правильным текстом + XSS-safe для имени ошибки. |
+
+### Контракт acquire (v8.30.19)
+
+```js
+// async — обязательно await в bootstrapApp
+const lock = await acquire({
+    version, storageVersion,
+    locksApi,           // default: navigator.locks или null (fallback)
+    now, idGenerator,   // тестовые инъекции
+    heartbeatMs, staleMs,
+    scheduleInterval, clearScheduledInterval, bindUnload
+});
+// → { ok: true, instanceId, release: () => void }
+// → { ok: false, conflict: { version, storageVersion } }  (lock держит другая вкладка, registry имеет её)
+// → { ok: false, conflict: null, error: 'LockUnavailable' } (lock держит другая вкладка, registry ещё пуст)
+// → { ok: false, conflict: null, error: '<StorageError>' } (setItem бросил при попытке записать metadata)
+```
+
+### Тестовое покрытие
+
+| Метрика | v8.30.18 | v8.30.19 |
+|---|---|---|
+| Unit-suites | 82 PASS | 82 PASS |
+| Unit-tests | 1255 | **1256** (+1 net: −5 BC-тесты, +3 Web Locks/race/fallback, +3 blockedScreen focus/backup-failed) |
+| Архитектурные инварианты | прежние | прежние (bootstrap async + acquire-before-load по-прежнему держится) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+
+### End-to-end verification в реальном Chromium
+
+1. `navigator.locks.request` доступен (`hasNavigatorLocks: true`).
+2. Первая вкладка получила Web Lock, в registry записана с `version: v8.30.19, storageVersion: 12`, heartbeat обновляется.
+3. Вторая вкладка получила blocked screen (Web Locks вернул `null` через `ifAvailable: true`), `versions: ['v8.30.19', 'v8.30.19']`.
+4. **Focus management**: `document.activeElement === reloadBtn` (кнопка «Попробовать снова»), не остался в фоновом DOM.
+5. **kbd background**: computed `rgb(237, 228, 206)` (это `--bg-main` light theme), не transparent.
+6. Скриншот: `.playwright-mcp/v8.30.19-self-review-fixes-verified.png`.
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.19`. Без сброса старый `instanceLock.js` v8.30.18 с TOCTOU race останется в кэше.
+
+### Memory
+
+`feedback-button-must-fulfill-its-label` (v8.30.18) + новый принцип, подтверждённый этим pass'ом: **самостоятельный self-review по 8 осям ДО рапорта «done», иначе пользователь делает review за тебя**. Это четвёртая итерация подряд в одной области (8.30.16→17→18→19), две из них вызвали жалобу «брак». Без forcing function (запрос пользователя) я бы рапортовал «done» после v8.30.18 без проверки качества.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.18) — кнопка «Закрыть вкладку» удалена (честный fix)
 
 > Hotfix к v8.30.17. В v8.30.16 кнопка «Закрыть вкладку» не работала на обычной вкладке (`window.close()` тихо игнорируется браузером); в v8.30.17 я попытался «починить» добавлением подсказки, которая появлялась после клика — но **сама кнопка по-прежнему ничего не закрывала**. Это и есть брак: кнопка обещала лейблом действие, выполнить которое в данном контексте принципиально невозможно. Правильный fix — удалить кнопку и заменить её всегда видимой текстовой инструкцией.

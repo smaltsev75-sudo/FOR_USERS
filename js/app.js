@@ -212,7 +212,8 @@ export async function bootstrapApp() {
         storageVersion: APP_CONFIG.STORAGE_VERSION
     };
 
-    const lock = acquireInstanceLock(mine);
+    // v8.30.19: acquire async (Web Locks API внутри) — обязательно await.
+    const lock = await acquireInstanceLock(mine);
     if (!lock.ok) {
         renderBlockedScreen({
             mode: 'conflict',
@@ -242,7 +243,23 @@ export async function bootstrapApp() {
         }
 
         if (Number.isFinite(savedVersion) && savedVersion < APP_CONFIG.STORAGE_VERSION) {
-            storageService.saveBackup(rawSaved, savedVersion);
+            // v8.30.19: P1 self-review v8.30.18 — раньше результат saveBackup
+            // не проверялся. При quota/SecurityError backup не записывался,
+            // миграция всё равно шла и перештамповывала version поверх raw
+            // → исходное состояние теряется без шанса recovery. Теперь при
+            // !ok рендерится отдельный mode='backup-failed' с инструкцией
+            // скачать JSON вручную, а App НЕ запускается.
+            const backupResult = storageService.saveBackup(rawSaved, savedVersion);
+            if (backupResult && !backupResult.ok) {
+                renderBlockedScreen({
+                    mode: 'backup-failed',
+                    mine,
+                    savedVersion,
+                    error: backupResult.error || 'StorageError'
+                });
+                lock.release();
+                return null;
+            }
         }
     }
 
