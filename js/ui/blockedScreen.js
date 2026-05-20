@@ -37,7 +37,16 @@ const CLOSE_HINT_ID = 'blockedScreenCloseHint';
  * @property {number} savedVersion
  * @property {string} error
  *
- * @typedef {BlockedScreenConflictArgs | BlockedScreenFutureArgs | BlockedScreenBackupFailedArgs} BlockedScreenArgs
+ * v8.30.19/20: добавлен mode 'lock-storage-error' — рендерится, когда
+ * instanceLock не смог записать metadata в localStorage из-за Storage*Error
+ * (Quota/Security). До v8.30.21 этот mode не был отражён в JSDoc-контракте.
+ *
+ * @typedef {Object} BlockedScreenLockStorageErrorArgs
+ * @property {'lock-storage-error'} mode
+ * @property {{ version: string, storageVersion: number }} mine
+ * @property {string} error
+ *
+ * @typedef {BlockedScreenConflictArgs | BlockedScreenFutureArgs | BlockedScreenBackupFailedArgs | BlockedScreenLockStorageErrorArgs} BlockedScreenArgs
  *
  * @typedef {Object} BlockedScreenOpts
  * @property {HTMLElement} [mount]   куда монтировать (default: document.body)

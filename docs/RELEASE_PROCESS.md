@@ -24,7 +24,7 @@ npm run bump -- 9.0.0
 | 1 (обязательный) | semver-версия без префикса `v` | `X.Y.Z` | `8.29.4` |
 | 2 (опциональный) | slug — короткий человекочитаемый код для `CACHE_VERSION` | `[a-z0-9-]+` | `pwa-paths` |
 
-Скрипт обновит синхронно (7 мест, см. шапку `scripts/bump-version.mjs`):
+Скрипт обновит синхронно (7 мест через regex + дополнительная синхронизация `package-lock.json` через `npm install --package-lock-only`, см. шапку `scripts/bump-version.mjs`):
 
 | Файл | Что изменится |
 |------|---------------|
@@ -35,6 +35,7 @@ npm run bump -- 9.0.0
 | `index.html` | cache-bust `<link rel="manifest" href="manifest.json?v=X.Y.Z">` (добавлено в v8.30.2 чтобы установленные PWA получали свежий manifest). |
 | `index.html` | cache-bust `<script type="module" src="js/app.js?v=vX.Y.Z">` (добавлено в v8.30.11 — раньше ?v= застрял на v8.22.3-reorg-docs-folder 8 версий). |
 | `index.html` | cache-bust ВСЕХ CSS-ссылок: `<link rel="stylesheet" href="css/X.css?v=vX.Y.Z">` (добавлено в v8.30.15 — раньше ?v= застрял на смеси `?v=3` / `?v=4` / `?v=1` / `?v=v8.22.2`). |
+| `package-lock.json` | `root.version` и `packages[""].version` через `npm install --package-lock-only` после regex-шага (добавлено в v8.30.20 — lockfile дрейфовал второй раз; инвариант в `tests/unit/version.test.js`). |
 
 Что **не** меняется автоматически:
 

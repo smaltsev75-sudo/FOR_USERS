@@ -1,5 +1,66 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.21) — третий внешний аудит: XSS-bypass + import downgrade + 5 P3 + P4 coverage gate
+
+> Третий аудит подряд от пользователя после моих self-review. На этот раз **P1 не найдено** (прогресс) — но обнаружены 2 серьёзных P2: XSS-bypass через HTML-entity-encoded `javascript:` в fallback-санитайзере и downgrade-guard bypass через импорт JSON-файла. Релиз закрывает все 7 пунктов + bonus self-audit fix.
+
+### Findings внешнего аудита
+
+| # | Уровень | Где | Что |
+|---|---|---|---|
+| 1 | **P2** | [`js/controllers/fileController.js:90,111`](../js/controllers/fileController.js), [`appConfig.js:4`](../js/utils/appConfig.js) | **Import обходил downgrade-guard.** `bootstrapApp` блокирует запуск при `savedVersion > STORAGE_VERSION`, но `loadFromFile` проверял только `!data.version \|\| data.version < 2` и сразу гнал файл в `migratePersistedState`. Файл из будущей версии загружался в старую сборку, старый нормализатор тихо отбрасывал неизвестные поля. |
+| 2 | **P2** | [`js/utils/sanitize.js:19,30`](../js/utils/sanitize.js), [`sanitize.test.js:30`](../tests/unit/utils/sanitize.test.js) | **Fallback sanitizer обходился encoded `javascript:`**. Регекс `/javascript\s*:/gi` ловил только литеральный текст, но `java&#x73;cript:alert(1)` (HTML-entity) проходил без изменений → браузер при рендере декодировал entity и исполнял JS-URL. Тест-вектор подтверждён. DOMPurify основной путь прикрывал, но fallback заявлен как XSS-защита. |
+| 3 | P3 | [`playwright.config.js:24`](../playwright.config.js), [`package.json:18`](../package.json), `start-server.{bat,sh}` | E2E и dev-server зависели от **непиннутого `npx http-server`**. В чистой/offline среде это могло скачать плавающую версию или зависнуть на npm-поведении вне `audit`/`lockfile`. |
+| 4 | P3 | [`docs/UserManual.md:521,533`](UserManual.md) | UserManual противоречил UI: строка 521 говорила «двумя кнопками, включая Закрыть вкладку», 533 правильно говорила «ровно одна кнопка». Drift после v8.30.18. |
+| 5 | P3 | [`docs/RELEASE_PROCESS.md:27`](RELEASE_PROCESS.md), [`js/version.js:4`](../js/version.js), [`tests/unit/scripts/bumpVersion.test.js:85`](../tests/unit/scripts/bumpVersion.test.js) | Релизный процесс снова не полностью синхронен с lockfile-sync. `package-lock.json` уже синхронизируется скриптом и проверяется тестом версии (v8.30.20), но шапки `js/version.js` и `RELEASE_PROCESS.md` всё ещё говорили про «7 мест» без упоминания lockfile-sync. Документационный drift вокруг уже дважды ломавшейся зоны. |
+| 6 | P3 | [`js/ui/blockedScreen.js:40,86`](../js/ui/blockedScreen.js) | **JSDoc-контракт неполный**. Runtime поддерживал `mode === 'lock-storage-error'` с v8.30.20, но `BlockedScreenArgs` typedef union его не описывал. |
+| 7 | P4 | [`jest.config.cjs:3`](../jest.config.cjs) | **Coverage без gate**. `npm run test:coverage` проходил при любом регрессе. Слабые модули: `blockedScreen.js` 57.14%, `taskListGrouped.js` 60%, `utils.js` 60%, `capacityStripController.js` 62.5%. |
+
+### Что починено
+
+| # | Изменение |
+|---|---|
+| 1 | [`js/controllers/fileController.js`](../js/controllers/fileController.js): добавлен import-side downgrade-guard симметричный bootstrap'у. При `Number.isFinite(data.version) && data.version > APP_CONFIG.STORAGE_VERSION` показывается сообщение «Файл сохранён более новой версией приложения (схема X). Текущая версия поддерживает схему Y» и `loadState` НЕ вызывается. **+2 теста** в `fileController.test.js`: refuses future + accepts current. |
+| 2 | [`js/utils/sanitize.js`](../js/utils/sanitize.js): fallback теперь использует **allow-list безопасных протоколов** (`http`, `https`, `mailto`, `tel`, relative, hash, query). Всё прочее (включая `vbscript:`, `data:text/html`, `javascript:`, любые entity-encoded формы, tab/newline-разделённые scheme) переписывается на `about:blank` (рабочий no-op, не исполняемый). `decodeForUrlCheck` декодирует hex/decimal HTML-entity и убирает control chars (`\t\n\r\f\v\0`) перед проверкой — браузер их игнорирует при resolve URL-scheme, sanitizer должен судить по той же нормализованной форме. **+5 тестов**: entity-encoded hex, entity-encoded decimal, tab-separated, vbscript/data, allow-list passthrough. |
+| 3 | [`package.json`](../package.json): добавлен `"http-server": "^14.1.1"` в `devDependencies`. `npm install --package-lock-only` зафиксировал в lockfile. Теперь `npx http-server` в `playwright.config.js` и `start-server.{bat,sh}` использует локально установленную версию, не качает из сети. |
+| 4 | [`docs/UserManual.md`](UserManual.md): строка 521 переписана — «единственной кнопкой «Попробовать снова» (с версии 8.30.18 кнопка «Закрыть вкладку» удалена — браузер не позволяет ...)». Drift с строкой 533 ликвидирован. |
+| 5 | Шапки [`js/version.js`](../js/version.js) и [`docs/RELEASE_PROCESS.md`](RELEASE_PROCESS.md): добавлен пункт «+ package-lock.json через `npm install --package-lock-only`» с явным указанием версии добавления (v8.30.20) и invariant-теста. Формулировка «синхронно (7 мест через regex + дополнительная синхронизация ...)» оставляет числовой инвариант test'а bumpVersion (regex `/(\d+)\s*мест/` ловит 7). |
+| 6 | [`js/ui/blockedScreen.js`](../js/ui/blockedScreen.js): добавлен `@typedef BlockedScreenLockStorageErrorArgs` и расширен union `BlockedScreenArgs`. JSDoc теперь полностью согласован с runtime. |
+| 7 | [`jest.config.cjs`](../jest.config.cjs): добавлен `coverageThreshold.global`: statements 90%, branches 80%, functions 90%, lines 90%. Ниже текущих фактических значений (95.83/86.56/95.63/95.83), но крупные регрессии (целые модули без тестов) теперь падают at-commit. |
+
+### Bonus self-audit fix (P3 родственный паттерн)
+
+Grep по `js/` после фикса sanitize fallback нашёл потенциальный регресс-риск в [`js/domain/validation.js:33`](../js/domain/validation.js): `validateJiraUrl` тоже проверяет `toLowerCase().includes('javascript:')` без entity-decode. Runtime safe (структурно отвергает любой URL без `http(s)://` prefix), но контрактная дырка как у sanitize. **+3 regress-guard теста** на entity-encoded / decimal / tab-разделённый `javascript:` в `validateJiraUrl` — если кто-то ослабит prefix-check в будущем, тесты упадут.
+
+### Тестовое покрытие
+
+| Метрика | v8.30.20 | v8.30.21 |
+|---|---|---|
+| Unit-suites | 83 PASS | 83 PASS |
+| Unit-tests | 1273 | **1283** (+10) |
+| Coverage statements | 95.83% (no gate) | 95.83% (**gate 90%**) |
+| Coverage branches | 86.56% (no gate) | 86.56% (**gate 80%**) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+| lockfile sync | в sync | в sync + http-server pinned |
+
+### End-to-end в реальном Chromium
+
+- Первая вкладка v8.30.21 захватывает Web Lock, registry содержит правильную версию
+- Вторая вкладка получает blocked screen, обе версии `v8.30.21` в `<dl>`
+- `document.activeElement === reloadBtn` (focus management работает)
+- dev-server теперь поднимается через npm-pinned `http-server` (был `npx`-fallback)
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.21`.
+
+### Урок процессный
+
+Это четвёртый «жёсткий проход» подряд после моего self-review. Тренд: P1 ушёл (lint+lockfile дисциплина закреплена), сложные P2 (XSS-bypass, import bypass) остаются — они требуют **активного adversarial-мышления**, а не просто прохода по 8 осям. Self-audit grep'ом по родственным паттернам (§5.bis глобального CLAUDE.md) поймал bonus problem в `validateJiraUrl` — это правильный механизм, нужно применять его дисциплинированнее.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.20) — внешний код-аудит: lint, lockfile, legacy backup, error-mode
 
 > Пользователь провёл собственный код-аудит v8.30.19 и нашёл 7 пунктов, включая P1-блокер (`npm run lint` падал — я даже не запускал его перед коммитом) и lockfile drift (регрессировал второй раз). Это уже **второй внешний аудит, ловящий мой брак подряд** после моего «успешного» self-review. Этот релиз закрывает все 7.

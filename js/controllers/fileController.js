@@ -3,6 +3,7 @@ import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
 import { migratePersistedState, serializeStateForStorage } from '../state/persistence.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
+import { APP_CONFIG } from '../utils/appConfig.js';
 
 export class FileController {
     constructor(store, numberFormatService, criteriaManager) {
@@ -89,6 +90,20 @@ export class FileController {
             const data = await storageService.loadFile();
             if (!data || !data.version || data.version < 2) {
                 messageService.showMessage('Неверная версия файла');
+                return;
+            }
+            // v8.30.21 P2 audit: импорт обходил downgrade-guard. bootstrapApp
+            // защищён от savedVersion > STORAGE_VERSION (см. js/app.js),
+            // но импорт через UI до этого фикса проверял только нижнюю
+            // границу и сразу гнал данные в migratePersistedState — старый
+            // нормализатор тихо терял неизвестные поля из файла будущей
+            // версии. Симметричный guard здесь.
+            if (Number.isFinite(data.version) && data.version > APP_CONFIG.STORAGE_VERSION) {
+                messageService.showMessage(
+                    `Файл сохранён более новой версией приложения (схема ${data.version}). ` +
+                    `Текущая версия поддерживает схему ${APP_CONFIG.STORAGE_VERSION}. ` +
+                    `Обновите приложение до актуальной версии или используйте файл из той же версии.`
+                );
                 return;
             }
 
