@@ -376,6 +376,18 @@
     .toolbar__divider {
         display: none;
     }
+    /* v8.30.28: actions-группа должна тоже wrap'аться. Раньше она была
+       `flex: 0 0 auto` + non-wrapping flex, что давало ≥600px ширину
+       на 393px viewport и triggered html.scrollWidth>viewport. Раньше
+       это маскировалось `body{overflow-x:hidden}` — теперь оно убрано,
+       приходится чинить корректно. */
+    .toolbar__actions {
+        flex-wrap: wrap;
+        margin-left: 0;
+        flex: 1 1 100%;
+        order: 3;
+        justify-content: flex-start;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -220,19 +220,19 @@
     display: none;
 }
 
-/* v8.30.27: html + body overflow-x: hidden — необходимый safety-net для
-   mobile (Pixel 5 393px, iPhone 13 390px). Источники overflow точечно:
-   `.panel--matrix` (capacity matrix table 634px), modal-content max-width
-   520px > 393px. Точечный fix каждого источника — backlog v8.30.28+.
-   ИЗВЕСТНОЕ ОГРАНИЧЕНИЕ: body{overflow-x:hidden} создаёт scroll-context
-   на WebKit → sticky-children (.criteria-sum-bar, .quadrant-group-header)
-   не прилипают к viewport. Документировано в RELEASE_NOTES v8.30.27 и
-   UserManual «Известные ограничения mobile». Sticky на Chromium доказан
-   tests/e2e/sticky.spec.js; на WebKit — test.fixme с reason. */
-html {
-    overflow-x: hidden;
-}
-
+/* v8.30.28: ROOT-CAUSE FIX. Раньше (v8.30.27) был safety-net `html, body
+   { overflow-x: hidden }` для clip'а mobile-overflow. По CSS-spec любой
+   overflow ≠ visible на ancestor создаёт scroll-context и ломает
+   position:sticky дочерних элементов — REAL e2e тест в v8.30.27 это
+   доказал на Chromium и WebKit. Решение: убрать body/html overflow,
+   точечно зафиксить КАЖДЫЙ источник horizontal overflow:
+   - `.panel--matrix` уже имеет overflow-x: auto (table-scroll inside).
+   - `.toolbar__actions` теперь flex-wrap на mobile (см. css/toolbar.css).
+   - Длинные строки в карточках задач — overflow-wrap: anywhere
+     (css/task-card.css).
+   Sticky `.criteria-sum-bar`/`.quadrant-group-header` теперь честно
+   прилипают к viewport — доказано tests/e2e/sticky.spec.js (Chromium)
+   и tests/e2e/webkit.spec.js (WebKit). */
 body {
     background-color: var(--bg-main);
     color: var(--text);
@@ -241,5 +241,4 @@ body {
     padding: 8px;
     font-size: 0.75rem;
     min-height: 100vh;
-    overflow-x: hidden;
 }

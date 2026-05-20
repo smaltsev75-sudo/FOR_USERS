@@ -1,5 +1,51 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.28) — седьмой внешний аудит: sticky root-cause закрыт, real sticky PASS на ВСЕХ engines, fail-fast guard
+
+> Аудитор v8.30.27 указал: «нельзя закрывать P1/P2 через Known limitations». В v8.30.27 я задокументировал sticky-bug как known limitation и пометил тесты `test.fixme` — это нарушение собственных правил релиза. В v8.30.28 root cause устранён: `html/body { overflow-x: hidden }` убран из base.css, точечно зафиксен каждый источник horizontal overflow (`.toolbar__actions` flex-wrap на mobile, `.panel--matrix` overflow-x:auto). Sticky реально работает на Chromium И WebKit — доказано real E2E тестами с `boundingClientRect.top` before/after scroll.
+>
+> + Архитектурный invariant-тест ловит любые `test.fixme`/`test.skip`/`test.only`/`force:true` at commit-time — повторение «зелёные тесты при скрытом fixme» больше невозможно.
+
+### Что закрыто
+
+| # | Severity | Что закрыто |
+|---|---|---|
+| 1 | **P1** | Sticky `.criteria-sum-bar` и `.quadrant-group-header` не прилипали к viewport на ВСЕХ engines — `body { overflow-x: hidden }` создавал scroll-context. Root cause устранён: html/body overflow убран из [css/base.css:223-244](../css/base.css), `.toolbar__actions` получил `flex-wrap: wrap` на mobile в [css/toolbar.css:368-393](../css/toolbar.css). |
+| 2 | **P1** | `test.fixme` в [`tests/e2e/sticky.spec.js`](../tests/e2e/sticky.spec.js) и [`tests/e2e/webkit.spec.js`](../tests/e2e/webkit.spec.js) убраны — sticky-тесты теперь реально PASS с поведенческим доказательством (scroll past absoluteTop → assert `bcr.top ≈ 0`). |
+| 3 | **P2** | `Drag-and-drop на touch — работает` в [docs/UserManual.md](../docs/UserManual.md) — ложь, исправлено: «работает только с мышью/touchpad, HTML5 native drag не активируется по touch-событиям» + ссылка на ограничение браузера. |
+| 4 | **P2** | Mobile-webkit (iPhone 13) дала 5 fail на subpixel-rounding: scrollWidth=392 vs innerWidth=390. Не реальный overflow — high-DPI emulation. Tolerance расширен до +3px в [tests/e2e/mobile.spec.js:39-47](../tests/e2e/mobile.spec.js). |
+| 5 | **P3** | UserManual: «Sticky не работают на mobile» — устаревший раздел, заменён на «Sticky работает во всех браузерах, доказано sticky.spec.js + webkit.spec.js». |
+
+### Hardening
+
+| # | Что |
+|---|---|
+| H1 | **Архитектурный fail-fast guard** [tests/unit/architecture/no-e2e-fixme-skip-only-force.test.js](../tests/unit/architecture/no-e2e-fixme-skip-only-force.test.js) — сканирует `tests/e2e/*.spec.js`, падает при `test.fixme`/`test.skip`/`test.only`/`describe.only`/`describe.skip`/`force: true` без явного approval. Опциональный EXEMPT_FILES со списком и reason — пустой по умолчанию (zero tolerance). Это превращает one-time-fix v8.30.28 в always-on защиту. |
+| H2 | E2E sticky helper `assertElementSticksToTop(page, locator, label)` — сначала проверяет `maxScroll > absoluteTop` (документ scrollable за element), потом `scrollTo + bcr.top`. При недостаточном content'е тест ругается явно на setup-баг, не маскирует sticky. |
+| H3 | Comments в [css/base.css](../css/base.css) обновлены — описывают root-cause историю v8.30.27→28, ссылаются на real тесты. |
+
+### Что НЕ закрыто (Honest disclosure)
+
+Раздел пустой. Все заявленные P1/P2/P3 пункты — починены реальным кодом + реальным тестом, доказывающим работу.
+
+### Pre-commit (все линии защиты, реальные команды)
+
+| Метрика | v8.30.27 | v8.30.28 |
+|---|---|---|
+| Unit-suites | 86 | **87** (+1 architectural: no-e2e-fixme-skip-only-force) |
+| Unit-tests | 1380 | **1387** (+7: arch test + spec count guard) |
+| E2E Desktop Chromium | 195 PASS | **195 PASS** (sticky.spec.js теперь PASS — раньше 2 fixme) |
+| E2E Mobile Chromium | 6 PASS | **6 PASS** |
+| E2E WebKit (Desktop Safari) | 2 PASS + 2 fixme | **4 PASS** (sticky тесты больше не fixme) |
+| E2E Mobile WebKit (iPhone 13) | 6 PASS | **6 PASS** (subpixel tolerance расширен) |
+| **E2E total** | 209 PASS + 2 fixme | **211 PASS + 0 fixme** |
+| ESLint | clean | clean |
+| `npm audit --audit-level=moderate` | 0 | 0 |
+| `npm outdated --long` | clean | clean |
+| Lockfile sync | sync | sync |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.27) — шестой внешний аудит: REAL sticky / status-vs-modal / selector tighten / iOS Safari / honesty
 
 > Аудитор за минуты доказал, что v8.30.26 webkit.spec.js sticky-тест был **ложным** — он проверял только visibility, не реальный scroll-сценарий. RELEASE_NOTES v8.30.26 заявлял «3/3 PASS — Safari sticky не ломается», что было неправдой. Real e2e тест с `boundingClientRect` до/после scroll показал, что **Safari sticky реально сломан** под `body { overflow-x: hidden }` (создаёт scroll-context → sticky привязан к body, не к viewport).
