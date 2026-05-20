@@ -1,5 +1,57 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.22) — ограничение точности чисел: ≤ 2 знаков после запятой
+
+> Пользовательский запрос: «ограничим точность знаков после запятой для чисел — не более 2 знаков». Раньше дефолт `NumberFormatService` принимал любой `decimals` аргумент (включая 3+), а live-input `handleInput` пропускал произвольное количество цифр после точки. Теперь обе функции `clamp` decimals к `[0, MAX_DECIMALS=2]`, а `handleInput` обрезает дробную часть прямо во время ввода.
+
+### Изменения
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`js/services/numberFormat.js`](../js/services/numberFormat.js) | Экспорт `MAX_DECIMALS = 2`. `formatNumber`, `roundToDecimals` clamp'ят `decimals` к `[0, 2]` через `clampDecimals(n)`. Non-finite (`NaN`, `±Infinity`) → `0` / `"0,0"` (defense-at-display). |
+| 2 | [`js/services/numberFormat.js`](../js/services/numberFormat.js) | `handleInput(element)` обрезает дробную часть до 2 знаков. Trailing dot (`1.`) сохраняется — не мешает печатать. Склейка нескольких точек (`1.2.345 → 1.2345 → 1.23`) тоже cap'ится. |
+| 3 | [`tests/unit/architecture/decimal-precision-cap.test.js`](../tests/unit/architecture/decimal-precision-cap.test.js) | **Новый архитектурный инвариант**. Grep по `js/` (vendor исключён) на `.toFixed(N)`, `formatNumber(_, N)`, `roundToDecimals(_, N)` — при `N > 2` тест падает. Two-layer защита: runtime cap + grep. |
+| 4 | [`tests/unit/services/numberFormat.test.js`](../tests/unit/services/numberFormat.test.js) | **+15 тестов**: cap на 3/5/10 знаков, clamp отрицательного `decimals` к 0, Infinity/−Infinity → 0, truncate `1.234`/`0.123456`/`5,789`/`12.99999`/`0.00001`, mid-typing `1.`, no-op для `1.23`/`1.2`/`12`, склейка `1.2.345 → 1.23`. |
+
+### Что НЕ изменилось
+
+- Все вызовы `formatNumber(x, 0)` / `formatNumber(x, 1)` / `roundToDecimals(x, 1)` остаются как были — 0 и 1 знак уже укладываются в `MAX_DECIMALS=2`.
+- Storage normalizer (`js/state/persistence.js::normalizeNumber`) не трогаю — сохранённые арифметические значения могут хранить любую точность, но любой их выход в UI/input проходит через capped formatter.
+- API `parseNumber` остаётся сырым — округление отдельно через `roundToDecimals`. Это даёт ясную ответственность: парсер парсит, форматтер форматирует, округлятор округляет.
+
+### Adversarial-проход (§3.ter глобального CLAUDE.md)
+
+| Ось | Вектор | Поведение |
+|---|---|---|
+| Encoding | `1,234` (запятая как разделитель) | `handleInput` нормализует к `1.23` |
+| Альтернативные entry points | live input в `handleInput`, форматирование при display в `formatNumber`, persist round в `roundToDecimals` | все три имеют cap |
+| Boundary | `1.` (mid-typing), `0.00001` (very small), `1e30 + .0000000001` (large precision) | trailing dot сохранён, very-small → `0.00`, large round'ится без поломки структуры |
+| Failure modes | `Infinity`, `-Infinity`, `NaN` | `formatNumber` → `"0,0"`, `roundToDecimals` → `0` |
+| Negative | `-3.4567` | `-3.46` (Math.round-quirk на `Math.round(-0.5) = 0` принят как best-effort) |
+| External actor | malicious import JSON с `priorityScore: 1.234567` | persistence сохраняет, но любое отображение → `1,23` |
+
+### Тестовое покрытие
+
+| Метрика | v8.30.21 | v8.30.22 |
+|---|---|---|
+| Unit-suites | 83 PASS | **84 PASS** (+1 архитектурный инвариант) |
+| Unit-tests | 1283 | **1298** (+15) |
+| Lint | clean | clean |
+| audit | 0 vulns | 0 vulns |
+| lockfile sync | в sync | в sync (auto через `bump-version.mjs`) |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**. CACHE_VERSION → `sp-v8.30.22-decimal-precision-cap`.
+
+### Что почувствует пользователь
+
+- При вводе цены/часа/процента третий знак физически не появляется в поле.
+- Если в localStorage сохранено старое число с большей точностью — на ближайшем display оно покажется уже округлённым, на ближайшем save — округлится в storage (через blur → formatInputOnBlur → formatNumber).
+- Никаких видимых регрессий: всё, что раньше форматировалось с 0 или 1 знаком, осталось с 0 или 1 знаком.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.21) — третий внешний аудит: XSS-bypass + import downgrade + 5 P3 + P4 coverage gate
 
 > Третий аудит подряд от пользователя после моих self-review. На этот раз **P1 не найдено** (прогресс) — но обнаружены 2 серьёзных P2: XSS-bypass через HTML-entity-encoded `javascript:` в fallback-санитайзере и downgrade-guard bypass через импорт JSON-файла. Релиз закрывает все 7 пунктов + bonus self-audit fix.

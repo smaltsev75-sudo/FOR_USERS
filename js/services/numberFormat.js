@@ -1,6 +1,20 @@
 
 // js/services/numberFormat.js
 
+/**
+ * Максимум знаков после запятой для отображения и пользовательского ввода.
+ * v8.30.22: вся точность чисел в UI и input-полях capped к 2 знакам.
+ * Архитектурный инвариант — tests/unit/architecture/decimal-precision-cap.test.js.
+ */
+export const MAX_DECIMALS = 2;
+
+function clampDecimals(decimals) {
+    const n = Number.isFinite(decimals) ? Math.floor(decimals) : 1;
+    if (n < 0) return 0;
+    if (n > MAX_DECIMALS) return MAX_DECIMALS;
+    return n;
+}
+
 export class NumberFormatService {
     /**
      * @param {string} [initialSeparator] - Начальный разделитель десятичных знаков.
@@ -47,12 +61,20 @@ export class NumberFormatService {
         }
     }
 
+    /**
+     * Форматирует число с заданным числом знаков после запятой.
+     * v8.30.22: decimals аргумент clamp'ится к [0, MAX_DECIMALS=2]. Любые
+     * caller'ы, передающие 3+, получают 2. Также non-finite значения
+     * (NaN, ±Infinity) возвращают "0<separator>0" — defense-at-display
+     * против чисел, которые могли прорваться из арифметики.
+     */
     formatNumber(value, decimals = 1) {
-        if (value === undefined || value === null || isNaN(value)) {
+        if (value === undefined || value === null || !Number.isFinite(Number(value))) {
             return '0' + this.decimalSeparator + '0';
         }
+        const cappedDecimals = clampDecimals(decimals);
         const num = parseFloat(value);
-        const formatted = num.toFixed(decimals);
+        const formatted = num.toFixed(cappedDecimals);
         return formatted.replace('.', this.decimalSeparator);
     }
 
@@ -80,18 +102,41 @@ export class NumberFormatService {
         return isNaN(num) ? 0 : num;
     }
 
+    /**
+     * Округляет до N знаков после запятой.
+     * v8.30.22: decimals аргумент clamp'ится к [0, MAX_DECIMALS=2]; non-finite
+     * (NaN, ±Infinity) → 0 — иначе `Math.round(Infinity * 100) / 100` возвращает
+     * Infinity и отравляет state.
+     */
     roundToDecimals(value, decimals = 1) {
-        if (typeof value !== 'number' || isNaN(value)) return 0;
-        const factor = 10 ** decimals;
+        if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+        const cappedDecimals = clampDecimals(decimals);
+        const factor = 10 ** cappedDecimals;
         return Math.round(value * factor) / factor;
     }
 
+    /**
+     * Live-input handler: убирает запрещённые символы, нормализует разделитель
+     * к точке и ограничивает дробную часть MAX_DECIMALS знаками.
+     * v8.30.22: добавлен truncate дробной части — чтобы пользователь физически
+     * не мог ввести 3+ знака после запятой. Если он уже ввёл точку и пока
+     * НЕ ввёл цифры (`1.`), trailing dot сохраняется — иначе мешает печатать.
+     */
     handleInput(element) {
         let value = element.value;
         value = value.replace(/[^\d.,]/g, '').replace(/,/g, '.');
         const parts = value.split('.');
         if (parts.length > 2) {
             value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        // Truncate fractional part to MAX_DECIMALS (after merge of multiple dots).
+        const dotIdx = value.indexOf('.');
+        if (dotIdx !== -1) {
+            const intPart = value.slice(0, dotIdx);
+            const fracPart = value.slice(dotIdx + 1);
+            if (fracPart.length > MAX_DECIMALS) {
+                value = intPart + '.' + fracPart.slice(0, MAX_DECIMALS);
+            }
         }
         element.value = value;
     }
