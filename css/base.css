@@ -220,19 +220,15 @@
     display: none;
 }
 
-/* v8.30.25 (adversarial review trade-off):
-   `html { overflow-x: hidden }` нужен на mobile, потому что без него Pixel 5
-   viewport (393px) показывает horizontal scroll → addTaskBtn физически
-   уезжает за viewport (доказано test-results/mobile-*-failed-1.png). body
-   уже имел overflow-x: hidden (тоже создаёт scroll-context, но был там до
-   моих изменений и регрессий sticky не давал в e2e Chromium).
-   ПОТЕНЦИАЛЬНОЕ РИСКО (документировано в RELEASE_NOTES v8.30.25):
-   `.criteria-sum-bar` (css/criteria.css:288) и `.quadrant-group-header`
-   (css/task-card.css:1231) имеют `position: sticky; top: 0` — на Safari
-   sticky может привязаться к html-scroll-context вместо viewport (известная
-   particularity, не подтверждена в Chromium тестах: 198/198 e2e PASS).
-   Точечный фикс overflow источников (`.dash-grid > .panel { min-width: 0 }`
-   + per-panel `overflow-x: auto`) — отложен в backlog как proper-fix. */
+/* v8.30.27: html + body overflow-x: hidden — необходимый safety-net для
+   mobile (Pixel 5 393px, iPhone 13 390px). Источники overflow точечно:
+   `.panel--matrix` (capacity matrix table 634px), modal-content max-width
+   520px > 393px. Точечный fix каждого источника — backlog v8.30.28+.
+   ИЗВЕСТНОЕ ОГРАНИЧЕНИЕ: body{overflow-x:hidden} создаёт scroll-context
+   на WebKit → sticky-children (.criteria-sum-bar, .quadrant-group-header)
+   не прилипают к viewport. Документировано в RELEASE_NOTES v8.30.27 и
+   UserManual «Известные ограничения mobile». Sticky на Chromium доказан
+   tests/e2e/sticky.spec.js; на WebKit — test.fixme с reason. */
 html {
     overflow-x: hidden;
 }

@@ -12,22 +12,32 @@
 // Inert на background НЕ применяется (не все модалки в проекте проходят через
 // этот manager; inert-стратегия в backlog как unified-focus-management).
 
+// v8.30.27: внешний аудит P3 — selector был слишком широким:
+//   - включал `input[type="hidden"]` (служебное поле → невозможно получить focus в браузере)
+//   - не исключал `[aria-hidden="true"]` (явное скрытие от AT и от tab order)
+//   - не исключал `[hidden]` HTML attribute (display:none equivalent)
+//   - не исключал descendants of `fieldset:disabled` (тоже не focusable)
+// Теперь selector + post-filter покрывают все эти случаи.
 const FOCUSABLE_SELECTOR = [
-    'a[href]',
-    'button:not([disabled])',
-    'input:not([disabled])',
-    'textarea:not([disabled])',
-    'select:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])'
+    'a[href]:not([aria-hidden="true"])',
+    'button:not([disabled]):not([aria-hidden="true"])',
+    'input:not([disabled]):not([type="hidden"]):not([aria-hidden="true"])',
+    'textarea:not([disabled]):not([aria-hidden="true"])',
+    'select:not([disabled]):not([aria-hidden="true"])',
+    '[tabindex]:not([tabindex="-1"]):not([aria-hidden="true"])'
 ].join(', ');
 
 function getFocusableElements(modal) {
-    // Не фильтруем по offsetParent: в jsdom это всегда null (нет layout) →
-    // ломает test environment. В production открытая модалка не содержит
-    // hidden focusable children (display:none скрывает целые ветки DOM
-    // через CSS, которые querySelectorAll НЕ возвращает только если у
-    // элемента нет display:none). Disabled уже исключён selector'ом.
-    return Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR));
+    // 1. Selector уже исключает: disabled / hidden-input / aria-hidden / tabindex=-1.
+    // 2. Post-filter (cheap, без layout): исключаем элементы, у которых
+    //    ANY ancestor имеет `[hidden]` или находится внутри disabled <fieldset>.
+    //    Это HTML-семантика, доступная без computed style — работает в jsdom.
+    return Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR)).filter((el) => {
+        if (el.closest('[hidden]')) return false;
+        if (el.closest('[aria-hidden="true"]')) return false;
+        if (el.closest('fieldset:disabled')) return false;
+        return true;
+    });
 }
 
 function handleTabKey(modal, ev) {
@@ -120,4 +130,42 @@ export function hideModal(modal) {
 export function isModalOpen(modal) {
     if (!modal) return false;
     return modal.style.display === 'flex' || modal.classList.contains('is-open');
+}
+
+/**
+ * Открывает non-modal status/progress overlay БЕЗ focus-trap и БЕЗ изменения
+ * focus. Применять к элементам с `role="status"` / `aria-live`, которые не
+ * являются диалогами и не должны перехватывать клавиатуру.
+ *
+ * v8.30.27: внешний аудит P2 — `#globalProgress` (role="status") ошибочно
+ * проходил через `showModal()`, что давало ему: (1) Tab-trap, (2) перехват
+ * фокуса, (3) сохранение previously-focused. Это противоречит a11y-семантике
+ * live region — status сообщения озвучиваются AT, но НЕ забирают focus.
+ *
+ * Использовать ВМЕСТО `showModal()` для:
+ *   - `role="status"` / `role="alert"` (live regions)
+ *   - non-dialog progress overlays
+ *   - notification toasts
+ *
+ * @param {HTMLElement|null} el
+ */
+export function showStatusOverlay(el) {
+    if (!el) return;
+    el.style.display = 'flex';
+    el.classList.add('is-open');
+    // НЕ сохраняем previously-focused (status не забирает focus).
+    // НЕ добавляем Tab-trap (Tab должен работать нормально по странице).
+    // НЕ переводим focus — let AT announce через aria-live.
+}
+
+/**
+ * Закрывает non-modal status/progress overlay. Контрпарный к showStatusOverlay.
+ * НЕ восстанавливает focus (его и не сохраняли).
+ *
+ * @param {HTMLElement|null} el
+ */
+export function hideStatusOverlay(el) {
+    if (!el) return;
+    el.style.display = 'none';
+    el.classList.remove('is-open');
 }

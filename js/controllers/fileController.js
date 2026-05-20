@@ -2,7 +2,7 @@
 import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
 import { migratePersistedState, serializeStateForStorage } from '../state/persistence.js';
-import { showModal, hideModal } from '../ui/modalManager.js';
+import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 
 export class FileController {
@@ -45,13 +45,16 @@ export class FileController {
     showProgress(message) {
         if (this.progressEl && this.progressMessageEl) {
             this.progressMessageEl.textContent = message;
-            showModal(this.progressEl);
+            // v8.30.27: status overlay БЕЗ focus-trap. Раньше шло через
+            // showModal() — globalProgress (role="status") получал modal
+            // behavior, что противоречит a11y-семантике live region.
+            showStatusOverlay(this.progressEl);
         }
     }
 
     hideProgress() {
         if (this.progressEl) {
-            hideModal(this.progressEl);
+            hideStatusOverlay(this.progressEl);
         }
     }
 

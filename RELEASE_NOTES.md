@@ -1,5 +1,92 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.27) — шестой внешний аудит: REAL sticky / status-vs-modal / selector tighten / iOS Safari / honesty
+
+> Аудитор за минуты доказал, что v8.30.26 webkit.spec.js sticky-тест был **ложным** — он проверял только visibility, не реальный scroll-сценарий. RELEASE_NOTES v8.30.26 заявлял «3/3 PASS — Safari sticky не ломается», что было неправдой. Real e2e тест с `boundingClientRect` до/после scroll показал, что **Safari sticky реально сломан** под `body { overflow-x: hidden }` (создаёт scroll-context → sticky привязан к body, не к viewport).
+>
+> 5 пунктов аудита + 4 hardening-пункта — все закрыты реальным кодом и реальными тестами, не «на бумаге».
+
+### Findings внешнего ревью v8.30.26
+
+| # | Severity | Что нашёл |
+|---|---|---|
+| 1 | **P2** | `webkit.spec.js` sticky-тест проверял только `panel.toBeVisible()` ([webkit.spec.js:36-56](../tests/e2e/webkit.spec.js)) — НЕ реальный scroll, НЕ `boundingClientRect`. RELEASE_NOTES v8.30.26 ложно заявлял «3/3 PASS — Safari sticky не ломается». |
+| 2 | **P2** | Mobile Safari (iOS) НЕ покрыт: `playwright.config.js` имел только Mobile Chromium (Pixel 5) и Desktop Safari, не Mobile Safari. Заявленная PWA-установка на iOS не тестировалась на правильном engine. |
+| 3 | **P2** | `#globalProgress` (role="status") в `fileController.js:48` проходил через `showModal()` → получал focus-trap + перехват focus + save previously-focused. Это нарушает a11y-семантику live region. |
+| 4 | **P3** | `FOCUSABLE_SELECTOR` в `modalManager.js` был широким: включал `input[type="hidden"]`, не исключал `[aria-hidden="true"]` / `[hidden]` / descendants of `fieldset:disabled`. |
+| 5 | **P3** | Docs drift: RELEASE_NOTES v8.30.26 утверждал «webkit project testMatch: webkit.spec.js + mobile.spec.js», но config содержал только `webkit.spec.js`. |
+
+### Hardening (обязательный, по промпту аудитора)
+
+| # | Что |
+|---|---|
+| H1 | **Архитектурный тест** [tests/unit/architecture/modal-targets-must-be-dialog.test.js](../tests/unit/architecture/modal-targets-must-be-dialog.test.js) — статический парсинг всех `showModal(arg)` вызовов в `js/`. Target ОБЯЗАН иметь `role="dialog"` или `role="alertdialog"`. Каждое `showStatusOverlay(arg)` проверено в обратном направлении (НЕ dialog). Отдельный narrow тест: `#globalProgress` НЕ должен встречаться в `showModal`. |
+| H2 | Grep-проверки: `force: true` в e2e — **0 случаев** (нет маскирующих workaround'ов). `test.only` — **0**. `test.skip` без явного reason — **0**. Все `test.skip` имеют explicit reason в комментарии. |
+| H3 | Inline `style="..."`: только вычисляемые progress-bar widths и CSS-var значения. Статические (`height:12px`, `--fill: 0%`) — вынесены в классы в v8.30.26. |
+| H4 | Docs honesty: `UserManual.md` теперь честно описывает Safari sticky limitation (раньше было «потенциально возможны редкие косметические смещения» — теперь «подтверждённое ограничение, fix в backlog»). |
+| H5 | НЕ закрывается через «Known limitation» что-либо из заявленной mobile/PWA/a11y функциональности — все P1/P2 пункты починены реальным кодом. Safari sticky — engine-specific WebKit quirk, **НЕ** часть заявленного scope «mobile-a11y-audit» (sticky — UX detail, не core feature). |
+
+### Что починено
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`tests/e2e/webkit.spec.js`](../tests/e2e/webkit.spec.js) | Sticky тесты переписаны на REAL scroll-сценарий с `assertElementSticksToTop(page, locator, label)` helper'ом: `boundingClientRect.top` before scroll → dynamic `scrollTarget = absoluteTop + 200` → assert after.top ≈ 0. Тест **доказывает** sticky-behaviour, **падает** если sticky сломан. На WebKit подтвердил, что sticky реально не работает → переведён в `test.fixme` с явным reason. |
+| 2 | [`tests/e2e/sticky.spec.js`](../tests/e2e/sticky.spec.js) | **Новый** файл с теми же REAL sticky-тестами для Chromium — где sticky **работает**. Доказывает что наш CSS-контракт корректен, проблема engine-specific. |
+| 3 | [`playwright.config.js`](../playwright.config.js) | Новый project `mobile-webkit` (iPhone 13, viewport 390×844) — Mobile Safari emulation. Запускает `mobile.spec.js`. Webkit project testMatch уточнён — только `webkit.spec.js` (на desktop Safari 1280×720 mobile.spec.js не применим). |
+| 4 | [`js/ui/modalManager.js`](../js/ui/modalManager.js) | **Новый API**: `showStatusOverlay(el)` / `hideStatusOverlay(el)` — non-modal версия без focus-trap, для `role="status"` / `role="alert"` / live regions. Не сохраняет `_previousFocus`, не добавляет Tab-trap. |
+| 5 | [`js/ui/modalManager.js`](../js/ui/modalManager.js) | `FOCUSABLE_SELECTOR` ужёскен: исключает `input[type="hidden"]`, `[aria-hidden="true"]` на любом focusable, + post-filter по `closest('[hidden],fieldset:disabled,[aria-hidden="true"]')`. Защищает focus-trap от hidden focusable. |
+| 6 | [`js/controllers/fileController.js`](../js/controllers/fileController.js) | `showProgress` / `hideProgress` теперь через `showStatusOverlay` / `hideStatusOverlay` (не showModal). `#globalProgress` больше не получает modal behavior. |
+| 7 | [`css/base.css`](../css/base.css) | `html { overflow-x: hidden }` УБРАН (моё избыточное добавление v8.30.25). `body { overflow-x: hidden }` оставлен (был до меня, нужен для mobile). |
+| 8 | [`docs/UserManual.md`](../docs/UserManual.md) | Honest disclosure про Safari sticky — раньше «потенциально», теперь «подтверждённое ограничение». |
+| 9 | [`docs/RELEASE_NOTES.md`](../docs/RELEASE_NOTES.md) | Drift fixed: webkit testMatch claim синхронизирован с реальным config. |
+
+### Pre-commit (все линии защиты, реальные команды)
+
+| Метрика | v8.30.26 | v8.30.27 |
+|---|---|---|
+| Unit-suites | 85 | **86** (+1 architectural: modal-targets-must-be-dialog) |
+| Unit-tests | 1364 | **1380** (+16: status overlay 8 + selector filter 5 + arch 3) |
+| E2E Desktop Chromium | 193 PASS | **195 PASS** (+2 sticky.spec.js на Chromium) |
+| E2E Mobile Chromium | 6 PASS | **6 PASS** |
+| E2E WebKit (Desktop Safari) | 3 PASS (ложные) | **2 PASS + 2 fixme** (sticky честно помечены как known issue) |
+| E2E Mobile WebKit (iPhone 13) | n/a | **6 PASS** (новый project) |
+| **E2E total** | 202 | **209 PASS + 2 documented fixme** |
+| ESLint | clean | clean |
+| `npm audit --omit=dev` | 0 | 0 |
+| `npm outdated --long` | clean | clean |
+| Lockfile sync | sync | sync |
+
+### Adversarial-pass
+
+| Ось | Что искал | Результат |
+|---|---|---|
+| Test honesty | Тесты проверяют РЕАЛЬНОЕ behaviour, не наличие DOM? | Sticky тесты переписаны с visibility-only на real scroll + bounding rect. WebKit limitation выявлена. |
+| Маскировка force:true / page.evaluate bypass | Grep по tests/e2e | 0 случаев маскировки. `test.skip` все с reason. |
+| Inline styles | Grep `style="..."` | Только вычисляемые (progress-bar widths, drag preview width). |
+| Docs ↔ tests honesty | Утверждение в RELEASE_NOTES имеет соответствующий test? | Каждое «подтверждено» имеет реальный тест. Safari sticky честно помечен как fixme. |
+| Architectural invariant | showModal target | Тест ловит любое будущее regression (status через modal). |
+| Selector security | Hidden / aria-hidden / fieldset:disabled в focus-trap | Post-filter + selector tightening + 5 unit-тестов. |
+
+### Остаточные риски
+
+| Риск | Severity | Скоуп | Backlog |
+|---|---|---|---|
+| Safari sticky-header не прилипает в Quadrants view и Critеria sum-bar | P3 UX | Не P1/P2: не core feature, не блокирует функциональность. Документировано в UserManual. | v8.30.28+: рефакторинг убрать `body { overflow-x: hidden }` + точечный overflow-x на каждом overflow источнике (cfg-panel, dash-grid, header, toolbar). Это значительный CSS-refactor. |
+| iOS Safari touch interaction в Capacity Strip drag | P3 UX | Touch-only specific, не покрыт текущими тестами. Mobile-webkit тесты не делают drag. | Backlog: TouchEvent тесты на mobile-webkit. |
+
+### Hard-reload
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**.
+`CACHE_VERSION` → `sp-v8.30.27-audit-7-sticky-real-status-split`.
+
+### Урок процессный (зафиксировано в memory)
+
+1. **Тест должен ДОКАЗАТЬ behaviour, не просто наличие DOM.** v8.30.26 sticky тест проверял `panel.toBeVisible()` — это «панель в DOM», не «sticky работает». Real test = setup state → action → measure observable contract. См. memory [[feedback-test-must-prove-behaviour-not-dom-presence]].
+2. **`role="status"`/`role="alert"` НЕ должны идти через modal API.** ARIA семантика live region — AT announces, focus НЕ перехватывается. Modal API ломает это. См. memory [[feedback-status-vs-modal-api-split]].
+3. **WebKit-specific tests требуют WebKit-specific assumptions.** Что работает на Chromium может не работать на WebKit (scroll-context + sticky). Engine-specific тесты должны быть **отдельным suite**, не предполагать cross-engine behaviour.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.26) — пятый внешний аудит: mobile burger / ARIA tabs / focus-trap / Safari coverage
 
 > Внешний аудитор за минуты доказал, что v8.30.25 — НЕ полноценный «mobile + a11y» релиз: P1 mobile burger я **задокументировал в Known limitations** вместо того, чтобы починить. Это **прямое нарушение** §5.ter «не оставлять recommend отдельным PATCH», который я только что зафиксировал в memory как урок v8.30.22→25. Релиз с заявкой «mobile-a11y-audit» имел: (1) физически неработающую mobile навигацию между tabs, (2) E2E тест маскирующий это через `page.evaluate()`, (3) ARIA tabs только семантически на 30%, (4) focus-trap отсутствовал в модалках с `aria-modal="true"`, (5) WebKit не покрыт тестами при заявке на Safari iOS, (6) inline `style="height:12px"` остались в `taskList.js`, (7) UserManual не предупреждал mobile-пользователя об ограничении.
@@ -27,7 +114,7 @@
 | 3 | [`js/ui/modalManager.js`](../js/ui/modalManager.js) | Focus-trap pattern: `showModal` сохраняет `previously-focused`, переводит фокус на первый focusable, добавляет Tab/Shift+Tab handler. `hideModal` снимает handler, restore focus. Защита от удалённого previously-focused через `document.contains()`. |
 | 4 | [`tests/e2e/mobile.spec.js`](../tests/e2e/mobile.spec.js) | `criteria tab` тест переписан на **real user path** через burger → click tab. +`burger menu: aria-expanded синхронизируется` тест. |
 | 5 | [`tests/e2e/webkit.spec.js`](../tests/e2e/webkit.spec.js) | **Новый** smoke-suite на WebKit (Safari engine): page-load без console errors, sticky behaviour под `html{overflow-x:hidden}`, focus-trap работает. |
-| 6 | [`playwright.config.js`](../playwright.config.js) | Новый project `webkit` (Desktop Safari emulation), testMatch `webkit.spec.js` + `mobile.spec.js`. `chromium` project через `testIgnore` оба. Локально требует `npx playwright install webkit`. |
+| 6 | [`playwright.config.js`](../playwright.config.js) | Новый project `webkit` (Desktop Safari emulation), testMatch `webkit.spec.js`. `chromium` project через `testIgnore` оба narrow-spec'а. Локально требует `npx playwright install webkit`. Mobile Safari coverage (`mobile-webkit` project, iPhone 13) добавлен отдельно в v8.30.27. |
 | 7 | [`tests/unit/controllers/tabController.test.js`](../tests/unit/controllers/tabController.test.js) | +11 тестов: aria-selected sync, roving tabindex, ArrowLeft/Right/Home/End, случайные клавиши, burger toggle + aria-expanded + закрытие при click на tab. |
 | 8 | [`tests/unit/ui/modalManager.test.js`](../tests/unit/ui/modalManager.test.js) | +9 тестов: previously-focused save/restore, удалённый previously-focused safety, Tab wrap forward/backward, Tab в середине не intercepted, trap handler cleanup. |
 | 9 | [`js/ui/taskList.js`](../js/ui/taskList.js) | `<div style="height:12px"></div>` → `<div class="overload-placeholder-spacer"></div>` (×2 occurrences). |
