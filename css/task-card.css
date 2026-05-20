@@ -436,6 +436,15 @@
     background: var(--accent-bg-faint);
 }
 
+/* v8.30.26: spacer для пустых overload-placeholder cells.
+   Раньше рендерился как inline `<div style="height:12px"></div>` (P3 нарушение
+   CODE_REVIEW_GUIDELINES.md §4.2 — static inline styles запрещены).
+   Назначение: зарезервировать вертикальное место под overload-tag, чтобы
+   соседние строки не «прыгали» по высоте при появлении/исчезновении overload. */
+.overload-placeholder-spacer {
+    height: 12px;
+}
+
 .est-box--empty .est-input-container input {
     color: var(--text-muted);
 }

@@ -530,7 +530,7 @@ function updateOverloadIndicators(state, nfs) {
         if (task.excluded) {
             roles.forEach(role => {
                 const container = taskEl.querySelector(`.overload-placeholder[data-role="${role.id}"]`);
-                if (container) container.innerHTML = '<div style="height:12px"></div>';
+                if (container) container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
             });
             return;
         }
@@ -546,7 +546,7 @@ function updateOverloadIndicators(state, nfs) {
                 const pct = (cumulativeTotal / cap * 100) - 100;
                 container.innerHTML = `<div class="overload-tag" title="Перегрузка: +${nfs.formatNumber(diff)} ч (+${nfs.formatNumber(pctOverload)}%)">+${nfs.formatNumber(diff)} <span class="overload-percent">+${nfs.formatNumber(pct)}%</span></div>`;
             } else {
-                container.innerHTML = '<div style="height:12px"></div>';
+                container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
             }
         });
     });

@@ -1,5 +1,71 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.26) — пятый внешний аудит: mobile burger / ARIA tabs / focus-trap / Safari coverage
+
+> Внешний аудитор за минуты доказал, что v8.30.25 — НЕ полноценный «mobile + a11y» релиз: P1 mobile burger я **задокументировал в Known limitations** вместо того, чтобы починить. Это **прямое нарушение** §5.ter «не оставлять recommend отдельным PATCH», который я только что зафиксировал в memory как урок v8.30.22→25. Релиз с заявкой «mobile-a11y-audit» имел: (1) физически неработающую mobile навигацию между tabs, (2) E2E тест маскирующий это через `page.evaluate()`, (3) ARIA tabs только семантически на 30%, (4) focus-trap отсутствовал в модалках с `aria-modal="true"`, (5) WebKit не покрыт тестами при заявке на Safari iOS, (6) inline `style="height:12px"` остались в `taskList.js`, (7) UserManual не предупреждал mobile-пользователя об ограничении.
+>
+> Все 7 findings — починены в этой волне. **Mobile burger menu теперь полноценно работает** (HTML + JS + ARIA + e2e на реальном user-path). **ARIA tabs pattern** полностью реализован (aria-selected/controls + role=tabpanel + ArrowLeft/Right/Home/End навигация). **Modal focus-trap** + restore previously-focused (WCAG 2.1.2, 2.4.3, 3.2.1). **Safari engine smoke** suite в `webkit.spec.js`. **+19 unit-тестов**.
+
+### Findings внешнего ревью v8.30.25
+
+| # | Severity | Что нашёл |
+|---|---|---|
+| 1 | **P1** | Mobile навигация физически сломана. На ≤600px `.tabs-container { display: none }` ([css/layout.css:347](../css/layout.css)), `.mobile-menu-toggle` существует только в CSS ([css/layout.css:380](../css/layout.css)), HTML-элемента и JS-обработчика нет. Пользователь не мог попасть в «Критерии оценки». |
+| 2 | **P2** | Mobile E2E маскировал P1: `mobile.spec.js:67` переключал tab через `page.evaluate()` синтетически, не проверяя реальный user path. Зелёные 198/198, но UI не работает. |
+| 3 | **P2** | Заявлена поддержка mobile/PWA на iOS Safari, но Playwright проектов с WebKit не было ([playwright.config.js:17](../playwright.config.js)). Известный Safari sticky-риск в `css/base.css:223` не имел тестового покрытия. |
+| 4 | **P2** | `role="tab"` реализован семантически неполно ([index.html:92](../index.html), [tabController.js:20](../js/controllers/tabController.js)): нет `aria-selected`, `aria-controls`, `role="tabpanel"`, нет keyboard navigation стрелками. Screen-reader видит «почти вкладки». |
+| 5 | **P2** | `aria-modal="true"` диалоги ([index.html:379, 588, 666](../index.html)) без focus-trap. `showModal/hideModal` ([modalManager.js:9](../js/ui/modalManager.js)) только display + class. WCAG 2.1.2 (No Keyboard Trap), 2.4.3 (Focus Order), 3.2.1 (On Focus) — нарушены. |
+| 6 | **P3** | Inline `style="height:12px"` в [taskList.js:533, 549](../js/ui/taskList.js) — нарушение `CODE_REVIEW_GUIDELINES.md:158`. + `style="--fill: 0%"` в [index.html:522](../index.html) избыточен (CSS default уже задаёт `--fill: 0%`). |
+| 7 | **P3** | UserManual обещает «две вкладки» ([UserManual.md:236, 352](../docs/UserManual.md)) без упоминания mobile ограничения. Реальное ограничение спрятано только в RELEASE_NOTES. |
+
+### Что починено
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`index.html`](../index.html) | `<button class="mobile-menu-toggle" id="mobileMenuToggle" aria-controls="tabsContainer" aria-expanded="false">` добавлен в шапку. На `.tab-btn`: `aria-selected` / `aria-controls` / `tabindex` (roving). Tab panels получили `role="tabpanel"` + `aria-labelledby="<tabBtnId>"`. |
+| 2 | [`js/controllers/tabController.js`](../js/controllers/tabController.js) | Полный W3C ARIA tabs pattern: `activateTab` синхронизирует `aria-selected`/`tabindex`. Добавлен `_onTabKeydown` — keyboard nav `ArrowLeft`/`ArrowRight`/`Home`/`End`. `_toggleBurger`/`_closeBurger` управляют `.tabs-container.active` и `aria-expanded`. Click outside закрывает burger. |
+| 3 | [`js/ui/modalManager.js`](../js/ui/modalManager.js) | Focus-trap pattern: `showModal` сохраняет `previously-focused`, переводит фокус на первый focusable, добавляет Tab/Shift+Tab handler. `hideModal` снимает handler, restore focus. Защита от удалённого previously-focused через `document.contains()`. |
+| 4 | [`tests/e2e/mobile.spec.js`](../tests/e2e/mobile.spec.js) | `criteria tab` тест переписан на **real user path** через burger → click tab. +`burger menu: aria-expanded синхронизируется` тест. |
+| 5 | [`tests/e2e/webkit.spec.js`](../tests/e2e/webkit.spec.js) | **Новый** smoke-suite на WebKit (Safari engine): page-load без console errors, sticky behaviour под `html{overflow-x:hidden}`, focus-trap работает. |
+| 6 | [`playwright.config.js`](../playwright.config.js) | Новый project `webkit` (Desktop Safari emulation), testMatch `webkit.spec.js` + `mobile.spec.js`. `chromium` project через `testIgnore` оба. Локально требует `npx playwright install webkit`. |
+| 7 | [`tests/unit/controllers/tabController.test.js`](../tests/unit/controllers/tabController.test.js) | +11 тестов: aria-selected sync, roving tabindex, ArrowLeft/Right/Home/End, случайные клавиши, burger toggle + aria-expanded + закрытие при click на tab. |
+| 8 | [`tests/unit/ui/modalManager.test.js`](../tests/unit/ui/modalManager.test.js) | +9 тестов: previously-focused save/restore, удалённый previously-focused safety, Tab wrap forward/backward, Tab в середине не intercepted, trap handler cleanup. |
+| 9 | [`js/ui/taskList.js`](../js/ui/taskList.js) | `<div style="height:12px"></div>` → `<div class="overload-placeholder-spacer"></div>` (×2 occurrences). |
+| 10 | [`css/task-card.css`](../css/task-card.css) | Новый класс `.overload-placeholder-spacer { height: 12px }`. |
+| 11 | [`index.html`](../index.html) | Убран избыточный `style="--fill: 0%"` (CSS-default уже есть в `create-task-modal.css:205`). |
+| 12 | [`docs/UserManual.md`](../docs/UserManual.md) | Новая секция «📱 Использование на мобильных устройствах» с честным описанием возможностей и ограничений. В разделе «Интерфейс» — упоминание burger menu для mobile. |
+
+### Pre-commit (все линии защиты)
+
+| Метрика | v8.30.25 | v8.30.26 |
+|---|---|---|
+| Unit-suites | 85 | **85** |
+| Unit-tests | 1345 | **1364** (+19: tabController ARIA/keyboard/burger + modalManager focus-trap) |
+| E2E Desktop Chromium | 193/193 PASS | **193/193 PASS** |
+| E2E Mobile Chromium | 5/5 PASS | **6/6 PASS** (+1 burger aria-expanded) |
+| **E2E (chromium + mobile)** | 198/198 | **199/199 PASS** |
+| E2E WebKit (Desktop Safari) | n/a | **3/3 PASS** (page load + sticky behaviour + focus-trap). Подтверждено: Known limitation #2 v8.30.25 (Safari sticky под `html{overflow-x:hidden}`) на WebKit-engine **не проявляется** — sticky работает корректно. |
+| ESLint | clean | clean |
+| `npm audit --omit=dev` | 0 vulns | 0 vulns |
+| Lockfile sync | sync | sync |
+
+### Hard-reload обязателен
+
+DevTools → Application → Service Workers → **Unregister** + **Ctrl+Shift+R**.
+`CACHE_VERSION` → `sp-v8.30.26-mobile-burger-aria-focustrap-safari`.
+
+### Урок процессный (зафиксировано в memory)
+
+1. **«Known limitation» в RELEASE_NOTES — анти-паттерн в **scope текущего релиза**.** В v8.30.25 я задокументировал mobile burger как Known limitation #1. Аудитор сразу указал: «релиз с заявкой mobile-a11y-audit не должен иметь сломанной mobile navigation». Правильно: либо чинить ВСЕ блокеры заявленной фичи в этой волне, либо НЕ заявлять её в названии релиза. См. memory [[feedback-known-limitations-not-for-scope-violations]].
+
+2. **Cross-engine coverage обязателен при заявке cross-platform.** README/UserManual обещают iOS Safari, но WebKit не было в Playwright. Это нарушение §6.ter «end-to-end verification». См. memory [[feedback-cross-engine-coverage-required]].
+
+3. **ARIA tabs pattern имеет конкретный W3C spec** — это не «role=tab достаточно». Полный pattern: `aria-selected`/`aria-controls`/`tabindex` (roving) + клавиатурная навигация ArrowKeys/Home/End + связь с tabpanel через `aria-labelledby`. Если в HTML есть `role="tablist"` — это **обещание** screen-reader'у, которое должно выполняться целиком. См. memory [[feedback-aria-tabs-pattern-complete]].
+
+4. **`aria-modal="true"` без focus-trap — обещание без выполнения.** ARIA-атрибут говорит screen-reader'у «фокус заперт в модалке», но если JS этого не делает, Tab выходит из модалки на фоновые элементы. Это серьёзный a11y фейл. Универсальный паттерн focus-trap + restore previously-focused в [[feedback-modal-focus-trap-pattern]].
+
+---
+
 ## Версия: май 2026 (обновление 8.30.25) — внешний аудит № 4: mobile + a11y + cache + накопленный опыт
 
 > Внешний ревьюер за минуты доказал, что релиз 8.30.24 был **выпущен с red e2e** — тест на 256-й строке `planner.spec.js` ждал `5,0`, а реальный UI показывал `5` (новый контракт `formatNumber.trimTrailingZeros`). RELEASE_NOTES v8.30.24 при этом ложно заявлял «193 PASS». Это **процессный брак** — тесты не запускались перед выпуском.
