@@ -31,7 +31,12 @@ const CLOSE_HINT_ID = 'blockedScreenCloseHint';
  * @typedef {Object} BlockedScreenOpts
  * @property {HTMLElement} [mount]   куда монтировать (default: document.body)
  * @property {() => void} [onReload]
- * @property {() => void} [onClose]
+ *
+ * v8.30.18: опция onClose удалена. Кнопка «Закрыть вкладку» больше не
+ * рендерится — браузер не позволяет программно закрыть вкладку, которую
+ * пользователь открыл вручную (см. соответствующий комментарий в теле
+ * renderBlockedScreen). Инструкция о Ctrl/Cmd+W отрисована текстом и
+ * не нуждается в callback'е.
  */
 
 /**
@@ -46,22 +51,13 @@ export function renderBlockedScreen(args, opts = {}) {
     const onReload = typeof opts.onReload === 'function'
         ? opts.onReload
         : () => { if (typeof location !== 'undefined') location.reload(); };
-    // v8.30.17: window.close() по спецификации HTML работает только для окон,
-    // открытых скриптом (PWA standalone, window.open). На обычной вкладке
-    // браузер тихо игнорирует — пользователь считает кнопку «сломанной».
-    // Default onClose всё равно пытается close (для PWA-окна это работает),
-    // и независимо от исхода раскрывает скрытую подсказку с shortcut.
-    const onClose = typeof opts.onClose === 'function'
-        ? opts.onClose
-        : () => {
-            try {
-                if (typeof window !== 'undefined' && typeof window.close === 'function') {
-                    window.close();
-                }
-            } catch { /* cross-origin/SecurityError — игнорируем, hint всё равно раскроем */ }
-            const hint = document.getElementById(CLOSE_HINT_ID);
-            if (hint) hint.removeAttribute('hidden');
-        };
+    // v8.30.18: кнопка «Закрыть вкладку» удалена. window.close() по спеке HTML
+    // тихо игнорируется браузером для вкладок, открытых пользователем (Ctrl+T,
+    // ссылка) — это правило безопасности нельзя обойти кодом. Любая кнопка
+    // с таким лейблом на обычной вкладке обманывает пользователя; v8.30.17
+    // hint после клика проблемы не решал — кнопка по-прежнему «не работала».
+    // Теперь инструкция «Ctrl/Cmd + W» отрисована текстом, всегда видима, без
+    // кнопочной семантики. См. memory feedback-button-must-fulfill-its-label.
 
     const existing = document.getElementById(BLOCKED_SCREEN_ID);
     if (existing) existing.remove();
@@ -90,18 +86,15 @@ export function renderBlockedScreen(args, opts = {}) {
             ${body}
             <div class="blocked-screen__actions">
                 <button type="button" class="export-btn" data-action="reload">Попробовать снова</button>
-                <button type="button" class="export-btn" data-action="close">Закрыть вкладку</button>
             </div>
-            <p id="${CLOSE_HINT_ID}" class="blocked-screen__close-hint" role="status" aria-live="polite" hidden>
-                Если вкладка не закрылась — нажмите <kbd>Ctrl</kbd>&nbsp;+&nbsp;<kbd>W</kbd>
-                (или <kbd>⌘</kbd>&nbsp;+&nbsp;<kbd>W</kbd> на macOS). Браузер запрещает закрывать
-                вкладки, открытые вручную, программно.
+            <p id="${CLOSE_HINT_ID}" class="blocked-screen__close-hint">
+                Чтобы закрыть эту вкладку, нажмите <kbd>Ctrl</kbd>&nbsp;+&nbsp;<kbd>W</kbd>
+                (или <kbd>⌘</kbd>&nbsp;+&nbsp;<kbd>W</kbd> на macOS) либо крестик на самой вкладке.
             </p>
         </div>
     `;
 
     overlay.querySelector('[data-action="reload"]').addEventListener('click', () => onReload());
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => onClose());
 
     mount.appendChild(overlay);
 }
