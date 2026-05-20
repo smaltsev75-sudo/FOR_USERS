@@ -440,7 +440,7 @@ export function createTaskElement(task, taskEvaluations, index, roles, criteria,
     const editIconHtml = icon('pencil');
     const deleteIconHtml = icon('trash');
     const dragIconHtml = icon('gripVertical');
-    const printEffort = `<span class="print-only-effort" style="display:none;">Effort: ${nfs.formatNumber(taskTotal)}</span>`;
+    const printEffort = `<span class="print-only-effort">Effort: ${nfs.formatNumber(taskTotal)}</span>`;
 
     const priorityLevel = getPriorityLevel(priorityScore);
     const priorityLabel = getPriorityLabel(priorityLevel);

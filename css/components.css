@@ -108,6 +108,13 @@
        которая stretch'ится под высоту соседа Capacity Strip в dash-grid. */
     display: flex;
     flex-direction: column;
+    /* v8.30.25: на mobile (Pixel 5 = 393px) .table-dash шире viewport (≈ 634px
+       с 5 ролями × 3 типа задач). min-width: 0 разрешает panel сжаться в grid,
+       overflow-x: auto даёт ТАБЛИЦЕ собственный horizontal scroll внутри
+       panel'а — пользователь свайпает таблицу влево-вправо, остальная страница
+       не уезжает. См. tests/e2e/mobile.spec.js — закрывает body.scrollWidth>viewport. */
+    min-width: 0;
+    overflow-x: auto;
 }
 
 /* v8.27: matrix-header wrapper removed; h3 sits directly under .panel--matrix

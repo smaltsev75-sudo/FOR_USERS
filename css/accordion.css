@@ -1,6 +1,11 @@
 /* ---------- accordion.css ---------- */
 /* Аккордеоны в модале сравнения алгоритмов */
 
+/* v8.30.25: .accordion-header теперь рендерится как <button type="button">
+   (a11y WCAG 4.1.2: ранее <div> без role/tabindex был невидим для клавиатуры
+   и screen-reader'ов). Native button наследует Enter/Space из коробки.
+   Сбрасываем дефолтные стили button (рамку, шрифт, выравнивание), оставляя
+   нашу плоскую стилистику. */
 .accordion-header {
     cursor: pointer;
     padding: 10px 12px;
@@ -12,11 +17,21 @@
     user-select: none;
     box-sizing: border-box;
     width: 100%;
+    /* Reset native button defaults */
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    display: block;
 }
 
 .accordion-header:hover {
     background: var(--accent-bg-subtle);
     box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.accordion-header:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .accordion-icon {

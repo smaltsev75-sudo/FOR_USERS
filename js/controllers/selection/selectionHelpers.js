@@ -29,9 +29,14 @@ export function buildTasksWithPriority(tasks, criteriaManager, roles) {
 }
 
 export function buildAlgorithmsCacheKey(tasks, capacityByRole) {
-    const tasksHash = tasks.map((task) =>
-        `${task.id}:${task.excluded}:${JSON.stringify(task.est)}:${task.priorityScore || 0}`
-    ).join('|');
+    // v8.30.25: добавлены `dependencies` — раньше ключ не учитывал их изменения.
+    // selectTasksUniform (domain/selection/base.js) проверяет task.dependencies
+    // при отборе; смена deps без `est`/`excluded` могла отдать stale-результат
+    // из кэша. Stringify массива даёт стабильный hash.
+    const tasksHash = tasks.map((task) => {
+        const deps = JSON.stringify(task.dependencies || []);
+        return `${task.id}:${task.excluded}:${JSON.stringify(task.est)}:${task.priorityScore || 0}:${deps}`;
+    }).join('|');
     const capacityHash = JSON.stringify(capacityByRole);
     return `${tasksHash}_${capacityHash}`;
 }

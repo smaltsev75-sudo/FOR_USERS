@@ -168,12 +168,12 @@ function buildRecommendationBannerHtml(recommended) {
 function buildAlgorithmDescriptionsHtml() {
     return `
 <div class="accordion-item">
-    <div class="accordion-header" title="${escapeHtml(SECTION_HINTS.descriptions)}">
+    <button type="button" class="accordion-header" aria-expanded="false" aria-controls="algoDescriptionsPanel" title="${escapeHtml(SECTION_HINTS.descriptions)}">
         <span class="accordion-icon">▶</span>
         ${icon('bookOpen')}
         <strong>Об алгоритмах отбора</strong>
-    </div>
-    <div class="accordion-content" hidden>
+    </button>
+    <div id="algoDescriptionsPanel" class="accordion-content" hidden>
         <div class="algo-info-grid">
             <div class="algo-info-card">
                 <div class="algo-info-card-title">Priority-Effort Matrix</div>
@@ -344,14 +344,15 @@ function buildSingleAlgorithmDetailHtml(algo, res, displayName) {
         inner += `</ul>`;
     }
 
+    const panelId = `algoDetail_${algo}`;
     return `
 <div class="accordion-item algorithm-detail" data-algorithm="${escapeHtml(algo)}">
-    <div class="accordion-header" title="${escapeHtml(algoDetailHint(displayName))}">
+    <button type="button" class="accordion-header" aria-expanded="false" aria-controls="${panelId}" title="${escapeHtml(algoDetailHint(displayName))}">
         <span class="accordion-icon">▶</span>
         ${icon(ALGORITHM_ICON[algo] || 'barChart')}
         <strong>${escapeHtml(displayName)}</strong>
-    </div>
-    <div class="accordion-content" hidden>${inner}</div>
+    </button>
+    <div id="${panelId}" class="accordion-content" hidden>${inner}</div>
 </div>`;
 }
 
@@ -459,6 +460,9 @@ export function renderSelectionReport(multiSelectionResults, algorithms = ALGORI
                     content.setAttribute('hidden', '');
                     content.style.display = 'none';
                 }
+                // v8.30.25 (a11y): native <button> требует синхронизации aria-expanded
+                // с visible state для screen-reader'ов.
+                this.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
                 const iconEl = this.querySelector('.accordion-icon');
                 if (iconEl) iconEl.textContent = isHidden ? '▼' : '▶';
             }

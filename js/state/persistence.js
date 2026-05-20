@@ -146,6 +146,30 @@ function collectValidIds(items, minValue = 1) {
     return ids;
 }
 
+/**
+ * Нормализует массив `task.dependencies` к плоскому массиву валидных id.
+ *
+ * v8.30.25: внешний adversarial-аудит P2 — `selectionHelpers.buildAlgorithmsCacheKey`
+ * делает `JSON.stringify(task.dependencies || [])`, что:
+ *   1) бросает `TypeError` на циклическом объекте из malicious JSON импорта;
+ *   2) для не-массива даёт мусорный hash → cache stale.
+ * Symmetric guard на entry point (§3.quat): нормализуем при load, не пытаемся
+ * лечить в downstream.
+ *
+ * Контракт: только массив примитивных id (number/string), max 100 элементов
+ * чтобы не раздувать ключ при злоупотреблении.
+ */
+function normalizeTaskDependencies(deps) {
+    if (!Array.isArray(deps)) return [];
+    const filtered = [];
+    for (const dep of deps) {
+        if (typeof dep === 'number' && Number.isFinite(dep)) filtered.push(dep);
+        else if (typeof dep === 'string' && dep.length > 0 && dep.length < 64) filtered.push(dep);
+        if (filtered.length >= 100) break;
+    }
+    return filtered;
+}
+
 function normalizeTasks(tasks = []) {
     if (!Array.isArray(tasks)) return [];
     const validIds = collectValidIds(tasks, 1);
@@ -164,7 +188,8 @@ function normalizeTasks(tasks = []) {
             est: normalizeTaskEst(task.est),
             exclusionReason: String(task.exclusionReason ?? ''),
             criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
-            priorityScore: normalizeNumber(task.priorityScore, 0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, 2)
+            priorityScore: normalizeNumber(task.priorityScore, 0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, 2),
+            dependencies: normalizeTaskDependencies(task.dependencies)
         };
     });
     return fixTaskOrder(normalized);
