@@ -1,5 +1,56 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.42) — CI safety net + release metrics verifier
+
+> Audit-hardening после v8.30.41. Закрывает две процессные поверхности:
+> PLANNER теперь имеет GitHub Actions safety net для базовых gates, а
+> RELEASE_NOTES можно машинно сверять с реальным
+> `test-results/e2e-parallel-summary.json`, не переписывая e2e метрики только
+> вручную из консоли.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (CI safety net)** | Проект полагался только на локальную дисциплину release gates; один забытый запуск мог отправить red commit в `main`. | Добавлен GitHub Actions workflow с `unit-and-lint` и `e2e-smoke` jobs на Node 22 / Ubuntu. CI запускает `npm ci`, lint, coverage, audit, outdated и mobile-webkit smoke. | [.github/workflows/ci.yml](../.github/workflows/ci.yml), [ci-workflow-gates.test.js](../tests/unit/architecture/ci-workflow-gates.test.js) |
+| 2 | **P2 (release metrics grounding)** | `RELEASE_NOTES.md` оставался ручным источником e2e truth: можно было написать wrapper exit 0 и потерять child exit / override из summary artifact. | Добавлен `verify:release-metrics`: latest RELEASE_NOTES row сверяется с `test-results/e2e-parallel-summary.json` по wrapper exit, child exit, override и PASS-count. | [releaseMetricsVerifier.js](../scripts/releaseMetricsVerifier.js), [verify-release-metrics.mjs](../scripts/verify-release-metrics.mjs), [releaseMetricsVerifier.test.js](../tests/unit/scripts/releaseMetricsVerifier.test.js) |
+| 3 | **P2 (release process drift)** | Процесс релиза описывал честный e2e summary artifact, но не требовал машинной сверки notes ↔ runtime. | `RELEASE_PROCESS.md` добавил обязательную команду verifier после e2e и описал CI safety net v8.30.42. | [RELEASE_PROCESS.md](RELEASE_PROCESS.md), memory `feedback_ci_release_metrics_verifier.md` |
+| 4 | **P3 (audit calibration)** | DOMPurify audit warning мог выглядеть как drift: npm `dompurify` 3.4.5 vs vendored runtime. | Проверено: `js/vendor/purify.min.js` уже содержит DOMPurify 3.4.5, runtime и dev pin согласованы; отдельный sync-script не нужен сейчас. | [purify.min.js](../js/vendor/purify.min.js), [package.json](../package.json) |
+
+### Новые тесты (TDD / guard)
+
+- `ci-workflow-gates.test.js` — **red на старом дереве**: `.github/workflows/ci.yml` отсутствовал; теперь guard проверяет Node 22, lint, coverage, audit, outdated и smoke без platform-specific release-notes verifier в CI.
+- `releaseMetricsVerifier.test.js` — **red на старом дереве**: helper отсутствовал; теперь закреплены clean summary, override summary, latest-section parsing и mismatch detection.
+
+Всего unit-тесты: `1661 → 1669` (+8).
+
+### Уроки и классы ошибок
+
+1. **CI — safety net, не замена release discipline.** Локальный full e2e остаётся обязательным release gate, CI smoke ловит быстрый регресс в самом рискованном browser path; release-metrics verifier остаётся локальным шагом, потому что child exit / override платформенно-зависимы.
+2. **Release notes должны быть сверяемыми с runtime artifact.** Wrapper exit 0 не доказывает clean Playwright child exit; verifier сравнивает notes с `e2e-parallel-summary.json`.
+3. **Vendored runtime library проверять по фактическому файлу.** `npm audit` смотрит dev dependency, но браузер грузит `js/vendor/purify.min.js`.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1669/1669 PASS, 108 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS, mobile-webkit workers=2 | **0** | **1** on mobile-webkit | **yes** |
+| `npm run test:e2e` | 235/235 PASS, parallel projects | **0** | **0** | no |
+| `npm run verify:release-metrics -- --command="npm run test:e2e"` | RELEASE_NOTES ↔ summary OK | **0** | n/a | — |
+| `npm run verify:release-metrics -- --command="npm run test:e2e:smoke"` | RELEASE_NOTES ↔ smoke summary OK | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke post-bump: mobile-webkit `17/17 PASS`, wrapper exit 0, child exit 1 с `[OVERRIDE]` из-за известной worker shutdown race на Node 22+ Windows; это НЕ clean child exit.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `17/17`, webkit `4/4`, mobile-webkit `17/17`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` успешно сверил full e2e row с full summary artifact до post-bump smoke; после post-bump smoke свежий smoke artifact сверяется отдельной командой.
+- Node repro: не применимо, алгоритмических runtime-изменений нет.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.41) — audit hardening: e2e summary artifact / percent helper / handoff changelog
 
 > Audit-pass после v8.30.40. Закрывает полезные пункты внешнего аудита без

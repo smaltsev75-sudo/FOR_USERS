@@ -65,7 +65,41 @@ npm run bump -- 9.0.0
    | e | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
    | f | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
 
-5. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
+5. **После e2e запуска сверить RELEASE_NOTES с summary artifact:**
+
+   ```bash
+   npm run verify:release-metrics -- --command="npm run test:e2e"
+   ```
+
+   Для smoke-only проверки:
+
+   ```bash
+   npm run verify:release-metrics -- --command="npm run test:e2e:smoke"
+   ```
+
+   Скрипт читает latest section `docs/RELEASE_NOTES.md` и
+   `test-results/e2e-parallel-summary.json`. Он должен подтвердить, что
+   `Wrapper exit`, `Playwright child exit`, `Override` и PASS-count совпадают
+   с реальным e2e summary artifact.
+
+6. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
+
+## CI safety net (v8.30.42)
+
+`.github/workflows/ci.yml` запускается на `push`, `pull_request` в `main` и
+`workflow_dispatch`.
+
+| Job | Команды | Назначение |
+|---|---|---|
+| `unit-and-lint` | `npm ci`, `npm run lint`, `npm run test:coverage -- --runInBand`, `npm audit --audit-level=moderate`, `npm outdated --long` | Быстрые gates без браузеров |
+| `e2e-smoke` | `npm ci`, `npx playwright install --with-deps`, `npm run test:e2e:smoke` | Mobile WebKit smoke на Ubuntu |
+
+Полный `npm run test:e2e` остаётся обязательным локальным release gate по
+чек-листу выше: CI smoke ловит самый проблемный browser path, но не заменяет
+full release verification. `verify:release-metrics` намеренно остаётся
+локальным release-step: child exit / override зависят от платформы, и CI на
+Ubuntu не должен падать из-за честно задокументированного Windows override в
+верхней секции `RELEASE_NOTES.md`.
 
 ## Release gates: details
 
