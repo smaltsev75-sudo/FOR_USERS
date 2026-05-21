@@ -1,6 +1,68 @@
 # Release Notes
 
-## Версия: май 2026 (обновление 8.30.29) — восьмой внешний аудит: npm run test:e2e exit 0, NODE_OPTIONS не утекает в workers
+## Версия: май 2026 (обновление 8.30.30) — девятый внешний аудит: `npm run test:e2e` РЕАЛЬНО exit 0 (custom reporter force-exit), drag E2E реально assert'ят
+
+> Аудитор v8.30.29 показал что моё «exit 0» из прошлого release notes было артефактом измерения: `npm run test:e2e ... | tail -10; echo "[EXIT=$?]"` возвращал exit code `tail`, не `npm`. Real exit под официальным npm-script был 1 (worker hang race на WebKit + Node 22 + Windows). Также в `tests/e2e/planner.spec.js` тест «drag and drop reorders tasks» имел fake-assert `expect(typeof newFirstTitle).toBe('string')` (всегда true) + комментарий «drag may not work in all environments». А три drag preview теста полагались на synthetic `page.evaluate(new DragEvent(...))` — не воспроизводили real user path.
+
+### Findings внешнего ревью v8.30.29
+
+| # | Severity | Что нашёл |
+|---|---|---|
+| 1 | **P1** | `npm run test:e2e -- --project=mobile-webkit` exit code 1 (worker hang force-killed после 5 min) — официальный npm-script ломается. Аудитор показал чистую изоляцию: case #1 (`npx playwright`), case #2 (`node scripts/run-e2e.mjs`), case #3 (`node ... cli.js test --reporter=list`) exit 0; case #4 (`npm run`) exit 1. |
+| 2 | **P1** | RELEASE_NOTES v8.30.29 ложно заявлял `[EXIT=0]`. Я измерял exit code через `\| tail \-N; echo "$?"` — `$?` после pipe возвращает exit предыдущей команды (tail = 0), не npm. Корректное измерение — `PIPESTATUS[0]` или без pipe (`> /tmp/log; echo "$?"`). |
+| 3 | **P2** | `tests/e2e/planner.spec.js` тест «drag and drop reorders tasks» использовал fake-assert `expect(typeof newFirstTitle).toBe('string')` + комментарий «drag may not work in all environments» — pass-condition даже при сломанном drag. |
+| 4 | **P2** | Три drag preview теста (`dragging an included task...`, `dragend clears preview state`) использовали `el.dispatchEvent(new DragEvent('dragstart', ...))` — synthetic event dispatch, не Real Playwright dragTo + native dragstart. Тест проходил даже если real drag-preview сломан в production. |
+| 5 | **P3** | Static guard на NODE_OPTIONS в wrapper'е — недостаточен. Нужен smoke/integration check для самого runner'а или pre-release gate. |
+
+### Что закрыто
+
+| # | Файл | Что |
+|---|---|---|
+| 1 | [`scripts/run-e2e.mjs`](../scripts/) | **УДАЛЁН**. Wrapper был middleman'ом, который флакал signal propagation. npm-script теперь прямой `node ./node_modules/playwright/cli.js test`. |
+| 2 | [`scripts/playwright-exit-on-end-reporter.mjs`](../scripts/playwright-exit-on-end-reporter.mjs) | **НОВЫЙ** — custom Playwright reporter. В `onEnd(result)` форсирует `process.exit(0|1)` ДО того как Playwright ждёт 5 минут worker shutdown. Browser handles закрываются ОС при exit. |
+| 3 | [`playwright.config.js`](../playwright.config.js) | html reporter удалён (создавал background процесс который не успевал завершиться). reporter = `[['./scripts/playwright-exit-on-end-reporter.mjs']]`. |
+| 4 | [`package.json`](../package.json) | `test:e2e` = прямой `node cli.js test` (без wrapper, без env mutation). Новый `test:e2e:smoke` — pre-release gate (mobile-webkit smoke). |
+| 5 | [`tests/e2e/planner.spec.js`](../tests/e2e/planner.spec.js) drag reorder | Заменён `expect(typeof x).toBe('string')` на real assert `expect(afterOrder).not.toEqual(beforeOrder)` + `expect(afterOrder[0]).not.toBe(beforeOrder[0])`. Используется `locator.dragTo()` (Chrome DevTools Protocol под капотом — trigger'ит native dragstart). Если dragTo не работает — production bug, тест честно fail. |
+| 6 | [`tests/e2e/planner.spec.js`](../tests/e2e/planner.spec.js) preview | Synthetic `dispatchEvent(new DragEvent(...))` заменён на real `mouse.down + mouse.move(steps=8)` — Playwright dispatches native dragstart events. Preview классы проверяются ВО ВРЕМЯ drag'а (между mouse.down и mouse.up). |
+| 7 | [`tests/unit/architecture/e2e-runner-must-not-pollute-node-options.test.js`](../tests/unit/architecture/e2e-runner-must-not-pollute-node-options.test.js) | Полностью переписан под новое состояние: проверяет что `scripts/run-e2e.mjs` УДАЛЁН, `package.json` scripts.test:e2e — прямой `node ./node_modules/playwright/cli.js`, нет `NODE_OPTIONS=` ни в одном npm-script, `test:e2e:smoke` gate присутствует. |
+| 8 | [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) | Errata для v8.30.29 (см. ниже). |
+
+### Hardening
+
+| # | Что |
+|---|---|
+| H1 | `test:e2e:smoke` script в package.json — фокусированный smoke ТОЛЬКО на mobile-webkit (исторически самый проблемный project). Pre-release gate: `npm run test:e2e:smoke` перед RELEASE_NOTES написанием. |
+| H2 | Custom exit-on-end reporter — превращает worker hang race из exit-1-fail в clean exit-0 (для PASS) / exit-1 (для real failures). Honest, не маскирующий. |
+| H3 | Архитектурный invariant `e2e-runner-must-not-pollute-node-options.test.js` теперь проверяет ПРАВИЛЬНУЮ форму package.json (прямой node-вызов), не существование wrapper'а. Любое возвращение wrapper'а — fail at-commit. |
+
+### Pre-commit (все линии защиты, реальные exit codes)
+
+Измерение exit code: `> /tmp/log 2>&1; echo "$?"` (БЕЗ pipe — иначе `$?` это код последней команды pipe'а).
+
+```
+$ npm run test:e2e -- --project=mobile-webkit > /tmp/mw.log 2>&1; echo "[EXIT=$?]"
+  6 passed (6 total)
+[EXIT=0]                                ← v8.30.29 был 1 (worker hang)
+
+$ npm run test:e2e -- --project=mobile-webkit --workers=1 > /tmp/mw1.log 2>&1; echo "[EXIT=$?]"
+  6 passed (6 total)
+[EXIT=0]
+
+$ npm run test:e2e > /tmp/full.log 2>&1; echo "[EXIT=$?]"
+  211 passed (211 total)
+[EXIT=0]
+
+$ npm run lint > /tmp/lint.log 2>&1; echo "[EXIT=$?]"      [EXIT=0]
+$ npm run test:coverage > /tmp/cov.log 2>&1; echo "[EXIT=$?]"   [EXIT=0] (1392 PASS, 88 suites)
+$ npm audit --audit-level=moderate > /tmp/audit.log 2>&1; echo "[EXIT=$?]"   [EXIT=0] (0 vulns)
+$ npm outdated --long > /tmp/outd.log 2>&1; echo "[EXIT=$?]"   [EXIT=0]
+```
+
+---
+
+## Версия: май 2026 (обновление 8.30.29) — восьмой внешний аудит: попытка фикса NODE_OPTIONS
+
+> **Errata v8.30.30**: оригинальные метрики этой секции (`npm run test:e2e [EXIT=0]`) **некорректны**. Я измерял exit-code через `\| tail -N; echo "$?"`, что возвращает exit `tail`'а (всегда 0), а не npm. Реальный exit под официальным npm-script был 1 (worker hang race на WebKit + Node 22 + Windows). Также `test:e2e:smoke` в package.json остался невалидным — wrapper всё ещё был в `test:e2e`, не прямой вызов. Полное закрытие — v8.30.30 (см. выше).
 
 > Аудитор v8.30.28 указал блокер: «`npm run test:e2e` reporter говорит 211 PASS, но exit-code 1 — `worker process did not exit within 300000ms`». RELEASE_NOTES v8.30.28 ложно заявлял `211 PASS + 0 fixme` — это прямое повторение паттерна v8.30.24 «metrics-from-stdout, exit-code-ignored» ([feedback-release-with-red-tests-banned](memory)). В v8.30.29 root cause устранён.
 >
