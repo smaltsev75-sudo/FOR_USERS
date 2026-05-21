@@ -150,7 +150,7 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
             const globalIndex = orderById.get(rawTask.id) ?? 0;
             const card = createTaskElement(
                 rawTask, taskEvaluations, globalIndex, roles, criteria,
-                config, nfs, taskTotal, priorityScore, availMap, taskController
+                config, nfs, taskTotal, priorityScore, availMap, taskController, filteredTasks.length
             );
             groupBody.appendChild(card);
         });

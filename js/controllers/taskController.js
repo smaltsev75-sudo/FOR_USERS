@@ -221,6 +221,8 @@ export class TaskController {
                 const action = btn.dataset.action;
                 const id = +btn.dataset.id;
                 if (action === 'edit') this._form.openEditModal(id);
+                else if (action === 'moveUp') this.handleMoveTask(id, 'up');
+                else if (action === 'moveDown') this.handleMoveTask(id, 'down');
                 else if (action === 'toggleExclude') this.handleToggleExclude(id);
                 else if (action === 'delete') this.handleDeleteTask(id);
             });
@@ -424,6 +426,9 @@ export class TaskController {
 
     /** Сортирует по приоритету. */
     handleSortByPriority() { this._list.handleSortByPriority(); }
+
+    /** Перемещает задачу на одну позицию вверх/вниз. */
+    handleMoveTask(taskId, direction) { this._list.handleMoveTask(taskId, direction); }
 
     setPriorityScoreCalculator(fn) {
         this._cache.setPriorityScoreCalculator(fn);

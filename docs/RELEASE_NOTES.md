@@ -1,5 +1,57 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.43) — keyboard/touch task reorder controls
+
+> Desktop-first hardening после внешнего аудита v8.30.42. Native drag-and-drop
+> остаётся основным быстрым desktop-путём для мыши/touchpad, но карточка задачи
+> теперь имеет явные `↑/↓` controls: reorder доступен с клавиатуры, на touch и
+> в mobile smoke без полифилла HTML5 DnD.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (desktop keyboard / touch fallback)** | Reorder зависел от native HTML5 drag path: хороший desktop mouse UX, но слабый путь для клавиатуры и touch. | В карточку задачи добавлены явные move-up / move-down buttons с disabled edge states; native drag path сохранён. | [taskList.js](../js/ui/taskList.js), [taskListGrouped.js](../js/ui/taskListGrouped.js), [icons.js](../js/utils/icons.js), [task-card.css](../css/task-card.css) |
+| 2 | **P2 (controller contract)** | У кнопок reorder не было отдельного delegated action path, который можно тестировать без браузерного drag API. | `TaskController` прокидывает `moveUp` / `moveDown` в `TaskListHandler.handleMoveTask`, handler меняет порядок через `store.reorderTasks(fixTaskOrder(...))` и invalidates cache. | [taskController.js](../js/controllers/taskController.js), [taskListHandler.js](../js/controllers/task/taskListHandler.js) |
+| 3 | **P2 (mobile smoke gap)** | Mobile projects проверяли базовый UI, но не закрепляли, что reorder возможен без native touch drag. | Добавлен mobile e2e: seed tasks → click move-down → verify order swapped → assert no horizontal overflow. | [mobile.spec.js](../tests/e2e/mobile.spec.js), [stateHelpers.js](../tests/e2e/stateHelpers.js) |
+| 4 | **P3 (docs / handoff clarity)** | User-facing docs описывали drag path, но не называли явный keyboard/touch fallback. | UserManual и README обновлены: drag остаётся desktop path, `↑/↓` controls — универсальный fallback для keyboard/touch. | [UserManual.md](UserManual.md), [README.md](../README.md) |
+
+### Новые тесты (TDD / guard)
+
+- `taskList.test.js` — **red на старом дереве**: в карточке не было `data-action="moveUp|moveDown"` и disabled edge states.
+- `taskController.test.js` — **red на старом дереве**: delegated click по `moveUp|moveDown` не вызывал reorder path; boundary no-op не был закреплён.
+- `mobile.spec.js` — **red на старом дереве**: mobile reorder без native drag не имел кликабельного пути.
+
+Всего unit-тесты: `1669 → 1673` (+4). Full e2e: `235 → 237` (+2 за новый mobile test в mobile-chromium и mobile-webkit).
+
+### Уроки и классы ошибок
+
+1. **Desktop-first меняет severity, но не отменяет input-modality fallback.** Touch-only drag gap не P1 для приоритетного desktop-сценария, однако reorder должен иметь явный keyboard/touch path.
+2. **Native drag лучше не полифиллить, если есть простой продуктовый control.** `↑/↓` buttons закрывают keyboard и touch одним additive UI-контрактом без риска сломать desktop drag.
+3. **Mobile smoke полезен как guard на отсутствие горизонтального оверфлоу.** Новый тест кликает реальный control без `force: true` и проверяет layout boundary.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1673/1673 PASS, 108 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm run verify:release-metrics -- --command="npm run test:e2e"` | RELEASE_NOTES ↔ full summary OK | **0** | n/a | — |
+| `npm run verify:release-metrics -- --command="npm run test:e2e:smoke"` | RELEASE_NOTES ↔ smoke summary OK | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`, webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` сверяет latest release row с `test-results/e2e-parallel-summary.json`; full row сверен до post-bump smoke, smoke row сверяется после post-bump smoke.
+- Visual check: desktop card + mobile touch card checked via Playwright screenshots; action row has no horizontal overflow.
+- Node repro: не применимо, алгоритмических runtime-изменений нет.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.42) — CI safety net + release metrics verifier
 
 > Audit-hardening после v8.30.41. Закрывает две процессные поверхности:

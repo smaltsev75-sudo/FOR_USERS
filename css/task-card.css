@@ -638,6 +638,26 @@
     box-shadow: 0 3px 6px var(--shadow-md);
 }
 
+.task-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+.task-action-btn:disabled:hover {
+    background: var(--button-bg);
+    border-color: var(--border-light);
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-move-up:hover:not(:disabled),
+.btn-move-down:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
 .btn-edit:hover {
     color: var(--accent);
     border-color: var(--accent);
@@ -1140,6 +1160,18 @@
 }
 
 @media (max-width: 540px) {
+    .task-content {
+        min-width: 0;
+        flex-basis: 100%;
+    }
+
+    .task-btn-group {
+        order: 20;
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+
     .est-box {
         flex: 1 1 calc(33.333% - 6px);
     }

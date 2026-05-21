@@ -182,7 +182,7 @@ export function renderTaskList(state, nfs, taskController = null) {
             || calculatePriorityScore(criteria, taskEvaluations);
         return createTaskElement(
             task, taskEvaluations, index, roles, criteria,
-            config, nfs, taskTotal, priorityScore, availMap, taskController
+            config, nfs, taskTotal, priorityScore, availMap, taskController, filteredTasks.length
         );
     };
 
@@ -466,7 +466,10 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
  * Creates a task card DOM element using VM.
  * Exported for reuse by alternate views (e.g. quadrant-grouped view).
  */
-export function createTaskElement(task, taskEvaluations, index, roles, criteria, config, nfs, taskTotal, priorityScore, _availMap, _taskController) {
+export function createTaskElement(
+    task, taskEvaluations, index, roles, criteria, config, nfs, taskTotal,
+    priorityScore, _availMap, _taskController, taskCount = 0
+) {
     const vm = createTaskRowVM(task, criteria, roles);
 
     const el = document.createElement('div');
@@ -487,7 +490,13 @@ export function createTaskElement(task, taskEvaluations, index, roles, criteria,
     const editIconHtml = icon('pencil');
     const deleteIconHtml = icon('trash');
     const dragIconHtml = icon('gripVertical');
+    const moveUpIconHtml = icon('chevronUp');
+    const moveDownIconHtml = icon('chevronDown');
     const printEffort = `<span class="print-only-effort">Effort: ${nfs.formatNumber(taskTotal)}</span>`;
+    const isFirstTask = index <= 0;
+    const isLastTask = taskCount > 0 && index >= taskCount - 1;
+    const moveUpDisabled = isFirstTask ? ' disabled' : '';
+    const moveDownDisabled = isLastTask ? ' disabled' : '';
 
     const priorityLevel = getPriorityLevel(priorityScore);
     const priorityLabel = getPriorityLabel(priorityLevel);
@@ -516,6 +525,8 @@ export function createTaskElement(task, taskEvaluations, index, roles, criteria,
                 <div class="task-comment"></div>
             </div>
             <div class="task-btn-group">
+                <button class="task-action-btn btn-move-up" title="Переместить задачу выше" data-action="moveUp" data-id="${vm.id}" aria-label="Переместить выше"${moveUpDisabled}>${moveUpIconHtml}</button>
+                <button class="task-action-btn btn-move-down" title="Переместить задачу ниже" data-action="moveDown" data-id="${vm.id}" aria-label="Переместить ниже"${moveDownDisabled}>${moveDownIconHtml}</button>
                 <button class="task-action-btn btn-edit" title="Редактировать задачу спринта" data-action="edit" data-id="${vm.id}" aria-label="Редактировать">${editIconHtml}</button>
                 <button class="${excludeClass}" title="${escapeHtml(excludeTitle)}" data-action="toggleExclude" data-id="${vm.id}" aria-label="Включить или исключить">${excludeIconHtml}</button>
                 <button class="task-action-btn btn-delete" title="Удалить задачу спринта" data-action="delete" data-id="${vm.id}" aria-label="Удалить">${deleteIconHtml}</button>

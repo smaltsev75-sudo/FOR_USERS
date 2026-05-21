@@ -245,4 +245,25 @@ export class TaskListHandler {
         const fixed = fixTaskOrder(sorted);
         this.store.reorderTasks(fixed);
     }
+
+    /**
+     * Перемещает задачу на одну позицию для keyboard/touch сценариев, где
+     * native HTML5 drag недоступен или неудобен.
+     * @param {number} taskId
+     * @param {'up'|'down'} direction
+     * @returns {boolean} true если порядок изменён
+     */
+    handleMoveTask(taskId, direction) {
+        const delta = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
+        if (delta === 0) return false;
+        const tasks = [...this.store.getState().tasks];
+        const index = tasks.findIndex(t => t.id === taskId);
+        const targetIndex = index + delta;
+        if (index === -1 || targetIndex < 0 || targetIndex >= tasks.length) return false;
+
+        [tasks[index], tasks[targetIndex]] = [tasks[targetIndex], tasks[index]];
+        this.store.reorderTasks(fixTaskOrder(tasks));
+        this._cache.invalidate();
+        return true;
+    }
 }
