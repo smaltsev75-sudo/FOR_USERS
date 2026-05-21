@@ -120,7 +120,7 @@ php -S localhost:8123
 | Проблема | Решение |
 |----------|---------|
 | `Failed to load module script` | Файл открыт через `file://` — запустите через HTTP-сервер |
-| Порт 8000 занят | Используйте другой порт: `python3 -m http.server 8080` |
+| Порт 8123 занят чужим процессом | `netstat -ano \| findstr :8123` (Windows) / `lsof -i :8123` (Unix) → `taskkill /F /PID <pid>` или `kill <pid>`. Если порт занят другим Sprint Planner — это OK, e2e-runner (v8.30.33+) сам определит свой сервер по `<title>` signature. Старый legacy совет «8080» больше не применим: порт зафиксирован на 8123 в playwright.config.js и start-server.*. |
 | `Permission denied` (Linux) | Используйте `bash start-server.sh` |
 | Не найден Python / Node.js / PHP | Установите [Python 3](https://python.org) или [Node.js](https://nodejs.org) |
 

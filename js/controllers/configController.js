@@ -3,6 +3,7 @@
 import { messageService } from '../services/message.js';
 import { createDefaultConfig } from '../domain/config.js';
 import { addWorkingDays, countWorkingDays, formatDate, parseDate } from '../utils/date.js';
+import { parseStrictInteger } from '../domain/strictInteger.js';
 
 export class ConfigController {
     /**
@@ -32,6 +33,11 @@ export class ConfigController {
      */
     init() {
         this.attachEvents();
+        // v8.30.33: mobile compact disclosure для cfg-section--coef.
+        // На mobile (≤600px) #cfgAdvanced collapse'ится по умолчанию (open
+        // удаляется); на desktop остаётся open. Без display:none — feature
+        // parity сохранена. Resize не закрывает уже открытый <details>.
+        this._applyMobileAdvancedDefault();
         // Подписываемся только на изменения конфигурации, чтобы синхронизировать поля ввода.
         this.unsubscribe = this.store.subscribe((state) => {
             const signature = this.getConfigSignature(state.config);
@@ -42,6 +48,22 @@ export class ConfigController {
         const initialConfig = this.store.getState().config;
         this.lastConfigSignature = this.getConfigSignature(initialConfig);
         this.updateInputsFromState(initialConfig);
+    }
+
+    /**
+     * v8.30.33: на mobile (≤600px) сворачивает <details id="cfgAdvanced">
+     * (коэффициент доступности + порог алерта). На desktop остаётся открытым.
+     * Защита от undefined matchMedia (старые jsdom).
+     */
+    _applyMobileAdvancedDefault() {
+        const cfg = document.getElementById('cfgAdvanced');
+        if (!cfg) return;
+        const mm = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+            ? window.matchMedia('(max-width: 600px)')
+            : null;
+        if (mm && mm.matches) {
+            cfg.removeAttribute('open');
+        }
     }
 
     /**
@@ -206,24 +228,33 @@ export class ConfigController {
      */
     handleDaysInput(e) {
         const raw = e.target.value?.trim();
-        if (!raw) return;
-
-        const days = this.nfs.parseInteger(raw);
-        // Вызываем applyDays только при валидном положительном числе
-        if (days > 0) {
-            this.applyDays(days);
+        if (!raw) {
+            // Пустое поле в процессе редактирования — не invalid, не update.
+            e.target.removeAttribute('aria-invalid');
+            return;
         }
+        // v8.30.33: strict integer. '1.9' / '1abc' / '' → null, НЕ 1.
+        const days = parseStrictInteger(raw);
+        if (days === null || days < 1) {
+            e.target.setAttribute('aria-invalid', 'true');
+            return;
+        }
+        e.target.removeAttribute('aria-invalid');
+        this.applyDays(days);
     }
 
     handleDaysChange(e) {
         const { value } = e.target;
-        const days = this.nfs.parseInteger(value);
-        if (days <= 0) {
-            messageService.showMessage('Количество дней должно быть положительным числом');
+        const days = parseStrictInteger(value);
+        if (days === null || days < 1) {
+            e.target.setAttribute('aria-invalid', 'true');
+            messageService.showMessage('Количество дней должно быть положительным целым числом');
             // Откат к предыдущему значению
             e.target.value = this.store.getState().config?.days ?? 10;
+            e.target.removeAttribute('aria-invalid');
             return;
         }
+        e.target.removeAttribute('aria-invalid');
         this.applyDays(days);
     }
 
@@ -274,9 +305,17 @@ export class ConfigController {
      */
     handleHolidaysInput(e) {
         const raw = e.target.value?.trim();
-        if (!raw) return;
-        const holidays = this.nfs.parseInteger(raw);
-        if (holidays < 0) return;
+        if (!raw) {
+            e.target.removeAttribute('aria-invalid');
+            return;
+        }
+        // v8.30.33: strict integer. '0.5' / '5abc' → null, НЕ 0/5.
+        const holidays = parseStrictInteger(raw);
+        if (holidays === null || holidays < 0) {
+            e.target.setAttribute('aria-invalid', 'true');
+            return;
+        }
+        e.target.removeAttribute('aria-invalid');
         this.applyHolidays(holidays);
     }
 
@@ -284,12 +323,15 @@ export class ConfigController {
      * Обработка окончательного изменения количества праздничных дней (blur).
      */
     handleHolidaysChange(e) {
-        const holidays = this.nfs.parseInteger(e.target.value);
-        if (holidays < 0) {
-            messageService.showMessage('Количество праздничных дней не может быть отрицательным');
+        const holidays = parseStrictInteger(e.target.value);
+        if (holidays === null || holidays < 0) {
+            e.target.setAttribute('aria-invalid', 'true');
+            messageService.showMessage('Количество праздничных дней должно быть неотрицательным целым числом');
             e.target.value = this.store.getState().config?.holidays ?? 0;
+            e.target.removeAttribute('aria-invalid');
             return;
         }
+        e.target.removeAttribute('aria-invalid');
         this.applyHolidays(holidays);
     }
 
@@ -344,13 +386,16 @@ export class ConfigController {
      * Обработка изменения порога предупреждения о перегрузке.
      */
     handleAlertChange(e) {
-        const alert = this.nfs.parseInteger(e.target.value);
-        if (alert < 0) {
+        // v8.30.33: strict integer. '3.5' / '5abc' → null, НЕ 3/5.
+        const alert = parseStrictInteger(e.target.value);
+        if (alert === null || alert < 0) {
+            e.target.setAttribute('aria-invalid', 'true');
             messageService.showMessage('Порог предупреждения должен быть неотрицательным целым числом');
-            // Откат к предыдущему значению
             e.target.value = this.store.getState().config?.alert ?? 3;
+            e.target.removeAttribute('aria-invalid');
             return;
         }
+        e.target.removeAttribute('aria-invalid');
         const { alert: currentAlert } = this.store.getState().config ?? {};
         if (currentAlert === alert) return;
         this.store.setConfig({ alert });

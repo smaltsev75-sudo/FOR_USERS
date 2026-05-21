@@ -85,17 +85,17 @@ npm run bump -- 9.0.0
 ### Webserver
 
 `playwright.config.js → webServer`: `npx http-server . -p 8123 --silent --no-cache`.
-**Порт 8123** — нестандартный, чтобы не конфликтовать с другими dev-серверами
-проекта на 8000/8080. `reuseExistingServer: !process.env.CI`.
+**Порт 8123** зафиксирован — `start-server.bat`, `start-server.sh`, playwright.config.js, e2e-runner, README используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. `reuseExistingServer: !process.env.CI`.
 
-### e2e-runner (v8.30.31: ground truth = JSON reporter)
+### e2e-runner (v8.30.33: process-tree cleanup + own/foreign port detection)
 
 `scripts/e2e-runner.mjs`:
 - Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в `test-results/e2e-runner-results.json`.
 - **Ground truth для exit-кода**: JSON-файл (`stats.unexpected`). НЕ stdout-парсинг.
-- Stdout-monitor — секондарный watchdog для force-kill при WebKit worker hang race на Node 22+ Windows.
-- EADDRINUSE на порт 8123 — info (не fatal), webServer reuse подхватит.
-- Orphan cleanup: SIGINT/SIGTERM/exit propagate в child, force-SIGKILL после 1.5s.
+- Stdout-monitor — секундарный watchdog для force-kill при WebKit worker hang race на Node 22+ Windows.
+- **Port 8123 own-server detection (v8.30.33+):** занят чужим процессом? Делаем HTTP GET на `/index.html`, ищем `<title>Sprint Planner` сигнатуру. Свой сервер — info, webServer reuse подхватит. Чужой listener — **fail fast** с явной ошибкой и инструкцией. Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
+- **Process-tree cleanup (v8.30.33+):** Windows — `taskkill /F /T /PID`; Unix — `spawn(detached:true)` + `process.kill(-pgid)`. Закрывает класс «grandchild leak» (worker'ы Playwright + браузеры). Lifecycle test: [tests/unit/architecture/e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js).
+- Orphan cleanup: SIGINT/SIGTERM/exit propagate в process tree, force-SIGKILL после 1.5s.
 
 ### Измерение exit-кодов
 

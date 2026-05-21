@@ -1,5 +1,55 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.33) — repair pass: 6 классов ошибок закрыты
+
+> Жёсткий repair pass. Закрываются не только конкретные баги, но и **классы ошибок**, из которых они выросли. Каждый фикс — TDD-тест, который падал бы на v8.30.32 коде.
+
+### Закрытые баги по 6 поверхностям audit'а
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1** | `handleDeleteAll` использовал stale full snapshot для undo — задачи, созданные между delete-all и undo, терялись | Single-item snapshot (`deletedTasks`) + merge с current state; новые задачи сохраняются, deleted восстанавливаются в исходном порядке, дубликаты id фильтруются (приоритет current) | [taskListHandler.js:191-220](../js/controllers/task/taskListHandler.js) |
+| 2 | **P1** | `parseInt` глотал мусор (`'1abc'`=1, `'1.9'`=1) в configController/criteriaController/criteriaFormController/persistence — тихая порча данных без сигнала | Единый strict-integer контракт в [strictInteger.js](../js/domain/strictInteger.js), применён во всех integer полях: days/holidays/alert/weight/score. `'1abc'`/`'1.9'`/пустое/NaN/Infinity → null с aria-invalid | [strictInteger.js](../js/domain/strictInteger.js), [configController.js](../js/controllers/configController.js), [criteriaController.js](../js/controllers/criteriaController.js), [criteriaFormController.js](../js/controllers/criteria/criteriaFormController.js), [persistence.js](../js/state/persistence.js) |
+| 3 | **P1** | Mobile feature parity: `cfg-section--coef { display: none }` на ≤600px полностью блокировал доступ к коэффициент доступности и порогу алерта — пользователь mobile не мог их редактировать | `<details id="cfgAdvanced">` обёртка с `<summary>` toggle. На desktop summary скрыт, секция видна всегда. На mobile collapse'ится по умолчанию через `configController._applyMobileAdvancedDefault()` + matchMedia, 1 тап раскрывает | [index.html](../index.html), [css/config-panel.css](../css/config-panel.css), [configController.js](../js/controllers/configController.js) |
+| 4 | **P1** | Import тихо подменял невалидные поля fallback'ом и показывал «Данные успешно загружены» — пользователь не знал, что FTE=200 → 100, weight=150 → 100 и т.д. | `analyzeImportIssues(rawState)` собирает список distortion'ов, fileController показывает их в `messageService.showConfirm` ПЕРЕД импортом, success message честно отражает количество fallback'ов | [persistence.js → analyzeImportIssues](../js/state/persistence.js), [fileController.js](../js/controllers/fileController.js) |
+| 5 | **P2** | e2e-runner на kill убивал только direct child; Playwright worker'ы и браузеры оставались orphaned. Port 8123 reuse слепо подхватывал ЛЮБОЙ listener — чужой dev-сервер маскировал тесты | **Process-tree cleanup:** Windows `taskkill /F /T /PID`, Unix `spawn(detached:true)` + `process.kill(-pgid)`. **Port own/foreign detection:** HTTP GET на `/index.html` + `<title>Sprint Planner` сигнатура; чужой listener — fail fast | [scripts/e2e-runner.mjs](../scripts/e2e-runner.mjs) |
+| 6 | **P2** | Docs drift — README/ARCHITECTURE/RELEASE_PROCESS упоминали legacy 8080/8000, mobile секция UserManual не отражала advanced disclosure, e2e-runner документация не описывала tree-kill | Все упоминания 8000/8080 переписаны как legacy troubleshooting; UserManual mobile-секция обновлена до v8.30.33 (cfgAdvanced); RELEASE_PROCESS / ARCHITECTURE описывают tree-kill + own/foreign detection | [README.md](../README.md), [docs/ARCHITECTURE.md](ARCHITECTURE.md), [docs/UserManual.md](UserManual.md), [docs/RELEASE_PROCESS.md](RELEASE_PROCESS.md) |
+
+### Новые/обновлённые тесты (TDD — падают на v8.30.32 коде)
+
+- [tests/unit/controllers/task/taskListHandler.test.js](../tests/unit/controllers/task/taskListHandler.test.js) — 4 новых теста на delete-all undo: новые задачи не теряются; edit между delete и undo сохраняется; id переиспользован → current приоритет; пустой список → no-op.
+- [tests/unit/domain/strictInteger.test.js](../tests/unit/domain/strictInteger.test.js) — новый файл, 21 тест на strict integer contract (parseStrictInteger, parseStrictIntegerInRange, normalizeStrictIntegerForPersistence).
+- [tests/unit/state/persistence.honestImport.test.js](../tests/unit/state/persistence.honestImport.test.js) — новый файл, 22 теста: analyzeImportIssues на config/roles/criteria/tasks; migratePersistedState с новым strict-контрактом (weight=150 → fallback=0, не clamp=100).
+- [tests/unit/state/persistence.test.js](../tests/unit/state/persistence.test.js) — обновлён под новое поведение: days=0 → fallback=10 (не clamp=1); alert=-5 → fallback=3; criteria weight=150 → 0.
+- [tests/unit/controllers/configController.test.js](../tests/unit/controllers/configController.test.js) — 8 новых тестов: strict integer для days/holidays/alert (отвергаются '1.9', '10abc', '0.5', '3.5', '5abc'); mobile compact disclosure (cfgAdvanced collapse на mobile, остаётся open на desktop, не падает без cfgAdvanced).
+- [tests/unit/controllers/fileController.test.js](../tests/unit/controllers/fileController.test.js) — обновлён mock для analyzeImportIssues.
+- [tests/unit/architecture/e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js) — новый файл: fake child → grandchild, проверяет что tree-kill убивает grandchild (а простой kill — нет).
+- [tests/e2e/mobile.spec.js](../tests/e2e/mobile.spec.js) — 4 новых e2e-теста: cfgAdvanced свёрнут на mobile; cfgAvailCoef доступен через summary toggle, редактируется, переживает reload; cfgAlert — то же; cfgAdvanced не вызывает horizontal overflow в обоих состояниях.
+
+### Уроки и классы ошибок (для будущих audit'ов)
+
+1. **Undo через full state snapshot — анти-паттерн всегда.** Любой undo, который восстанавливает «весь массив до изменения», теряет intermediate edits. Правильно — snapshot только удалённых элементов + merge с current. Применимо к delete-task ([feedback-undo-full-snapshot-breaks-intermediate-edits]), delete-all (этот релиз), любым массовым удалениям.
+2. **`parseInt` — это parseInt-мусор по умолчанию.** Никогда не использовать `parseInt(userInput, 10)` без последующей валидации формы (`/^-?\d+$/.test(s)`). Лучше — единый `parseStrictInteger` helper. Применимо к ЛЮБОМУ integer-полю в UI/persistence/import.
+3. **`display:none` на mobile — это не «адаптация», это удаление фичи.** Аудит должен проверять, что каждое скрытое поле имеет альтернативный путь доступа. `<details>` + `<summary>` — стандартный паттерн compact disclosure без потери функциональности.
+4. **Success message не должен скрывать distortion.** Если import применил fallback к N полям — это **обязательная** часть пользовательской диагностики, не «нюанс». Show issues BEFORE и AFTER апплая.
+5. **`child.kill()` ≠ process tree cleanup.** На любой платформе нужен явный механизм для grandchildren: Windows `taskkill /T`, Unix `process.kill(-pgid)`. Lifecycle-тест с fake hierarchy — обязателен.
+6. **Port reuse без identity check — security smell.** `reuseExistingServer=true` без HTTP signature check может молча подхватить чужой сервер. Минимальный identity-check: HTTP GET + поиск своей сигнатуры в body.
+
+### Финальные exit-коды (последний реальный запуск, без pipe-trap)
+
+| Команда | Результат | Exit-code |
+|---|---|---|
+| `npm run lint` | clean (eslint js/ sw.js) | **0** |
+| `npm run test:coverage -- --runInBand` | 1493 / 1493 PASS, 92 suites, 101s | **0** |
+| `npm run test:e2e:smoke` | 10 / 10 PASS (mobile-webkit, 5.2 min — worker hang race на Node 22+ Windows, runner force-kill + JSON ground truth → exit 0) | **0** |
+| `npm run test:e2e` | 221 / 221 PASS (chromium + mobile-chromium + webkit + mobile-webkit, 1.6 min) | **0** |
+| `npm audit` | 0 vulnerabilities | **0** |
+| `npm outdated` | (no critical updates) | **0** |
+
+Exit-коды получены через `cmd > /tmp/log 2>&1; echo $?` (без pipe-trap, см. memory `feedback-exit-code-after-pipe-lies`). Симметричный JSON-ground-truth check в [e2e-runner.mjs](../scripts/e2e-runner.mjs) обеспечивает exit 0 при child-exit ≠ 0 + JSON `unexpected=0` (worker shutdown race на Node 22+ Windows). Arch-test invariant в [e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js).
+
+---
+
 ## Версия: май 2026 (обновление 8.30.32) — продуктовая семантика FTE/Off исправлена
 
 > Аудит v8.30.31 закрепил **жёсткий контракт FTE 0..100 / off integer-only**. По фидбеку пользователя контракт был неверен с точки зрения продуктовой семантики. Этот релиз исправляет.

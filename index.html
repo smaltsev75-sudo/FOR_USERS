@@ -22,30 +22,30 @@
             document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
-    <link rel="stylesheet" href="css/base.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/layout.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/forms.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/modals.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/components.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/animations.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/progress.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/help.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/responsive.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.32">
-    <link rel="stylesheet" href="css/print.css?v=v8.30.32" media="print">
-    <link rel="manifest" href="manifest.json?v=8.30.32">
+    <link rel="stylesheet" href="css/base.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/layout.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/forms.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/modals.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/components.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/animations.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/progress.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/help.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/responsive.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.33">
+    <link rel="stylesheet" href="css/print.css?v=v8.30.33" media="print">
+    <link rel="manifest" href="manifest.json?v=8.30.33">
     <meta name="theme-color" content="#00d9ff">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -181,6 +181,14 @@
                     </div>
                 </section>
 
+                <!-- v8.30.33: на mobile (≤600px) обёрнуто в <details> для compact disclosure.
+                     На desktop summary скрыт (display:none), секция видна всегда.
+                     На mobile открывается тапом на summary без потери функциональности. -->
+                <details class="cfg-advanced" id="cfgAdvanced" open>
+                    <summary class="cfg-advanced-summary" aria-label="Дополнительные настройки: коэффициенты расчёта">
+                        <span class="cfg-advanced-summary-label">Коэффициенты расчёта</span>
+                        <span class="cfg-advanced-summary-hint">(коэфф. доступности, порог алерта)</span>
+                    </summary>
                 <section class="cfg-section cfg-section--coef" aria-labelledby="cfgSection2Title">
                     <h2 class="cfg-section-title" id="cfgSection2Title">Коэффициенты расчёта</h2>
                     <div class="cfg-fields">
@@ -225,6 +233,7 @@
 
                     </div>
                 </section>
+                </details>
             </div>
 
             <!-- Дэшборд: загрузка команды + распределение по типам -->
@@ -702,7 +711,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.30.32"></script>
+    <script type="module" src="js/app.js?v=v8.30.33"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

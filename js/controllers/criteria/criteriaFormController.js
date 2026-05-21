@@ -4,6 +4,7 @@ import { messageService } from '../../services/message.js';
 import { validateAbbreviation, isAbbreviationUnique, generateAbbreviation } from '../../domain/validation.js';
 import { generateScaleEditorHTML } from '../../ui/criteriaList.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
+import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
 
 /**
  * CriteriaFormController — контроллер модального окна добавления/редактирования критерия.
@@ -107,7 +108,11 @@ export class CriteriaFormController {
 
         const name = document.getElementById('editCriteriaName').value.trim();
         const abbreviation = document.getElementById('editCriteriaAbbreviation').value.trim().toUpperCase();
-        const weight = parseInt(document.getElementById('editCriteriaWeight').value) || 0;
+        // v8.30.33: strict integer 0..100. '50.5' / '50abc' → отклоняем ВЫШЕ
+        // store, явное сообщение пользователю. Раньше `parseInt() || 0` тихо
+        // превращал «50.5» → 50, «50abc» → 50, а пустую строку → 0.
+        const weightEl = document.getElementById('editCriteriaWeight');
+        const weight = parseStrictIntegerInRange(weightEl.value, 0, 100);
         const rationale = document.getElementById('editCriteriaRationale').value.trim();
         const scale = this.collectScaleFromEditor();
 
@@ -115,6 +120,13 @@ export class CriteriaFormController {
             messageService.showMessage('Название критерия обязательно для заполнения');
             return;
         }
+
+        if (weight === null) {
+            weightEl.setAttribute('aria-invalid', 'true');
+            messageService.showMessage('Вес критерия должен быть целым числом от 0 до 100');
+            return;
+        }
+        weightEl.removeAttribute('aria-invalid');
 
         const aVal = validateAbbreviation(abbreviation);
         if (!aVal.valid) {

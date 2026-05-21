@@ -4,7 +4,8 @@ import { createDefaultConfig } from '../domain/config.js';
 import { createDefaultRoles } from '../domain/role.js';
 import { fixTaskOrder } from '../domain/task.js';
 import { ROLES } from '../utils/constants.js';
-import { normalizeRoleFieldForPersistence } from '../domain/roleFieldContract.js';
+import { normalizeRoleFieldForPersistence, parseRoleField } from '../domain/roleFieldContract.js';
+import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
 
 const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
 
@@ -282,10 +283,102 @@ function normalizeTaskType(type) {
     return ['us', 'bug', 'tech'].includes(type) ? type : 'us';
 }
 
+/**
+ * v8.30.33 — honest import: analyzeImportIssues возвращает список «потерь
+ * данных» которые будут применены при migratePersistedState. Используется
+ * fileController перед import, чтобы показать пользователю явное
+ * подтверждение «N полей будет отброшено в fallback».
+ *
+ * Поведение: walk по rawState, найти поля, которые **присутствуют, но
+ * невалидны** относительно текущего контракта. Отсутствие поля — НЕ issue
+ * (default применится молча). Только distortion.
+ *
+ * @param {*} rawState
+ * @returns {{issues: string[]}}
+ */
+export function analyzeImportIssues(rawState) {
+    const issues = [];
+    if (!rawState || typeof rawState !== 'object') {
+        return { issues };
+    }
+
+    // config: days ≥1, holidays ≥0, alert ≥0 (целые)
+    const cfg = rawState.config;
+    if (cfg && typeof cfg === 'object') {
+        checkIntegerField(issues, 'config.days', cfg.days, 1, Number.MAX_SAFE_INTEGER);
+        checkIntegerField(issues, 'config.holidays', cfg.holidays, 0, Number.MAX_SAFE_INTEGER);
+        checkIntegerField(issues, 'config.alert', cfg.alert, 0, Number.MAX_SAFE_INTEGER);
+        if (cfg.availCoef !== undefined && cfg.availCoef !== null) {
+            const n = Number(cfg.availCoef);
+            if (!Number.isFinite(n) || n < 0 || n > 100) {
+                issues.push(`config.availCoef = ${JSON.stringify(cfg.availCoef)} отвергнуто (требуется число 0..100); применён fallback`);
+            }
+        }
+    }
+
+    // roles: fte (integer ≥0), off (decimal ≥0, 1 знак)
+    if (Array.isArray(rawState.roles)) {
+        rawState.roles.forEach((role, i) => {
+            if (role && typeof role === 'object') {
+                if (role.fte !== undefined && parseRoleField('fte', role.fte) === null) {
+                    issues.push(`roles[${i}].fte = ${JSON.stringify(role.fte)} отвергнуто (требуется целое ≥0); применён fallback`);
+                }
+                if (role.off !== undefined && parseRoleField('off', role.off) === null) {
+                    issues.push(`roles[${i}].off = ${JSON.stringify(role.off)} отвергнуто (требуется ≥0, точность 1 знак); применён fallback`);
+                }
+            }
+        });
+    }
+
+    // criteria: weight (integer 0..100), score в evaluations (integer 0..10)
+    if (Array.isArray(rawState.criteria)) {
+        rawState.criteria.forEach((c, i) => {
+            if (c && typeof c === 'object') {
+                if (c.weight !== undefined && parseStrictIntegerInRange(c.weight, 0, 100) === null) {
+                    issues.push(`criteria[${i}].weight = ${JSON.stringify(c.weight)} отвергнуто (требуется целое 0..100); применён fallback`);
+                }
+            }
+        });
+    }
+
+    // tasks: criteriaEvaluations.score (integer 0..10), priorityScore (число),
+    // dependencies (массив), excluded (0/1) — мягкие, без warning'а на каждый
+    // (слишком многословно). Документируем только score-distortion.
+    if (Array.isArray(rawState.tasks)) {
+        rawState.tasks.forEach((t, i) => {
+            if (t && typeof t === 'object' && t.criteriaEvaluations) {
+                Object.entries(t.criteriaEvaluations).forEach(([critId, ev]) => {
+                    if (ev && ev.score !== undefined && parseStrictIntegerInRange(ev.score, 0, 10) === null) {
+                        issues.push(`tasks[${i}].criteriaEvaluations[${critId}].score = ${JSON.stringify(ev.score)} отвергнуто (требуется целое 0..10); применён fallback`);
+                    }
+                });
+            }
+        });
+    }
+
+    return { issues };
+}
+
+function checkIntegerField(issues, fieldName, value, min, max) {
+    if (value === undefined || value === null) return; // отсутствие — норма
+    if (parseStrictIntegerInRange(value, min, max) === null) {
+        issues.push(`${fieldName} = ${JSON.stringify(value)} отвергнуто (требуется целое в [${min}, ${max}]); применён fallback`);
+    }
+}
+
+/**
+ * v8.30.33: strict integer для persistence/import. Раньше:
+ *   parseInt('1.9', 10) → 1 (мусор, дробь усечена → принята)
+ *   parseInt('1abc', 10) → 1 (мусор)
+ * Теперь:
+ *   '1.9' / '1abc' / NaN / Infinity → fallback (явный отказ).
+ * Чистые integer (number или string из чистых цифр) принимаются и clamp'ятся
+ * в [min, max]. Значение вне диапазона → fallback (clamp удалён по audit
+ * фидбеку «не маскировать distortion тихим clamp'ом»).
+ */
 function normalizeInteger(value, fallback, min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) {
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
+    const parsed = parseStrictIntegerInRange(value, min, max);
+    return parsed === null ? fallback : parsed;
 }
 
 /**

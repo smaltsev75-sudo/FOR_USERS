@@ -11,6 +11,7 @@
 import { messageService } from '../services/message.js';
 import { CriteriaFormController } from './criteria/criteriaFormController.js';
 import { updateSumBar } from '../ui/criteriaList.js';
+import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
 
 export class CriteriaController {
     constructor(store, criteriaManager) {
@@ -129,18 +130,26 @@ export class CriteriaController {
         if (!input) return;
 
         const raw = input.value;
-        const parsed = parseInt(raw, 10);
-        const isValid = Number.isFinite(parsed) && parsed >= 0 && parsed <= 100;
+        // v8.30.33: strict integer 0..100. '50.5' / '50abc' / отрицательные → null.
+        const parsed = parseStrictIntegerInRange(raw, 0, 100);
+        const isValid = parsed !== null;
         input.classList.toggle('is-invalid', !isValid && raw !== '');
+        if (isValid) {
+            input.removeAttribute('aria-invalid');
+        } else if (raw !== '') {
+            input.setAttribute('aria-invalid', 'true');
+        } else {
+            input.removeAttribute('aria-invalid');
+        }
 
         // Промежуточная сумма (не комитим в Store) — для мгновенной реакции pill.
-        // Читаем все weight-input на странице, считаем сумму.
+        // Читаем все weight-input на странице, считаем сумму валидных значений.
         const list = input.closest('#criteriaList');
         if (!list) return;
         let total = 0;
         list.querySelectorAll('.criteria-weight-input').forEach(el => {
-            const v = parseInt(el.value, 10);
-            total += Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0;
+            const v = parseStrictIntegerInRange(el.value, 0, 100);
+            if (v !== null) total += v;
         });
         updateSumBar(total);
     }
@@ -149,13 +158,13 @@ export class CriteriaController {
         const input = e.target.closest('.criteria-weight-input');
         if (!input) return;
         const id = +input.dataset.id;
-        const parsed = parseInt(input.value, 10);
-        const valid = Number.isFinite(parsed) && parsed >= 0 && parsed <= 100;
-        if (!valid) {
+        const parsed = parseStrictIntegerInRange(input.value, 0, 100);
+        if (parsed === null) {
             // Откатываем к текущему значению из Store
             const c = this.criteriaManager.getCriteriaById(id);
             if (c) input.value = String(c.weight);
             input.classList.remove('is-invalid');
+            input.removeAttribute('aria-invalid');
             return;
         }
         const cmgr = this.criteriaManager;
@@ -164,6 +173,7 @@ export class CriteriaController {
             this.store.setCriteria(cmgr.getCriteria());
         }
         input.classList.remove('is-invalid');
+        input.removeAttribute('aria-invalid');
     }
 
     // ──────────────────────────────────────────────────────────────────────────

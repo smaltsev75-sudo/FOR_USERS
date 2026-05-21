@@ -187,18 +187,37 @@ export class TaskListHandler {
         });
     }
 
-    /** Удаляет все задачи с подтверждением. */
+    /**
+     * Удаляет все задачи с подтверждением.
+     *
+     * v8.30.33: undo НЕ восстанавливает stale full snapshot. Между delete-all и
+     * undo пользователь может создать новые задачи — они должны остаться.
+     * Snapshot хранит ТОЛЬКО удалённые задачи; на undo берём текущий state
+     * (с возможными новыми задачами) и merge'им: новые остаются, удалённые
+     * восстанавливаются в исходном порядке, дубликаты по id отфильтрованы
+     * (если id переиспользован между delete и undo — приоритет current).
+     *
+     * См. memory/feedback-undo-full-snapshot-breaks-intermediate-edits.md.
+     */
     handleDeleteAll() {
         messageService.showConfirm('Удалить все задачи?', () => {
-            const tasksBefore = [...this.store.getState().tasks];
+            const deletedTasks = [...this.store.getState().tasks];
+            if (deletedTasks.length === 0) return;
 
             this.store.setTasks([]);
             this._setSelectedTaskId(null);
             this._cache.invalidate();
 
-            showSnackbar(`Удалено ${tasksBefore.length} задач`, {
+            showSnackbar(`Удалено ${deletedTasks.length} задач`, {
                 onUndo: () => {
-                    this.store.setTasks(tasksBefore);
+                    const currentTasks = this.store.getState().tasks;
+                    const currentIds = new Set(currentTasks.map(t => t.id));
+                    // Удалённые задачи восстанавливаются ПЕРВЫМИ в их исходном
+                    // порядке, новые (созданные после delete) — следом.
+                    // Если id переиспользован — приоритет у current (новой).
+                    const restoredDeleted = deletedTasks.filter(t => !currentIds.has(t.id));
+                    const merged = [...restoredDeleted, ...currentTasks];
+                    this.store.setTasks(fixTaskOrder(merged));
                     this._cache.invalidate();
                 }
             });

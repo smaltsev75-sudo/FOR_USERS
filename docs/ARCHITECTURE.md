@@ -262,17 +262,22 @@ npm run test:e2e             # полный E2E (4 Playwright projects)
 | `webkit` | Desktop Safari 1280×720 | `webkit.spec.js` | engine-specific smoke (sticky, focus-trap) |
 | `mobile-webkit` | iPhone 13 (390×844), WebKit | `mobile.spec.js` | iOS Safari + mobile-webkit specific |
 
-**Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123** (нестандартный, чтобы не конфликтовать с другими проектными dev-серверами на 8000/8080).
+**Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
 
 ### e2e-runner (`scripts/e2e-runner.mjs`)
 
 Тонкий wrapper над Playwright CLI, обходит worker-shutdown race на Node 22+ Windows:
 
 - Spawn'ит Playwright с `--reporter=list,json`. Ground truth для exit-кода — JSON-файл (`test-results/e2e-runner-results.json`, `stats.unexpected`), не stdout-парсинг.
-- Stdout-monitor — секондарный watchdog, force-kill child после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
-- EADDRINUSE проверка для порта 8123 — info, не fatal (webServer `reuseExistingServer` подхватит).
-- Orphan-cleanup: SIGINT/SIGTERM/exit propagate в child + SIGKILL после 1.5s timeout.
+- Stdout-monitor — секундарный watchdog, force-kill child tree после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
+- **Port 8123 own-server detection (v8.30.33+):** если порт занят, runner делает HTTP GET на `/index.html` и ищет `<title>Sprint Planner` сигнатуру. Свой сервер — info, продолжаем (webServer.reuseExistingServer подхватит). Чужой listener — **fail fast** с явной ошибкой и инструкцией (taskkill/kill). Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
+- **Process-tree cleanup (v8.30.33+):** Playwright spawn'ит worker'ов, worker'ы — браузеры. Простой `child.kill()` оставлял grandchildren orphan. Теперь:
+  - **Windows:** `taskkill /F /T /PID <pid>` (T = tree).
+  - **Unix:** `spawn(..., {detached:true})` → новая process group; `process.kill(-pid, signal)` кладёт всю группу.
+  - Tree-kill вызывается из cleanupAndExit (SIGINT/SIGTERM/exit) и из force-kill watchdog'а.
+- Orphan-cleanup: SIGINT/SIGTERM/exit propagate в process tree + SIGKILL после 1.5s timeout.
 - НЕ модифицирует `NODE_OPTIONS` (см. memory `feedback-node-options-pollutes-child-workers`).
+- Lifecycle invariant-тест: [tests/unit/architecture/e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js) spawn'ит fake child → grandchild, проверяет что tree-kill убивает grandchild (а простой `kill` — нет).
 
 ### Диагностика тестов
 
@@ -283,7 +288,8 @@ npm run test:e2e             # полный E2E (4 Playwright projects)
 | `ReferenceError: require is not defined` в `jest.mock` | Убедитесь, что в скрипте `npm test` **нет** `--experimental-vm-modules` |
 | `ReferenceError` в фабрике мока | Определяйте моки **внутри** фабрики `jest.mock()` (см. паттерн ниже) |
 | `jest.unstable_mockModule is not a function` | Замените на `jest.mock()` — проект использует `babel-jest` (CJS) |
-| `connect ECONNREFUSED 127.0.0.1:8080` (E2E) | Playwright запускает сервер автоматически |
+| `connect ECONNREFUSED 127.0.0.1:8123` (E2E) | Playwright запускает сервер автоматически через `webServer` в playwright.config.js. Если ошибка остаётся — проверьте, что `http-server` установлен (`npx http-server --version`). |
+| `port 8123 occupied by foreign process` (e2e-runner) | На порту 8123 уже сидит не-Sprint Planner процесс (другой проект, забытый dev-сервер). v8.30.33+ runner отличает свой сервер от чужого по `<title>` сигнатуре и не молча подхватывает чужой. Освободите порт: `netstat -ano \| findstr :8123` (Windows) или `lsof -i :8123` (Unix) → kill PID. |
 | `browserType.launch: Executable doesn't exist` | `npx playwright install` |
 | Тесты доступности падают | `npx playwright show-report` → исправьте нарушения |
 

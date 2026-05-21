@@ -1,7 +1,7 @@
 // js/controllers/fileController.js
 import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
-import { migratePersistedState, serializeStateForStorage } from '../state/persistence.js';
+import { migratePersistedState, serializeStateForStorage, analyzeImportIssues } from '../state/persistence.js';
 import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 
@@ -112,8 +112,20 @@ export class FileController {
 
             const taskCount = data.tasks ? data.tasks.length : 0;
 
+            // v8.30.33: honest import — собираем list невалидных полей ДО
+            // подтверждения, показываем пользователю явный отчёт. Success
+            // message больше не маскирует потерю данных fallback-ом.
+            const { issues } = analyzeImportIssues(data);
+            const previewLines = issues.slice(0, 8).map(s => '• ' + s);
+            if (issues.length > 8) previewLines.push(`… ещё ${issues.length - 8} проблем(ы)`);
+            const issuePreview = issues.length > 0
+                ? `\n\nОбнаружены проблемы в файле:\n${previewLines.join('\n')}\n\nЭти значения будут заменены fallback'ами.`
+                : '';
+
+            const confirmText = `Загрузить данные? Текущие данные будут потеряны.${issuePreview}`;
+
             messageService.showConfirm(
-                'Загрузить данные? Текущие данные будут потеряны.',
+                confirmText,
                 async () => {
                     this.showProgress('Загрузка...');
                     // Snapshot для atomic rollback при ошибке во время импорта.
@@ -164,7 +176,12 @@ export class FileController {
                             tasks
                         });
 
-                        messageService.showMessage(`Данные успешно загружены! Загружено ${taskCount} задач`);
+                        // v8.30.33: honest success message — не скрываем
+                        // потерю данных. Если были issues, добавляем счётчик.
+                        const successMsg = issues.length > 0
+                            ? `Данные загружены: ${taskCount} задач. Применены fallback'и для ${issues.length} невалидных полей (см. подтверждение перед импортом).`
+                            : `Данные успешно загружены! Загружено ${taskCount} задач`;
+                        messageService.showMessage(successMsg);
                     } catch (error) {
                         // Atomic rollback: возвращаем все три источника состояния
                         // в snapshot, чтобы пользователь не получил partial state.

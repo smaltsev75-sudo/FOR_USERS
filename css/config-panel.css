@@ -13,16 +13,79 @@
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* v8.30.31 mobile UI pass: на mobile (≤600px) cfg-panel становится компактнее,
-   а секция «Коэффициенты» скрывается с первого экрана — её настраивают редко,
-   а вертикальная тяжесть мешает добраться до задачников. На desktop ≥601px —
-   обе секции видны как раньше. Audit: «без скрытия ключевого workflow далеко вниз». */
+/* v8.30.33 mobile UI pass: compact disclosure через <details>.
+   - Desktop (≥601px): summary скрыт, секция «Коэффициенты» видна всегда (как раньше).
+   - Mobile (≤600px): summary показывается как кнопка-аккордеон, секция collapse'ится
+     по умолчанию (configController removes [open] attribute via JS на mobile).
+   Это решает audit-feedback «нельзя display:none без альтернативного доступа»: на
+   mobile ключевые поля cfgAvailCoef / cfgAlert доступны в 1 клик, не скрыты. */
+.cfg-advanced {
+    /* details сам по себе block-уровня, нужен margin-сброс */
+    margin: 0;
+    padding: 0;
+}
+
+.cfg-advanced-summary {
+    display: none;  /* по умолчанию (desktop) скрыт; mobile media query показывает */
+    list-style: none;  /* убираем нативный треугольник */
+    cursor: pointer;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--overlay-faint);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    user-select: none;
+    align-items: center;
+    gap: 8px;
+}
+
+.cfg-advanced-summary::-webkit-details-marker {
+    display: none;
+}
+
+.cfg-advanced-summary::before {
+    content: '▸';
+    display: inline-block;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    transform-origin: center;
+    color: var(--accent);
+}
+
+.cfg-advanced[open] > .cfg-advanced-summary::before {
+    transform: rotate(90deg);
+}
+
+.cfg-advanced-summary:hover {
+    background: var(--overlay-light);
+    color: var(--text);
+}
+
+.cfg-advanced-summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.cfg-advanced-summary-hint {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+}
+
 @media (max-width: 600px) {
-    .cfg-section--coef {
-        display: none;
+    .cfg-advanced-summary {
+        display: flex;
+        min-height: 44px;
     }
     .cfg-panel {
         margin-bottom: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cfg-advanced-summary::before {
+        transition: none;
     }
 }
 

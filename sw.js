@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.32-fte-uncapped-fractional-off';
+const CACHE_VERSION = 'sp-v8.30.33-repair-pass-6-classes';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -73,6 +73,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/criteriaManager.js',
     './js/domain/role.js',
     './js/domain/roleFieldContract.js',
+    './js/domain/strictInteger.js',
     './js/domain/selection/analysis.js',
     './js/domain/selection/base.js',
     './js/domain/selection/config.js',
