@@ -108,8 +108,7 @@ export class NumberFormatService {
      *      посторонний символ → 0 (не частичный parseFloat).
      *
      * Возвращает 0 для невалидного input — это контракт, на который
-     * полагаются `parseInteger`-fallback'ы и handle*Change методы в
-     * controller'ах.
+     * полагаются handle*Change методы в controller'ах.
      */
     parseNumber(str) {
         if (str === null || str === undefined) return 0;
@@ -147,8 +146,9 @@ export class NumberFormatService {
         if (str === undefined || str === null) return 0;
         const normalized = String(str).trim();
         if (!normalized) return 0;
-        const num = parseInt(normalized, 10);
-        return isNaN(num) ? 0 : num;
+        if (!/^-?\d+$/.test(normalized)) return 0;
+        const num = Number(normalized);
+        return Number.isFinite(num) && Number.isInteger(num) ? num : 0;
     }
 
     /**

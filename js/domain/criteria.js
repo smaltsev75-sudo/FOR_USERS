@@ -1,5 +1,11 @@
 // @ts-check
 // js/domain/criteria.js
+import { parseStrictIntegerInRange } from './strictInteger.js';
+
+export function parseCriteriaScore(raw, fallback = 0) {
+    const parsed = parseStrictIntegerInRange(raw, 0, 10);
+    return parsed === null ? fallback : parsed;
+}
 
 export function calculatePriorityScore(criteria, evaluations) {
     if (!evaluations || criteria.length === 0) return 0;
@@ -9,7 +15,7 @@ export function calculatePriorityScore(criteria, evaluations) {
     criteria.forEach(criterion => {
         const evaluation = evaluations[criterion.id];
         // Используем score=0 как валидное значение (не пропускаем нулевые оценки)
-        const score = evaluation !== null && evaluation !== undefined ? (parseInt(evaluation.score) || 0) : 0;
+        const score = evaluation !== null && evaluation !== undefined ? parseCriteriaScore(evaluation.score) : 0;
         totalScore += score * criterion.weight;
     });
     // Делим на totalWeight (не на 100), чтобы результат был корректным
@@ -30,7 +36,7 @@ export function calculateCriteriaValue(score, weight) {
 }
 
 export function updateCriteriaEvaluation(evaluation, newScore, weight) {
-    const score = parseInt(newScore) || 0;
+    const score = parseCriteriaScore(newScore);
     return {
         score,
         value: calculateCriteriaValue(score, weight)

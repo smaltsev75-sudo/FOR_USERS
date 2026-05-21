@@ -8,6 +8,8 @@ import {
     isJiraUrlUnique
 } from '../../domain/validation.js';
 import { createTask } from '../../domain/task.js';
+import { parseCriteriaScore } from '../../domain/criteria.js';
+import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
 import {
     calculateCreateFormTotal,
     collectCriteriaEvaluations,
@@ -177,8 +179,8 @@ export class TaskFormController {
         criteria.forEach(c => {
             const safeName = escapeHtml(c.name);
             const safeAbbr = escapeHtml(c.abbreviation);
-            const safeId = Number.parseInt(c.id, 10) || 0;
-            const safeWeight = Number.parseInt(c.weight, 10) || 0;
+            const safeId = parseStrictIntegerInRange(c.id, 1, Infinity) ?? 0;
+            const safeWeight = parseStrictIntegerInRange(c.weight, 0, 100) ?? 0;
             labelsHtml += `
                 <div class="create-criteria-label" title="${safeName}">
                     <span class="create-criteria-weight-badge">${safeWeight}%</span>
@@ -212,7 +214,7 @@ export class TaskFormController {
         criteria.forEach(c => {
             const select = document.getElementById(`criteria_${c.id}`);
             if (select) {
-                const score = parseInt(select.value) || 0;
+                const score = parseCriteriaScore(select.value);
                 totalScore += score * c.weight;
             }
         });

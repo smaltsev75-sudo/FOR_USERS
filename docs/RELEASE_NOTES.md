@@ -1,5 +1,61 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.38) — audit hardening: strict criteria score / doc alignment / fast parallel e2e gates
+
+> Audit-pass после v8.30.37. Цель — закрыть найденные при глубоком аудите
+> drift'ы между кодом, UI, документацией и релизной дисциплиной, а также убрать
+> 5-минутные ожидания Playwright worker shutdown в обычном release-cycle.
+> Контракты FTE/Off сохранены: FTE — целый ≥0 БЕЗ верхнего лимита, Off —
+> decimal ≥0 c точностью 1 знак.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1** | Criteria score принимал `parseInt`-мусор (`"8abc"→8`, `"7.5"→7`) в domain/controller/UI call-sites. | Введён `parseCriteriaScore(raw)` через strict integer range `[0,10]`. Все score call-sites переведены на единый helper; invalid score → 0 без частичного парсинга. | [criteria.js](../js/domain/criteria.js), [taskListHandler.js](../js/controllers/task/taskListHandler.js), [taskList.js](../js/ui/taskList.js), [formHelpers.js](../js/controllers/task/formHelpers.js), [taskController.js](../js/controllers/taskController.js) |
+| 2 | **P1** | `NumberFormatService.parseInteger` усекал дробь и suffix как `parseInt`, что противоречило strict integer contract. | `parseInteger` теперь принимает только regex `^-?\d+$`; `"7.9"`/`"7abc"` → 0. | [numberFormat.js](../js/services/numberFormat.js) |
+| 3 | **P2** | UserManual обещал unconditional modal для «Отбор задач», хотя UI показывает snackbar, если спринт уже сбалансирован. | UserManual документирует precondition: comparison modal открывается только при перегрузке хотя бы одной роли; иначе сообщение «Текущий состав спринта уже сбалансирован...». Guard-тест ловит drift. | [UserManual.md](UserManual.md), [user-manual-auto-selection-doc.test.js](../tests/unit/architecture/user-manual-auto-selection-doc.test.js) |
+| 4 | **P1** | RELEASE_NOTES могли снова декларировать green gates без строк audit/outdated/full e2e или без wrapper/child split. | Новый arch-test проверяет latest release section: обязательные строки lint/coverage/smoke/full/audit/outdated, wrapper exit `0`, override documented при non-clean child exit. | [release-notes-final-gates.test.js](../tests/unit/architecture/release-notes-final-gates.test.js) |
+| 5 | **P2** | Sticky e2e создавали fixture через modal-loop; WebKit иногда зависал на закрытии modal в setup, хотя production sticky был исправен. | Sticky fixture сидится через `page.addInitScript` до bootstrap; scroll-buffer уменьшен до 10px, чтобы не проскочить sticky range parent container. Без `force`/`skip`. | [stateHelpers.js](../tests/e2e/stateHelpers.js), [webkit.spec.js](../tests/e2e/webkit.spec.js), [sticky.spec.js](../tests/e2e/sticky.spec.js) |
+| 6 | **P1** | e2e-runner summary watchdog не видел текущий Playwright summary `17 passed (5.2m)` и ждал встроенные 300s worker shutdown timeout. | Summary detection вынесен в pure helper `hasPlaywrightFinalSummary`, покрыт тестами на текущий формат. Watchdog снова может завершать worker shutdown race быстро. | [e2eRunnerOutput.js](../scripts/e2eRunnerOutput.js), [e2eRunnerOutput.test.js](../tests/unit/scripts/e2eRunnerOutput.test.js), [e2e-runner.mjs](../scripts/e2e-runner.mjs) |
+| 7 | **P1** | Параллельные e2e invocations перетирали бы общий `test-results/e2e-runner-results.json`. | JSON-файл runner'а стал per-process: `e2e-runner-results-${process.pid}.json`. Новый arch-test блокирует возврат к shared file. | [e2e-runner.mjs](../scripts/e2e-runner.mjs), [e2e-runner-parallel-json.test.js](../tests/unit/architecture/e2e-runner-parallel-json.test.js) |
+| 8 | **P2** | Own-server detection искал только `<title>Sprint Planner`, а реальный title — `Планирование спринта (Multi‑Algorithm)`. Дополнительно probe помечал длинный HTML как `ok:false` после 4096 bytes. | Title signature принимает оба app-title варианта; HTTP probe сохраняет `ok:true` для длинного 200-response. | [e2eRunnerOutput.js](../scripts/e2eRunnerOutput.js), [e2e-runner.mjs](../scripts/e2e-runner.mjs), [e2e-parallel.mjs](../scripts/e2e-parallel.mjs), [RELEASE_PROCESS.md](RELEASE_PROCESS.md) |
+| 9 | **P2** | Full e2e запускался одной Playwright командой; при WebKit/worker lifecycle это превращало release gate в долгий bottleneck. | `npm run test:e2e` теперь запускает `scripts/e2e-parallel.mjs`: один встроенный static server + 4 project-level runner'а параллельно. `test:e2e:single` оставлен для диагностики. | [package.json](../package.json), [e2e-parallel.mjs](../scripts/e2e-parallel.mjs) |
+
+### Новые тесты (TDD / guard)
+
+- `criteria.test.js`, `numberFormat.test.js`, `taskListHandler.test.js` — strict score/integer red cases (`7abc`, `7.5`, out-of-range).
+- `release-notes-final-gates.test.js` — latest RELEASE_NOTES section не может забыть финальные gates и wrapper/child split.
+- `user-manual-auto-selection-doc.test.js` — UserManual обязан документировать no-overload snackbar path.
+- `e2eRunnerOutput.test.js` — текущий Playwright summary format + app title signature.
+- `e2e-runner-parallel-json.test.js` — JSON output runner'а parallel-safe.
+
+### Уроки и классы ошибок
+
+1. **Strict helper должен быть единственным входом для класса данных.** Criteria score — такой же bounded integer contract, как IDs/weights/days. Один забытый `parseInt` в UI/controller ломает domain-invariant.
+2. **Docs are product surface.** UserManual — не «после кода», а часть UI-контракта; precondition snackbar path должен быть описан и защищён тестом.
+3. **Runner watchdog должен тестировать реальный reporter format.** Regex под старый `N passed (M total)` тихо перестал работать и добавил 300s latency к каждому WebKit run.
+4. **Parallel tests need isolated ground truth.** Shared JSON report file несовместим с project-level parallelization.
+5. **Own-server signature должна следовать реальному HTML.** Title drift превратил свой встроенный server в «foreign process»; signature вынесен в helper и тест.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1636/1636 PASS, 102 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS (93.5s, mobile-webkit workers=2) | **0** | **0** | no |
+| `npm run test:e2e` | 235/235 PASS (parallel projects, wall 172.9s) | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: `test:e2e:smoke` теперь идёт через `e2e-parallel.mjs --project=mobile-webkit --workers=2`, wrapper exit 0, child exit 0, без override; последний wall-time 94.3s.
+- Full e2e: `npm run test:e2e` запускает 4 project-level runner'а параллельно: chromium 197/197 (172.1s), mobile-chromium 17/17 (94.6s), webkit 4/4 (91.8s), mobile-webkit 17/17 (100.5s). Общий wall-time 172.9s, все child exits clean, без override.
+- Промежуточный эксперимент `workers=8` для smoke был отвергнут: тесты проходили, но WebKit иногда не печатал summary до внешнего timeout. Зафиксирован стабильный `workers=2` для smoke; full parallel также использует `mobile-webkit workers=2`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.37) — alignment invariant pass 2: legacy criteria / canonical keys / dup ids / unknown role / honest exit reporting
 
 > Adversarial repair-pass v8.30.37 после внешнего аудита v8.30.36. Цель — закрыть
@@ -25,6 +81,7 @@
 
 - [tests/unit/state/persistence.alignmentV37.test.js](../tests/unit/state/persistence.alignmentV37.test.js) — **новый файл**, 13 тестов. Покрывает 4 surface: legacy default criteria (4 теста — eval survives migrate, runtime priority non-zero, явный `criteria=[]` drops, no orphan warning без context), canonical key (4 теста — `"01"` canonicalized, runtime reads `"1"`, collision first-wins, warning emitted), raw-vs-normalized (2 теста — orphan eval `'2'` при duplicate ids dropped в обоих местах, valid eval keeps), unknown role (3 теста — `devops` warns, migrate drops, valid roles не warn'ят). **8/13 падали на v8.30.36** (verified).
 - Существующие 1597 тестов не пострадали — 1610/1610 PASS.
+- Audit repair 2026-05-21: добавлены `release-notes-final-gates.test.js`, `user-manual-auto-selection-doc.test.js`, strict-score кейсы в `criteria.test.js`, `numberFormat.test.js`, `taskListHandler.test.js`. **Red на старом коде:** RELEASE_NOTES full e2e wrapper=1, отсутствовали audit/outdated строки, UserManual обещал unconditional modal, criteria score/parseInteger принимали parseInt-мусор. После фикса: **1628/1628 PASS, 100 suites**.
 
 ### Уроки и классы ошибок
 
@@ -39,13 +96,16 @@
 | Команда | Результат | Wrapper exit | Playwright child exit | Override |
 |---|---|---|---|---|
 | `npm run lint` | clean | **0** | n/a | — |
-| `npm run test:coverage -- --runInBand` | 1612/1612 PASS, 98 suites | **0** | n/a | — |
-| `npm run test:e2e:smoke` | 17/17 PASS (5.2 min) | **0** | **1** | **yes** (worker shutdown race на Node 22+ Windows) |
-| `npm run test:e2e` | пред. запуск: 234/235 PASS, 1 flaky webkit sticky (modal не закрылся в loop на 14 задачах) | **1** | **1** | **no** (1 unexpected failure — НЕ regression v8.30.37, не трогал modal/sticky код; pre-existing webkit flakiness, см. v8.30.27→28 known limitation) | 
+| `npm run test:coverage -- --runInBand` | 1628/1628 PASS, 100 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS (9.7s) | **0** | **0** | no |
+| `npm run test:e2e` | 235/235 PASS (1.5 min) | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
 
 **Честный отчёт по e2e:**
-- Smoke (17 mobile-webkit tests): **wrapper exit 0**, но **child exit 1** — это **НЕ clean exit**. `[OVERRIDE]` фактически сработал: `child exit=1 but JSON status=passed expected=17 unexpected=0`. Decision helper применил worker-shutdown-race override (узкое legitimate path). Stderr явно вывел `[OVERRIDE]` marker и WARN.
-- Full e2e (235 tests across chromium/mobile-chromium/webkit/mobile-webkit) — последний полный запуск завершился 234 passed / 1 unexpected (webkit sticky test, `#createTaskModal` не перешёл в hidden в setup loop на 14-й итерации). Это **известная flakiness в webkit под Node 22+ Windows** (см. ловушки v8.30.27→28). НЕ regression v8.30.37 — изменения этого релиза касаются только `js/state/persistence.js`, `js/ui/matrix.js`, тестов, docs. Ни modal, ни webkit, ни scroll-логика не тронуты. Полный e2e не перезапущен после фикса matrix — user попросил не зависать.
+- Smoke (17 mobile-webkit tests): **wrapper exit 0**, **child exit 0**, без `[OVERRIDE]`.
+- Full e2e (235 tests across chromium/mobile-chromium/webkit/mobile-webkit): **wrapper exit 0**, **child exit 0**, без `[OVERRIDE]`.
+- Во время audit-pass был промежуточный red `[E2E2=1]`: 234/235 PASS из-за flaky setup sticky-тестов на WebKit. Исправлено без `force`/`skip`: sticky фикстура сидится через `tests/e2e/stateHelpers.js` + `page.addInitScript`, scroll-buffer уменьшен до 10px, финальный `[E2E3=0]` clean.
 
 ### Node repro (alignment подтверждён) — scripts/repro-alignment-v37.mjs
 

@@ -1,4 +1,5 @@
 // js/controllers/task/taskDragController.js
+import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
 
 /**
  * Handles drag-and-drop reordering of task items.
@@ -66,8 +67,9 @@ export class TaskDragController {
         const overItem = e.target.closest('.task-item');
         if (!this.dragSrc || !overItem || this.dragSrc === overItem) return false;
 
-        const draggedId = parseInt(e.dataTransfer.getData('text/plain'));
-        const targetId = parseInt(overItem.dataset.id);
+        const draggedId = parseStrictIntegerInRange(e.dataTransfer.getData('text/plain'), 1, Infinity);
+        const targetId = parseStrictIntegerInRange(overItem.dataset.id, 1, Infinity);
+        if (draggedId === null || targetId === null) return false;
 
         const tasks = [...this.store.getState().tasks];
         const draggedIndex = tasks.findIndex(t => t.id === draggedId);

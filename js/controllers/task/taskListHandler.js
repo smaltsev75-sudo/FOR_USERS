@@ -2,6 +2,7 @@
 // js/controllers/task/taskListHandler.js
 
 import { messageService } from '../../services/message.js';
+import { parseCriteriaScore } from '../../domain/criteria.js';
 import { fixTaskOrder } from '../../domain/task.js';
 import { showSnackbar } from '../../ui/snackbar.js';
 
@@ -71,9 +72,10 @@ export class TaskListHandler {
         if (!criterion) return;
 
         const evaluations = { ...task.criteriaEvaluations };
+        const parsedScore = parseCriteriaScore(score);
         evaluations[criterionId] = {
-            score: parseInt(score) || 0,
-            value: (parseInt(score) || 0) * criterion.weight / 10
+            score: parsedScore,
+            value: (parsedScore * criterion.weight) / 10
         };
         this.store.updateTask(taskId, { criteriaEvaluations: evaluations });
         this._cache.invalidate();

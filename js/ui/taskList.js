@@ -2,7 +2,7 @@
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { calculateAvailability } from '../domain/role.js';
 import { calculateTaskTotal } from '../domain/task.js';
-import { calculatePriorityScore } from '../domain/criteria.js';
+import { calculatePriorityScore, parseCriteriaScore } from '../domain/criteria.js';
 import { createTaskRowVM, getPriorityLevel, getPriorityLabel } from './createTaskRowVM.js';
 import { icon } from '../utils/icons.js';
 
@@ -367,7 +367,7 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
     let criteriaRows = '';
     criteria.forEach((criterion, idx) => {
         const evaluation = taskEvaluations[criterion.id] || { score: 0, value: 0 };
-        const score = parseInt(evaluation.score) || 0;
+        const score = parseCriteriaScore(evaluation.score);
         const value = (score * criterion.weight) / 10;
         const maxValue = criterion.weight; // максимальный вклад при score=10
         const contributionPct = maxValue > 0 ? (value / maxValue) * 100 : 0;

@@ -19,6 +19,7 @@
 // Layer: controllers/. Reads Store, writes DOM via renderCapacityStrip.
 
 import { renderTeamCapacity } from '../ui/teamCapacity.js';
+import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
 
 export class CapacityStripController {
     /**
@@ -54,8 +55,8 @@ export class CapacityStripController {
     }
 
     _previewFromItem(item) {
-        const id = parseInt(item.dataset.id, 10);
-        if (!Number.isFinite(id)) return;
+        const id = parseStrictIntegerInRange(item.dataset.id, 1, Infinity);
+        if (id === null) return;
         if (this.activePreviewId === id) return;
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === id);

@@ -1,6 +1,7 @@
 // js/controllers/taskController.js
 
 import { ROLES } from '../utils/constants.js';
+import { parseCriteriaScore } from '../domain/criteria.js';
 import { TaskCacheService } from './task/taskCacheService.js';
 import { TaskFormController } from './task/taskFormController.js';
 import { TaskDragController } from './task/taskDragController.js';
@@ -170,7 +171,7 @@ export class TaskController {
                 const stepper = btn.closest('.criteria-eval-stepper');
                 if (!stepper) return;
                 const action = btn.dataset.action;
-                const current = parseInt(stepper.getAttribute('aria-valuenow'), 10) || 0;
+                const current = parseCriteriaScore(stepper.getAttribute('aria-valuenow'));
                 let next = current;
                 if (action === 'decrement') next = Math.max(0, current - 1);
                 if (action === 'increment') next = Math.min(10, current + 1);
@@ -182,7 +183,7 @@ export class TaskController {
             taskList.addEventListener('keydown', (e) => {
                 const stepper = e.target.closest('.criteria-eval-stepper');
                 if (!stepper || e.target !== stepper) return;
-                const current = parseInt(stepper.getAttribute('aria-valuenow'), 10) || 0;
+                const current = parseCriteriaScore(stepper.getAttribute('aria-valuenow'));
                 let next;
                 switch (e.key) {
                     case 'ArrowUp':

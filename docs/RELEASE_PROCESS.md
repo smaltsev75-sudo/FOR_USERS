@@ -100,7 +100,7 @@ npm run bump -- 9.0.0
   - clean child exit=0 + passed → exit 0
   - **Иначе** child exit code as-is (без blind override)
 - **`decision.reason` всегда в stderr** перед `process.exit(N)`: будущий аудитор должен видеть ПОЧЕМУ runner вышел так как вышел.
-- **Port 8123 own-server detection (v8.30.33+):** HTTP GET на `/index.html`, `<title>Sprint Planner` signature. Чужой listener — fail fast.
+- **Port 8123 own-server detection (v8.30.33+):** HTTP GET на `/index.html`, app title signature (`Sprint Planner` или текущий `Планирование спринта`). Чужой listener — fail fast.
 - **Pre-exit process-tree cleanup (summary watchdog):** через 3 сек после summary в stdout — `killProcessTree(child.pid)` пока child ещё жив. Windows `taskkill /F /T /PID`, Unix `process.kill(-pgid)`. Закрывает класс «grandchild leak».
 
 #### Известные лимиты process-tree cleanup (v8.30.35 — честно документировано)

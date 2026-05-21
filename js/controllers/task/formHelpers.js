@@ -1,5 +1,7 @@
 // js/controllers/task/formHelpers.js
 
+import { parseCriteriaScore } from '../../domain/criteria.js';
+
 export function parseNonNegativeNumber(nfs, value) {
     const parsed = nfs.parseNumber(value) || 0;
     return Math.max(0, parsed);
@@ -33,7 +35,7 @@ export function collectCriteriaEvaluations(criteria, root = document, selectIdPr
     const evaluations = {};
     criteria.forEach((criterion) => {
         const select = root.getElementById(`${selectIdPrefix}${criterion.id}`);
-        const score = select ? (parseInt(select.value, 10) || 0) : 0;
+        const score = select ? parseCriteriaScore(select.value) : 0;
         evaluations[criterion.id] = {
             score,
             value: (score * criterion.weight) / 10
