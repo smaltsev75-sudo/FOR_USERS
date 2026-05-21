@@ -2,9 +2,9 @@
 // js/domain/criteria.js
 import { parseStrictIntegerInRange } from './strictInteger.js';
 
-export function parseCriteriaScore(raw, fallback = 0) {
+export function parseCriteriaScore(raw) {
     const parsed = parseStrictIntegerInRange(raw, 0, 10);
-    return parsed === null ? fallback : parsed;
+    return parsed === null ? 0 : parsed;
 }
 
 export function calculatePriorityScore(criteria, evaluations) {

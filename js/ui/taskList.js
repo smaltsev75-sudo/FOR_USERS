@@ -245,8 +245,9 @@ export { updateOverloadIndicators };
 function restoreCriteriaScoreFocus(taskListEl, key) {
     if (!key) return;
     const [taskId, criterionId] = key.split('::');
+    const escapeSelectorValue = globalThis.CSS?.escape || ((value) => String(value).replace(/["\\\]]/g, '\\$&'));
     const stepper = taskListEl.querySelector(
-        `.criteria-eval-stepper[data-id="${taskId}"][data-criterion-id="${criterionId}"]`
+        `.criteria-eval-stepper[data-id="${escapeSelectorValue(taskId)}"][data-criterion-id="${escapeSelectorValue(criterionId)}"]`
     );
     const input = stepper?.querySelector('.criteria-score-input');
     if (input && typeof input.focus === 'function') {

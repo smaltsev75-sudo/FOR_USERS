@@ -1,5 +1,59 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.41) — audit hardening: e2e summary artifact / percent helper / handoff changelog
+
+> Audit-pass после v8.30.40. Закрывает полезные пункты внешнего аудита без
+> расширения UI-scope: parallel e2e теперь оставляет machine-readable summary
+> для release metrics, largest-remainder percent rounding вынесен из UI в utils
+> и покрыт edge-кейсами, ARCHITECTURE догнал v8.30.37 invariants, handoff ZIP
+> включает пользовательскую историю изменений.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (honest release reporting)** | `scripts/e2e-parallel.mjs` возвращал только wrapper exit per project и мог скрыть, что дочерний `e2e-runner` применил `[OVERRIDE]` к real child exit. | Добавлен `scripts/e2eParallelSummary.js`: parallel runner парсит decision line, пишет `test-results/e2e-parallel-summary.json` с `wrapperExit / decisionExit / childExit / override / reason`, summary печатает child/override в project rows. | [e2e-parallel.mjs](../scripts/e2e-parallel.mjs), [e2eParallelSummary.js](../scripts/e2eParallelSummary.js), memory `feedback_e2e_parallel_honest_summary_artifact.md` |
+| 2 | **P2 (release-notes contract)** | Latest RELEASE_NOTES guard проверял wrapper exit, но не фиксировал форму final gates table. Column drift мог незаметно сломать разбор child/override. | `release-notes-final-gates.test.js` теперь требует ровно 5 колонок в каждой final gate row; e2e summary artifact задокументирован как источник истины для full e2e метрик. | [release-notes-final-gates.test.js](../tests/unit/architecture/release-notes-final-gates.test.js), [RELEASE_PROCESS.md](RELEASE_PROCESS.md) |
+| 3 | **P2 (numeric helper isolation)** | Largest-remainder rounding жил приватно в `js/ui/matrix.js` и был покрыт только indirect render-тестами. | `distributeRoundedPercentages` вынесен в `js/utils/percent.js`; добавлены direct edge-тесты: zero, single non-zero, negative/non-finite, tie-break, decimals=2. | [percent.js](../js/utils/percent.js), [matrix.js](../js/ui/matrix.js), [percent.test.js](../tests/unit/utils/percent.test.js) |
+| 4 | **P2 (architecture doc drift)** | `ARCHITECTURE.md` описывал alignment invariant до v8.30.36 и не фиксировал v8.30.37 canonical keys / raw id view / deferred context. | В §2.4 добавлена подсекция `v8.30.37: canonical keys / raw views / deferred context` со ссылкой на `persistence.alignmentV37.test.js`. | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| 5 | **P3 (safety polish)** | Focus restore selector для criteria score строился из raw attribute values; `parseCriteriaScore` держал неиспользуемый fallback-аргумент. | Selector values проходят через `CSS.escape` с fallback; `parseCriteriaScore` оставлен single-policy: invalid score → 0. | [taskList.js](../js/ui/taskList.js), [criteria.js](../js/domain/criteria.js), [criteria.test.js](../tests/unit/domain/criteria.test.js) |
+| 6 | **P3 (handoff policy)** | `package-for-handoff.ps1` исключал `docs/RELEASE_NOTES.md`; downstream ZIP получал приложение без истории пользовательских изменений. | Handoff ZIP теперь копирует `docs/UserManual.md` и `docs/RELEASE_NOTES.md`; arch-test защищает включение changelog. | [package-for-handoff.ps1](../package-for-handoff.ps1), [handoff-package-docs.test.js](../tests/unit/architecture/handoff-package-docs.test.js) |
+
+### Новые тесты (TDD / guard)
+
+- `e2eParallelSummary.test.js` — **red на старом коде**: helper отсутствовал; теперь парсит clean и `[OVERRIDE]` decision lines, строит project rows и закрепляет path `test-results/e2e-parallel-summary.json`.
+- `percent.test.js` — **5 red edge-кейсов** на старом коде: rounding-helper не экспортировался из utils.
+- `handoff-package-docs.test.js` — **red на старом script policy**: `docs/RELEASE_NOTES.md` отсутствовал в `$docsFiles` и был в exclude-комментарии.
+- `criteria.test.js` — **red на старом API-шуме**: второй fallback-аргумент мог менять invalid score policy.
+- `release-notes-final-gates.test.js` — guard на ровно 5 колонок в final gates table.
+
+Всего unit-тесты: `1650 → 1661` (+11).
+
+### Уроки и классы ошибок
+
+1. **Parallel wrapper должен оставлять structured truth.** Если child runner применил override, это нельзя оставлять только в stderr; release notes должны опираться на JSON artifact.
+2. **Числовые helpers не должны жить в UI, если их корректность важнее разметки.** Largest-remainder rounding теперь тестируется напрямую.
+3. **Handoff ZIP — пользовательский канал, не dev-only архив.** История изменений нужна downstream-получателю так же, как UserManual.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1661/1661 PASS, 106 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 235/235 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `17/17 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `17/17`, webkit `4/4`, mobile-webkit `17/17`; все `childExit=0`, все `override=false`.
+- `test-results/e2e-parallel-summary.json` создан и проверен вручную после full e2e.
+- Node repro: не применимо, алгоритмических runtime-изменений нет.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.40) — criteria score native dropdown hotfix
 
 > User-reported hotfix к v8.30.39. `input[list]` оказался неверным UI-контрактом

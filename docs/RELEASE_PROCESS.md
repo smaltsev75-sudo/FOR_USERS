@@ -122,6 +122,32 @@ npm run bump -- 9.0.0
 
 **Реальный механизм cleanup** — pre-exit summary-watchdog. Если worker exit'ит ДО summary в stdout, orphans inevitable. На практике для PLANNER e2e это не наблюдалось — Playwright всегда успевает напечатать summary до exit'а.
 
+### e2e-parallel summary artifact (v8.30.41)
+
+`scripts/e2e-parallel.mjs` запускает project-level `e2e-runner.mjs` процессы
+параллельно, но обязан сохранять честную картину child-exit'ов. После каждого
+запуска он пишет `test-results/e2e-parallel-summary.json`:
+
+```json
+{
+  "projects": [
+    {
+      "project": "mobile-webkit",
+      "wrapperExit": 0,
+      "decisionExit": 0,
+      "childExit": 1,
+      "override": true,
+      "reason": "child exit=1 but JSON status=passed expected=17 unexpected=0 -> exit 0"
+    }
+  ]
+}
+```
+
+Для `RELEASE_NOTES.md` это источник истины по full e2e: `wrapperExit` отвечает
+за npm gate, `childExit` показывает реальный Playwright/runner child status,
+`override=true` означает documented worker-shutdown race override. Нельзя
+подменять эти значения только строкой `npm run test:e2e` exit=0.
+
 ### Измерение exit-кодов
 
 Bash:

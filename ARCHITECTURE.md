@@ -100,6 +100,34 @@ plain object → passthrough; null/array/primitive → `{}`. Применяет�
   `.` или `,`). `'5abc'`/`-3`/`1.234`/`Infinity`/`'1e10'` → 0 + issue,
   не silent corruption.
 
+#### v8.30.37: canonical keys / raw views / deferred context
+
+`criteriaEvaluations` — referential map, поэтому ключи нормализуются так же
+строго, как id критериев:
+
+- **Canonical key:** любой валидный numeric-id ключ сохраняется как
+  `String(parseStrictIntegerInRange(key, 1, MAX_SAFE_INTEGER))`. Например,
+  `"01"` → `"1"`. Runtime читает `evaluations[criterion.id]`, а JS приводит
+  numeric key к строке; неканонический `"01"` раньше давал priority=0.
+- **Collision policy:** если несколько raw-key попадают в один canonical key
+  (`"1"` и `"01"`), применяется first-canonical-wins. `analyzeImportIssues`
+  обязан сообщить collision, а `migratePersistedState` обязан физически оставить
+  только первый canonical entry.
+- **Raw criterion id view:** orphan-check для eval-key идёт по raw id из
+  import payload до reallocation duplicate criteria. Иначе `normalizeCriteria`
+  мог бы назначить duplicate criterion новый id и случайно reattach eval,
+  который пользователь не импортировал как валидную ссылку. Helper:
+  `collectRawCriterionIds(rawCriteria)`.
+- **Deferred context:** `criteria` absent и `criteria: []` — разные состояния.
+  Если поле `criteria` отсутствует, context неизвестен, валидные eval-key
+  сохраняются: runtime подмешает `DEFAULT_CRITERIA`. Если передано явное
+  `criteria: []`, context задан как пустой, и eval-key считаются orphan.
+
+Регрессии закреплены в
+[`tests/unit/state/persistence.alignmentV37.test.js`](../tests/unit/state/persistence.alignmentV37.test.js):
+S1 default criteria data loss, S2 canonical keys, S3 raw-vs-normalized criterion
+id mismatch, S4 unknown role effort keys.
+
 `analyzeImportIssues` сообщает shape-distortion для **каждого** покрытого
 поля (см. таблицу ниже). Тесты `tests/unit/state/persistence.alignmentInvariants.test.js`
 проверяют для **каждого** issue, что junk физически отсутствует в migrated state.
