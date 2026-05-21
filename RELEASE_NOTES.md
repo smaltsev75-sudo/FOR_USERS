@@ -1,5 +1,53 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.32) — продуктовая семантика FTE/Off исправлена
+
+> Аудит v8.30.31 закрепил **жёсткий контракт FTE 0..100 / off integer-only**. По фидбеку пользователя контракт был неверен с точки зрения продуктовой семантики. Этот релиз исправляет.
+
+### Что изменено
+
+| # | Severity | Что было (v8.30.31) | Что стало (v8.30.32) | Где |
+|---|---|---|---|---|
+| 1 | **P1** | FTE > 100 отвергался (`parseRoleField('fte', 150) → null`) | FTE — целый процент **без верхнего лимита**: 150 = 1.5 FTE, 200 = два full-time | [roleFieldContract.js](../js/domain/roleFieldContract.js) |
+| 2 | **P1** | off — integer ≥0 (`'0.5'` / `'0,5'` → null, никакая «половина дня» не принималась) | off — **decimal ≥0 с точностью 1 знак после запятой**; «0.5» и «0,5» эквивалентны; «0,55»/«1.99» отвергаются | [roleFieldContract.js](../js/domain/roleFieldContract.js) |
+| 3 | **P2** | UI input off имел `pattern="[0-9]*"` — блокировал ввод дробной части | `inputmode="decimal"`, `pattern` удалён; рендер `0.5` → `formatNumber(0.5, 1)`; целые рендерятся без дроби | [teamCapacity.js](../js/ui/teamCapacity.js) |
+| 4 | **P2** | Persistence/import тихо отбрасывал FTE>100 в fallback (default=100) | FTE 200/500 переживает import → migrate → reload | [persistence.js](../js/state/persistence.js) |
+| 5 | **P3** | UserManual утверждал «FTE целочисленный»: не объяснял семантику >100% | Отдельный блок про FTE >100 как агрегированная доступность роли + блок про дробный отпуск с примерами | [UserManual.md](UserManual.md) |
+
+### Capacity-формула — без изменений, но проверена тестами
+
+`calculateAvailability(role, config)` уже использует `role.fte / 100` и `availableDays = days - role.off` — пропорциональность гарантирована формулой. Новые тесты в [tests/unit/domain/role.test.js](../tests/unit/domain/role.test.js):
+- `FTE=150` даёт ровно `1.5×` от capacity при `FTE=100`.
+- `FTE=200` даёт ровно `2×` от capacity при `FTE=100`.
+- `off=0.5` при 8-часовом дне эквивалентен потере 4 часов до коэффициентов.
+- `off=0.5` снижает `useful` в диапазоне `[0.9 × off0, off0)`.
+
+### Тесты добавлены / переписаны под новый контракт
+
+- [tests/unit/domain/roleFieldContract.test.js](../tests/unit/domain/roleFieldContract.test.js) — полностью переписан под новый контракт. Падает на v8.30.31 коде. Новые describe: «FTE > 100 ПРИНИМАЕТСЯ», «дробь с 1 знаком ПРИНИМАЕТСЯ (точка и запятая)», «дробь точнее 1 знака → null», «5.0 нормализуется до 5».
+- [tests/unit/controllers/roleController.test.js](../tests/unit/controllers/roleController.test.js) — `_parseRoleFieldValue` тесты: `fte 200 → 200`, `off '0,5' → 0.5`, `off '1.99' → null` + handleRoleInput / handleRoleBlur для дробного off.
+- [tests/unit/state/persistence.test.js](../tests/unit/state/persistence.test.js) — пять новых тестов: import FTE=150/200/500, off=0.5/2.5, off=1.99 → fallback, FTE=-1 → fallback, roundtrip import→migrate→reload.
+- [tests/unit/ui/teamCapacity.test.js](../tests/unit/ui/teamCapacity.test.js) — `inputmode="decimal"` без `pattern`, рендер `off=0.5` как `"0.5"`, рендер `FTE=200` без cap.
+
+### Уроки
+
+1. **«Жёсткий контракт» ≠ «правильный контракт».** Аудит v8.30.31 закрепил strict integer 0..100. Это было technically clean, но семантически ложно: FTE — это **сумма доступностей по роли**, а не персональный showcase. Аудит должен валидировать **продуктовую модель**, а не только техническую строгость.
+2. **Жалоба «у меня FTE 200, а оно сбрасывает в 100» — это симптом доменной модели, не баг ввода.** Перед фиксом «как починить парсер» — сверить с доменной моделью пользователя.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Exit-code |
+|---|---|---|
+| `npm run lint` | clean (eslint js/ sw.js) | **0** |
+| `npm run test:coverage -- --runInBand` | 1440/1440 PASS, 89 suites | **0** |
+| `npm run test:e2e:smoke` | 6/6 PASS (mobile-webkit) | **0** |
+| `npm run test:e2e` | 213/213 PASS (chromium + mobile-chromium + webkit + mobile-webkit) | **0** |
+| `npm audit` | 0 vulnerabilities | **0** |
+
+Exit-коды измерены без pipe-trap (`cmd > /tmp/log 2>&1; echo $?`), см. §6.ter.1 / arch-test `e2e-runner-must-not-pollute-node-options.test.js`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.31) — десятый внешний аудит: undo + FTE + overload + e2e-runner + a11y + selection deps + mobile UI
 
 > 8 поверхностей внешнего жёсткого аудита закрыты. По каждому — реальный код-фикс плюс тест, который падает на старом коде.

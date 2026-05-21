@@ -235,9 +235,9 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
             <label class="team-cap__card-control" title="${escapeHtml(role.name)} отпуск (дней)">
                 <span class="team-cap__card-control-label">Отпуск (д)</span>
                 <span class="team-cap__card-control-pill">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*"
+                    <input type="text" inputmode="decimal"
                            class="input-off number-input team-cap__card-control-input"
-                           value="${role.off}"
+                           value="${Number.isInteger(Number(role.off)) ? String(role.off) : nfs.formatNumber(role.off, 1)}"
                            data-action="updateRole" data-field="off" data-role="${role.id}"
                            aria-label="${escapeHtml(role.name)} отпуск (дней)">
                 </span>

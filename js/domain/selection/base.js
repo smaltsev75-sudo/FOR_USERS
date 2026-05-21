@@ -112,7 +112,6 @@ export function categorizeIntoQuadrants(tasks, medianPriority, medianEffort) {
  */
 export function selectTasksUniform(sortedTasks, capacityByRole) {
     const selectedTasks = [];   // отобранные задачи
-    const excludedTasks = [];   // исключённые задачи с причинами
     const selectedTaskIds = new Set();
 
     // Текущая загрузка по каждой роли (нарастающий итог)
@@ -121,60 +120,119 @@ export function selectTasksUniform(sortedTasks, capacityByRole) {
     let totalLoad = 0; // суммарная загрузка (часы)
     const totalCapacity = Object.values(capacityByRole).reduce((sum, v) => sum + v, 0);
 
-    for (const task of sortedTasks) {
-        // Пропускаем вручную исключённые задачи
-        if (task.excluded) {
-            excludedTasks.push({ ...task, reason: 'Исключена вручную', canBeAdded: false });
-            continue;
-        }
+    // v8.30.31: topological retry. Раньше — single-pass: если задача A
+    // встретилась раньше своей зависимости B в sortedTasks, A отбраковывалась
+    // с reason="Не выполнены зависимости" даже если B позже была отобрана и
+    // их обоих хватило бы по capacity. Внешний аудит P2.
+    //
+    // Решение: pending-список для задач с unmet deps + retry-проход до
+    // фиксированной точки. Это даёт topological-friendly порядок без явного
+    // topo-sort'а (который потребовал бы знать deps до сортировки).
+    //
+    // Алгоритм:
+    //   1. Pass 0: проходим sortedTasks. Каждая задача → либо selected, либо
+    //      hard-excluded (excluded/no-effort/no-capacity/role-overload), либо
+    //      pending (unmet deps).
+    //   2. Loop: пока хоть одну pending удалось добавить в эту итерацию —
+    //      пробуем pending заново. Когда итерация не добавила ни одной —
+    //      оставшиеся pending → final excluded с reason="Не выполнены зависимости".
+    //   3. Capacity по ролям накапливается монотонно в loadByRole; deps-only
+    //      retry никогда не отменяет hard-exclusions.
 
-        // Пропускаем задачи без оценки трудозатрат
-        if (task.effort <= 0) {
-            excludedTasks.push({ ...task, reason: 'Нулевая оценка трудозатрат', canBeAdded: false });
-            continue;
-        }
+    const hardExcluded = [];
+    const pendingDeps = [];
 
-        // Проверка: не превысит ли общая загрузка суммарную ёмкость
-        if (totalLoad + task.effort > totalCapacity) {
-            excludedTasks.push({ ...task, reason: 'Недостаточно общей ёмкости команды', canBeAdded: false });
-            continue;
-        }
-
-        // Проверка: не превысит ли загрузка ёмкость хотя бы одной роли
-        let roleOverload = false;
+    // helper: проверка capacity. Возвращает 'ok' | 'team-cap' | 'role-cap' | 'zero-effort'.
+    function checkCapacity(task) {
+        if (task.effort <= 0) return 'zero-effort';
+        if (totalLoad + task.effort > totalCapacity) return 'team-cap';
         for (const role of SELECTION_CONFIG.ROLES) {
             const current = loadByRole[role] || 0;
             const addition = task.roleEffort[role] || 0;
             const capacity = capacityByRole[role] || 0;
-            if (current + addition > capacity) {
-                roleOverload = true;
-                break;
-            }
+            if (current + addition > capacity) return 'role-cap';
         }
-        if (roleOverload) {
-            excludedTasks.push({ ...task, reason: 'Недостаточно ресурсов по ролям', canBeAdded: false });
-            continue;
-        }
+        return 'ok';
+    }
 
-        // Проверка зависимостей: все зависимости должны быть уже отобраны
-        if (task.dependencies && task.dependencies.length > 0) {
-            const unmet = task.dependencies.some(depId => !selectedTaskIds.has(depId));
-            if (unmet) {
-                excludedTasks.push({ ...task, reason: 'Не выполнены зависимости', canBeAdded: true });
-                continue;
-            }
-        }
-
-        // Все проверки прошли — включаем задачу в спринт
+    function commit(task) {
         selectedTasks.push(task);
         selectedTaskIds.add(task.id);
-
-        // Обновляем текущую загрузку
         SELECTION_CONFIG.ROLES.forEach(role => {
             loadByRole[role] += task.roleEffort[role] || 0;
         });
         totalLoad += task.effort;
     }
+
+    // Pass 0: единственный проход по sortedTasks, разделяющий на selected /
+    // hardExcluded / pendingDeps.
+    for (const task of sortedTasks) {
+        if (task.excluded) {
+            hardExcluded.push({ ...task, reason: 'Исключена вручную', canBeAdded: false });
+            continue;
+        }
+        const cap = checkCapacity(task);
+        if (cap === 'zero-effort') {
+            hardExcluded.push({ ...task, reason: 'Нулевая оценка трудозатрат', canBeAdded: false });
+            continue;
+        }
+        if (cap === 'team-cap') {
+            hardExcluded.push({ ...task, reason: 'Недостаточно общей ёмкости команды', canBeAdded: false });
+            continue;
+        }
+        if (cap === 'role-cap') {
+            hardExcluded.push({ ...task, reason: 'Недостаточно ресурсов по ролям', canBeAdded: false });
+            continue;
+        }
+        if (task.dependencies && task.dependencies.length > 0) {
+            const unmet = task.dependencies.some(depId => !selectedTaskIds.has(depId));
+            if (unmet) {
+                pendingDeps.push(task);
+                continue;
+            }
+        }
+        commit(task);
+    }
+
+    // Retry loop: пока хоть одну pending удалось закоммитить.
+    let progress = true;
+    const remainingPending = [...pendingDeps];
+    while (progress && remainingPending.length > 0) {
+        progress = false;
+        for (let i = remainingPending.length - 1; i >= 0; i--) {
+            const task = remainingPending[i];
+            // Перепроверяем capacity и deps на текущем состоянии loadByRole.
+            const cap = checkCapacity(task);
+            if (cap === 'team-cap' || cap === 'role-cap') {
+                // Capacity stale — пометим как exclusion, не возвращаем в pending.
+                remainingPending.splice(i, 1);
+                hardExcluded.push({
+                    ...task,
+                    reason: cap === 'team-cap'
+                        ? 'Недостаточно общей ёмкости команды'
+                        : 'Недостаточно ресурсов по ролям',
+                    canBeAdded: false
+                });
+                continue;
+            }
+            const depsMet = task.dependencies.every(depId => selectedTaskIds.has(depId));
+            if (depsMet) {
+                commit(task);
+                remainingPending.splice(i, 1);
+                progress = true;
+            }
+        }
+    }
+
+    // Оставшиеся pending — реально циклы или зависимости от hard-excluded.
+    const excludedTasks = [
+        ...hardExcluded,
+        ...remainingPending.map(task => ({
+            ...task,
+            reason: 'Не выполнены зависимости (зависит от не-отобранной задачи)',
+            canBeAdded: true
+        }))
+    ];
 
     // Вычисляем процент загрузки и статистику по ролям
     const loadPercentage = totalCapacity > 0 ? (totalLoad / totalCapacity) * 100 : 0;

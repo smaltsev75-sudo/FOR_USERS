@@ -179,6 +179,10 @@ export function renderTaskList(state, nfs, taskController = null) {
     taskListEl.appendChild(fragment);
 
     // Остальные задачи — асинхронно
+    // v8.30.31: updateOverloadIndicators ВЫЗЫВАЕТСЯ ПОСЛЕ КАЖДОГО batch'а
+    // (synchronous + async). Раньше — только один раз после sync-batch'а,
+    // и для задач из async-batch'ей overload-placeholder оставался пустым.
+    // Внешний аудит P2: «работает в обычном списке только до 20 задач».
     if (filteredTasks.length > BATCH_SIZE) {
         const remaining = filteredTasks.slice(BATCH_SIZE);
         let i = 0;
@@ -191,6 +195,9 @@ export function renderTaskList(state, nfs, taskController = null) {
                 i++;
             }
             taskListEl.appendChild(batchFragment);
+            // v8.30.31: post-batch overload markup — обязателен после каждого
+            // appendChild, иначе late-rendered задачи остаются без overload-тегов.
+            updateOverloadIndicators(state, nfs);
             if (i < remaining.length) {
                 (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(renderNextBatch);
             }
@@ -211,6 +218,10 @@ export function renderTaskList(state, nfs, taskController = null) {
     pulseChangedPriorityScores(taskListEl, previousScores);
     restoreStepperFocus(taskListEl, focusedStepperKey);
 }
+
+// v8.30.31: экспорт updateOverloadIndicators — renderGroupedTasks теперь тоже
+// его вызывает, чтобы overload-теги были видны в Quadrants view.
+export { updateOverloadIndicators };
 
 /**
  * v8.27.2: восстанавливает фокус на step-spinbutton после re-render.

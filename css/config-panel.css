@@ -13,6 +13,19 @@
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+/* v8.30.31 mobile UI pass: на mobile (≤600px) cfg-panel становится компактнее,
+   а секция «Коэффициенты» скрывается с первого экрана — её настраивают редко,
+   а вертикальная тяжесть мешает добраться до задачников. На desktop ≥601px —
+   обе секции видны как раньше. Audit: «без скрытия ключевого workflow далеко вниз». */
+@media (max-width: 600px) {
+    .cfg-section--coef {
+        display: none;
+    }
+    .cfg-panel {
+        margin-bottom: 8px;
+    }
+}
+
 .cfg-panel:hover {
     box-shadow: 0 4px 12px var(--shadow-md);
     border-color: var(--border-light);

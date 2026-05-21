@@ -317,17 +317,23 @@ export class TaskFormController {
         }
         const value = el.value.trim();
         const result = validateFn(value);
+        // v8.30.31: aria-invalid выставляется/снимается вместе с .error class.
+        // Без этого screen reader пользователь не получает звукового сигнала
+        // об ошибке валидации — он видит ТОЛЬКО visual error class.
         if (!result.valid) {
             el.classList.add('error');
+            el.setAttribute('aria-invalid', 'true');
             messageService.showMessage(result.message);
             return null;
         }
         if (!uniqueFn(this.store.getState().tasks, value, excludeId)) {
             el.classList.add('error');
+            el.setAttribute('aria-invalid', 'true');
             messageService.showMessage(uniqueErrorMsg);
             return null;
         }
         el.classList.remove('error');
+        el.removeAttribute('aria-invalid');
         return value;
     }
 

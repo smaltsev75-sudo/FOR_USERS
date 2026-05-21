@@ -230,26 +230,49 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 ### Запуск тестов
 
 ```bash
-npm install             # установка зависимостей (один раз)
-npm test                # unit-тесты (Jest + jsdom)
-npm run test:smoke      # быстрая проверка
-npm run test:e2e        # E2E (Playwright + Chromium)
-npm test && npm run test:e2e   # все тесты
+npm install                  # установка зависимостей (один раз)
+npm test                     # unit-тесты (Jest + jsdom)
+npm run test:coverage        # unit + coverage (release gate)
+npm run test:smoke           # быстрая проверка unit-подмножества
+npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
+npm run test:e2e             # полный E2E (4 Playwright projects)
 ```
 
-### Текущий счёт
+### Тестовые суиты (v8.30.31)
 
-| Тип | Фреймворк | Команда |
-|-----|-----------|---------|
-| Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage` |
-| E2E | Playwright + Chromium | `npm run test:e2e` |
-| Accessibility | @axe-core/playwright | включены в e2e |
+| Тип | Фреймворк | Команда | Release gate |
+|-----|-----------|---------|--------------|
+| Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --runInBand` | **yes** (coverage exit 0) |
+| Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
+| E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
+| E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
+| Accessibility | @axe-core/playwright | в составе e2e (`tests/e2e/accessibility.spec.js`) | в составе e2e |
+| `npm audit` | npm | `npm audit --audit-level=moderate` | **yes** (0 moderate+) |
 
-Точные количественные метрики (X unit / Y e2e / N% coverage) актуализируются в `docs/RELEASE_NOTES.md` по каждому релизу — здесь намеренно не дублируем, чтобы документ не устаревал.
+Все release gates обязательны (см. `docs/RELEASE_PROCESS.md`, чек-лист). Релиз с red gate — категорически нельзя; см. memory `feedback-release-with-red-tests-banned`.
 
-- E2E запускаются параллельно (`fullyParallel: true`, workers = auto) — каждый тест изолирован (localStorage.clear в beforeEach).
-- Конфигурация: `jest.config.cjs` (`coverageProvider: 'v8'`), `playwright.config.js`.
-- Линтинг: `eslint.config.js` (ESLint 9 flat config), `npm run lint` / `npm run lint:fix`.
+### Playwright projects (`playwright.config.js`)
+
+4 проекта запускаются параллельно (`fullyParallel: true`):
+
+| project | viewport / engine | testMatch | Назначение |
+|---|---|---|---|
+| `chromium` | Desktop Chrome 1280×720 | все .spec.js, кроме mobile/webkit | основной desktop suite |
+| `mobile-chromium` | Pixel 5 (393×851), Chromium | `mobile.spec.js` | mobile responsive invariants |
+| `webkit` | Desktop Safari 1280×720 | `webkit.spec.js` | engine-specific smoke (sticky, focus-trap) |
+| `mobile-webkit` | iPhone 13 (390×844), WebKit | `mobile.spec.js` | iOS Safari + mobile-webkit specific |
+
+**Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123** (нестандартный, чтобы не конфликтовать с другими проектными dev-серверами на 8000/8080).
+
+### e2e-runner (`scripts/e2e-runner.mjs`)
+
+Тонкий wrapper над Playwright CLI, обходит worker-shutdown race на Node 22+ Windows:
+
+- Spawn'ит Playwright с `--reporter=list,json`. Ground truth для exit-кода — JSON-файл (`test-results/e2e-runner-results.json`, `stats.unexpected`), не stdout-парсинг.
+- Stdout-monitor — секондарный watchdog, force-kill child после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
+- EADDRINUSE проверка для порта 8123 — info, не fatal (webServer `reuseExistingServer` подхватит).
+- Orphan-cleanup: SIGINT/SIGTERM/exit propagate в child + SIGKILL после 1.5s timeout.
+- НЕ модифицирует `NODE_OPTIONS` (см. memory `feedback-node-options-pollutes-child-workers`).
 
 ### Диагностика тестов
 

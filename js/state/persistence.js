@@ -4,6 +4,7 @@ import { createDefaultConfig } from '../domain/config.js';
 import { createDefaultRoles } from '../domain/role.js';
 import { fixTaskOrder } from '../domain/task.js';
 import { ROLES } from '../utils/constants.js';
+import { normalizeRoleFieldForPersistence } from '../domain/roleFieldContract.js';
 
 const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
 
@@ -110,13 +111,15 @@ function normalizeConfig(config = {}, defaults) {
 
 function normalizeRoles(roles = [], defaults) {
     const map = new Map((roles || []).map((role) => [role.id, role]));
+    // v8.30.31: единый контракт через domain/roleFieldContract.js. parseInt-мусор
+    // (12abc), дроби (12.5), отрицательные → fallback на default из createDefaultRoles().
     return defaults.map((defaultRole) => {
         const role = map.get(defaultRole.id) || {};
         return {
             ...defaultRole,
             ...role,
-            fte: normalizeInteger(role.fte, defaultRole.fte, 0, 100),
-            off: normalizeInteger(role.off, defaultRole.off, 0)
+            fte: normalizeRoleFieldForPersistence('fte', role.fte, defaultRole.fte),
+            off: normalizeRoleFieldForPersistence('off', role.off, defaultRole.off)
         };
     });
 }

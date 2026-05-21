@@ -42,21 +42,76 @@ npm run bump -- 9.0.0
 - `docs/RELEASE_NOTES.md` — добавь раздел руками после bump'а.
 - README — обновляй только если изменения видны пользователю.
 
-## Полный чек-лист релиза
+## Полный чек-лист релиза (v8.30.31: e2e — обязательный release gate)
 
-1. Сделай и проверь правки в коде.
-2. `npm run bump -- <X.Y.Z> [<slug>]`.
-3. Добавь раздел в `docs/RELEASE_NOTES.md` с описанием изменений. Фактический
-   формат заголовка, используемый в проекте:
-   `## Версия: <месяц год> (обновление X.Y.Z) — <короткое описание>`
-   (пример: `## Версия: май 2026 (обновление 8.30.15) — review pass 11 + post-merge maintenance`).
-4. `npm test` — особенно `tests/unit/version.test.js` и
-   `tests/unit/scripts/bumpVersion.test.js` (regex smoke + шапка bump-script
-   упоминает корректное N мест): они сразу зафейлятся, если что-то забыто
-   или рассинхронизировано.
-5. `npm run lint` — на случай stray-edit'ов.
-6. Коммит с сообщением вида `vX.Y.Z: <короткое описание>` — формат уже
-   используется в проекте.
+Все шаги обязательны. Релиз с red e2e / coverage / audit — категорически нельзя
+(см. memory `feedback-release-with-red-tests-banned`). Exit codes измерять
+БЕЗ pipe (`cmd > /tmp/log; echo $?`), иначе `$?` = exit-код `tail`'а, не `cmd`.
+
+1. **Сделай и проверь правки в коде.**
+2. **`npm run bump -- <X.Y.Z> [<slug>]`** — синхронизирует версию во всех
+   7 местах (см. таблицу выше).
+3. **Добавь раздел в `docs/RELEASE_NOTES.md`.** Формат заголовка:
+   `## Версия: <месяц год> (обновление X.Y.Z) — <короткое описание>`.
+   Метрики PASS обязательны с фактическими exit-кодами (`[EXIT=0]`).
+4. **Release gates (все exit 0, источник истины — реальные команды):**
+
+   | # | Команда | Exit gate | Что проверяется |
+   |---|---|---|---|
+   | a | `npm run lint` | 0 | ESLint clean (no stray edits) |
+   | b | `npm run test:coverage -- --runInBand` | 0 | unit тесты + coverage threshold |
+   | c | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
+   | d | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
+   | e | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
+   | f | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
+
+5. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
+
+## Release gates: details
+
+### Playwright projects (`playwright.config.js`, v8.30.31)
+
+4 проекта; gate `e2e:smoke` запускает только mobile-webkit как fastest indicator
+большинства реальных проблем (worker-shutdown race, mobile overflow, sticky).
+`e2e` запускает все.
+
+| project | viewport / engine | testMatch | testIgnore |
+|---|---|---|---|
+| `chromium` | Desktop Chrome 1280×720 | (все .spec.js по умолчанию) | mobile.spec.js, webkit.spec.js |
+| `mobile-chromium` | Pixel 5 (393×851), Chromium | mobile.spec.js | — |
+| `webkit` | Desktop Safari 1280×720 | webkit.spec.js | — |
+| `mobile-webkit` | iPhone 13 (390×844), WebKit | mobile.spec.js | — |
+
+### Webserver
+
+`playwright.config.js → webServer`: `npx http-server . -p 8123 --silent --no-cache`.
+**Порт 8123** — нестандартный, чтобы не конфликтовать с другими dev-серверами
+проекта на 8000/8080. `reuseExistingServer: !process.env.CI`.
+
+### e2e-runner (v8.30.31: ground truth = JSON reporter)
+
+`scripts/e2e-runner.mjs`:
+- Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в `test-results/e2e-runner-results.json`.
+- **Ground truth для exit-кода**: JSON-файл (`stats.unexpected`). НЕ stdout-парсинг.
+- Stdout-monitor — секондарный watchdog для force-kill при WebKit worker hang race на Node 22+ Windows.
+- EADDRINUSE на порт 8123 — info (не fatal), webServer reuse подхватит.
+- Orphan cleanup: SIGINT/SIGTERM/exit propagate в child, force-SIGKILL после 1.5s.
+
+### Измерение exit-кодов
+
+Bash:
+```bash
+# Правильно (без pipe):
+npm run test:e2e > /tmp/e2e.log 2>&1; echo "[EXIT=$?]"
+
+# Правильно (с pipe + PIPESTATUS):
+npm run test:e2e 2>&1 | tail; echo "[EXIT=${PIPESTATUS[0]}]"
+
+# НЕПРАВИЛЬНО — $? после pipe = exit code tail (всегда 0):
+npm run test:e2e 2>&1 | tail; echo "[EXIT=$?]"   # ← врёт
+```
+
+PowerShell: `$LASTEXITCODE` после команды (не подвержен pipe-trap).
 
 ## Почему такая схема
 

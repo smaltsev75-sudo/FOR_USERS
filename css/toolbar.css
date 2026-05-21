@@ -369,6 +369,18 @@
     .toolbar {
         flex-wrap: wrap;
     }
+    /* v8.30.31 mobile UI pass: toolbar остаётся прилипшим к top на mobile,
+       чтобы кнопка «Новая задача» была доступна без долгого скролла через
+       cfg-panel и dash-grid. Audit: «первый экран должен быть рабочим
+       для планировщика, без скрытия ключевого workflow далеко вниз». */
+    .toolbar {
+        position: sticky;
+        top: 4px;
+        z-index: 30;
+        /* На sticky-toolbar лежит лёгкая тень, чтобы визуально отделить
+           от прокручиваемого контента под ним. */
+        box-shadow: 0 2px 6px var(--shadow-sm);
+    }
     .toolbar__center {
         order: 2;
         flex: 1 1 100%;

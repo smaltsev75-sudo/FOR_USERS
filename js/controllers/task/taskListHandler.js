@@ -111,6 +111,21 @@ export class TaskListHandler {
 
     /**
      * Удаляет задачу с анимацией (.removing → 300мс → deleteTask).
+     *
+     * v8.30.31: undo полностью переработан после внешнего аудита.
+     * Старый подход:
+     *   - Полный snapshot `tasksBefore = [...state.tasks]` при delete.
+     *   - На undo: `store.setTasks(tasksBefore)` — восстанавливает stale state,
+     *     стирая любые правки сделанные между delete и undo (новые задачи,
+     *     изменения других задач).
+     *   - Pending 300ms timer не отменялся → undo до timer'а двойной delete.
+     * Новый подход:
+     *   - Snapshot ТОЛЬКО удалённой задачи + её индекс.
+     *   - Pending timer — локальная переменная замыкания (не this._pending…,
+     *     иначе второй delete перетирает таймер первого).
+     *   - На undo: insertTaskAt(deletedTask, originalIndex) — восстанавливает
+     *     именно ту задачу на её место, не трогая остальное.
+     *
      * @param {number} taskId
      */
     handleDeleteTask(taskId) {
@@ -118,27 +133,55 @@ export class TaskListHandler {
         const taskIndex = state.tasks.findIndex(t => t.id === taskId);
         if (taskIndex === -1) return;
         const deletedTask = { ...state.tasks[taskIndex] };
-        const tasksBefore = [...state.tasks];
+        const originalIndex = taskIndex;
 
-        // Удаляем сразу (с анимацией)
-        const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
-        if (taskElement) {
-            taskElement.classList.add('removing');
-            setTimeout(() => {
-                this.store.deleteTask(taskId);
-                if (this._getSelectedTaskId() === taskId) this._setSelectedTaskId(null);
-                this._cache.invalidate();
-            }, 300);
-        } else {
+        // v8.30.31: локальные closure-переменные (не на this), чтобы одновременные
+        // delete двух задач не перетирали состояние друг друга.
+        let pendingTimer = null;
+        let applied = false;
+
+        const applyDelete = () => {
+            if (applied) return;
+            applied = true;
             this.store.deleteTask(taskId);
             if (this._getSelectedTaskId() === taskId) this._setSelectedTaskId(null);
             this._cache.invalidate();
+        };
+
+        const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
+        if (taskElement) {
+            taskElement.classList.add('removing');
+            pendingTimer = setTimeout(() => {
+                pendingTimer = null;
+                applyDelete();
+            }, 300);
+        } else {
+            applyDelete();
         }
 
-        // Snackbar с кнопкой «Отменить»
         showSnackbar(`Задача «${deletedTask.title}» удалена`, {
             onUndo: () => {
-                this.store.setTasks(tasksBefore);
+                // 1. Отменяем pending 300ms timer, если ещё не сработал.
+                if (pendingTimer !== null) {
+                    clearTimeout(pendingTimer);
+                    pendingTimer = null;
+                    applied = true; // не даём поздному applyDelete сработать (defence-in-depth)
+                }
+                // 2. Снимаем CSS-анимацию (если узел ещё в DOM).
+                if (taskElement && taskElement.isConnected) {
+                    taskElement.classList.remove('removing');
+                }
+                // 3. Если delete уже применён к store (timer успел сработать ДО undo,
+                //    т.е. undo после 300ms) — insert back at original index. В противном
+                //    случае задача ещё в store, restore — no-op для данных, только cache.
+                const currentTasks = this.store.getState().tasks;
+                const stillPresent = currentTasks.some(t => t.id === taskId);
+                if (!stillPresent) {
+                    const insertAt = Math.min(originalIndex, currentTasks.length);
+                    const restored = [...currentTasks];
+                    restored.splice(insertAt, 0, deletedTask);
+                    this.store.setTasks(fixTaskOrder(restored));
+                }
                 this._cache.invalidate();
             }
         });

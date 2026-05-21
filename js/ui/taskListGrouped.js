@@ -13,7 +13,7 @@ import { calculateTaskTotal } from '../domain/task.js';
 import { calculatePriorityScore } from '../domain/criteria.js';
 import { assignQuadrants, QUADRANT_KEYS_WITH_EXCLUDED, getQuadrantLabel, getQuadrantDescription } from '../domain/selection/quadrants.js';
 import { ICONS } from '../utils/icons.js';
-import { filterTasks, createTaskElement, resolveDensity } from './taskList.js';
+import { filterTasks, createTaskElement, resolveDensity, updateOverloadIndicators } from './taskList.js';
 
 /**
  * Маппинг ключа квадранта → имя иконки в ICONS.
@@ -159,6 +159,11 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
     });
 
     taskListEl.appendChild(fragment);
+
+    // v8.30.31: overload-теги в Quadrants view (раньше отсутствовали — баг
+    // P2 внешнего аудита). Quadrants view не использует progressive render —
+    // все задачи рендерятся sync. Один вызов после appendChild достаточен.
+    updateOverloadIndicators(state, nfs);
 }
 
 /**

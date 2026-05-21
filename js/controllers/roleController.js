@@ -1,4 +1,6 @@
 // js/controllers/roleController.js
+import { parseRoleField } from '../domain/roleFieldContract.js';
+
 export class RoleController {
     constructor(store, numberFormatService) {
         this.store = store;
@@ -26,21 +28,30 @@ export class RoleController {
     }
 
     /**
-     * Парсит значение поля роли из строки.
+     * v8.30.32: единый контракт через domain/roleFieldContract.js.
+     *   FTE — integer ≥0 без верхнего лимита (200% = два full-time).
+     *   off — decimal ≥0, 1 знак после запятой (0.5 = пол-дня), «,» и «.» равны.
      * @param {'fte'|'off'} field
      * @param {string} rawValue
-     * @returns {number|null} Число или null, если значение невалидно
+     * @returns {number|null}
      */
     _parseRoleFieldValue(field, rawValue) {
-        if (field === 'off') {
-            const value = parseInt(rawValue, 10);
-            return Number.isNaN(value) ? null : Math.max(0, value);
+        return parseRoleField(field, rawValue);
+    }
+
+    /**
+     * v8.30.31: aria-invalid выставляется ТОЛЬКО когда поле непустое и парсер
+     * вернул null (т.е. ввод был — но он невалиден). Пустое поле в процессе
+     * редактирования (Backspace до конца) — НЕ "invalid", aria-invalid снят.
+     */
+    _setFieldValidity(target, valid) {
+        if (valid) {
+            target.removeAttribute('aria-invalid');
+            target.classList.remove('error');
+        } else {
+            target.setAttribute('aria-invalid', 'true');
+            target.classList.add('error');
         }
-        if (field === 'fte') {
-            const value = this.nfs.parseNumber(rawValue);
-            return Number.isNaN(value) ? null : Math.max(0, Math.round(value));
-        }
-        return null;
     }
 
     handleRoleInput(e) {
@@ -48,8 +59,19 @@ export class RoleController {
         const roleId = target.dataset.role;
         const field = target.dataset.field;
         if (!roleId || !field) return;
-        const value = this._parseRoleFieldValue(field, target.value);
-        if (value === null) return;
+        const raw = target.value;
+        if (raw === '') {
+            // пустое поле в процессе редактирования — не invalid, не update
+            target.removeAttribute('aria-invalid');
+            target.classList.remove('error');
+            return;
+        }
+        const value = this._parseRoleFieldValue(field, raw);
+        if (value === null) {
+            this._setFieldValidity(target, false);
+            return;
+        }
+        this._setFieldValidity(target, true);
         this.store.updateRole(roleId, { [field]: value });
     }
 
@@ -63,7 +85,11 @@ export class RoleController {
         if (!role) return;
 
         const value = this._parseRoleFieldValue(field, target.value);
-        if (value === null) return;
+        if (value === null) {
+            this._setFieldValidity(target, false);
+            return;
+        }
+        this._setFieldValidity(target, true);
         this.store.updateRole(roleId, { [field]: value });
     }
 
@@ -82,7 +108,15 @@ export class RoleController {
         }
 
         if (field === 'off') {
-            target.value = String(role.off);
+            // v8.30.32: off — decimal с 1 знаком после запятой. Если целое (0, 5)
+            // показываем без дроби; если дробь — с одним знаком (используя
+            // выбранный пользователем разделитель «,» или «.»).
+            const value = Number(role.off);
+            if (Number.isInteger(value)) {
+                target.value = String(value);
+            } else {
+                target.value = this.nfs.formatNumber(value, 1);
+            }
         }
     }
 }
