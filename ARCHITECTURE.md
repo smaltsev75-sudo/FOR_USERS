@@ -549,6 +549,7 @@ tests/
 | `themeController.js` | Переключение светлой/тёмной темы |
 | `selectionReport.js` | Рендер отчёта сравнения алгоритмов |
 | `selectionRecommendations.js` | Рендер рекомендаций оптимизации |
+| `percent.js` | UI-контракт для отображаемых процентов: `formatUiPercent` / `formatSignedUiPercent` дают целые неотрицательные значения; CSS-геометрия зажимается через `clampPercentWidth` |
 
 ## 10. Политика изменений
 

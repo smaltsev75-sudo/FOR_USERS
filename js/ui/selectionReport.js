@@ -24,6 +24,7 @@ import { ALGORITHM_KEYS } from '../domain/selection/config.js';
 import { showModal } from './modalManager.js';
 import { icon } from '../utils/icons.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { clampPercentWidth, formatUiPercent } from '../utils/percent.js';
 
 /** Human-readable names for each algorithm key. */
 export const ALGORITHM_NAMES = {
@@ -139,7 +140,7 @@ function buildRecommendationBannerHtml(recommended) {
     if (!recommended) return '';
     const name = escapeHtml(recommended.name);
     const tasksLabel = `${recommended.tasksCount} задач`;
-    const loadLabel = `${fmt1(recommended.displayLoad)}% загрузка`;
+    const loadLabel = `${formatUiPercent(recommended.displayLoad)}% загрузка`;
     const priorityLabel = `Priority Score: ${fmt1(recommended.displayPriority)}`;
     const densityLabel = `Плотность: ${fmt2(recommended.displayDensity)}`;
 
@@ -234,7 +235,7 @@ function buildAlgorithmCardHtml(item, bestValues, recommendedKey) {
     const isRecommended = item.algo === recommendedKey;
 
     const tasksPct    = ratioPct(item.tasksCount, bestTasks);
-    const loadPct     = Math.min(100, Math.max(0, item.displayLoad));
+    const loadPct     = clampPercentWidth(item.displayLoad);
     const effortPct   = ratioPct(item.displayEffort, bestEffort);
     const priorityPct = ratioPct(item.displayPriority, bestPriority);
     const densityPct  = ratioPct(item.displayDensity, bestDensity);
@@ -261,7 +262,7 @@ function buildAlgorithmCardHtml(item, bestValues, recommendedKey) {
         </div>
         <div class="algo-card-metric" title="${escapeHtml(METRIC_HINTS.load)}">
             <span class="algo-card-metric-label">Загрузка</span>
-            <span class="algo-card-metric-value">${wrap(`${fmt1(item.displayLoad)}%`, isBestLoad)}</span>
+            <span class="algo-card-metric-value">${wrap(`${formatUiPercent(item.displayLoad)}%`, isBestLoad)}</span>
             <span class="metric-bar"><span class="metric-bar__fill ${loadBarFillClass(item.displayLoad)}" style="width:${loadPct}%"></span></span>
         </div>
         <div class="algo-card-metric" title="${escapeHtml(METRIC_HINTS.effort)}">

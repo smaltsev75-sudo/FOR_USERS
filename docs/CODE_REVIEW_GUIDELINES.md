@@ -136,6 +136,15 @@ export function y() { ... }
 - **`prefers-reduced-motion`** обнуляет `animation` / `transition`.
 - **`tabular-nums`** на числовых колонках (effort, priority-score, denominator).
 - **Контраст ≥ 4.5:1 для текста, ≥ 3:1 для UI** — в обеих темах.
+- **Отображаемые проценты в UI** — только целые неотрицательные числа. Для текста,
+  `title`, `aria-label`, snackbar/modal messages использовать `formatUiPercent`
+  / `formatSignedUiPercent`; дробные `%` допустимы только как CSS-геометрия
+  (`width`, `stroke-dasharray`, custom properties), не как видимое число.
+- **Stepper-only для чисел** — UX smell. Если пользователь видит число и
+  должен менять его часто, быстрые `−/+` могут быть рядом, но обязателен
+  прямой ввод или нативный выбор (`input`/`select`/combobox). Контейнер с
+  вложенными `input`/`button` не размечать как `role="spinbutton"`; семантика
+  должна жить на нативном поле.
 
 ### 4.1.bis Дизайн-система прежде всего (v8.28 lesson)
 

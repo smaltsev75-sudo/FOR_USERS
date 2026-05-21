@@ -793,7 +793,7 @@
     transition: box-shadow 0.18s ease;
 }
 
-.criteria-eval-stepper:focus-visible {
+.criteria-eval-stepper:focus-within {
     box-shadow: 0 0 0 2px var(--accent-bg-strong);
 }
 
@@ -835,6 +835,9 @@
 }
 
 .criteria-eval-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 0.95rem;
     font-weight: 800;
@@ -844,6 +847,43 @@
     padding: 2px 6px;
     transition: color 0.25s ease;
     user-select: none;
+}
+
+.criteria-score-input {
+    width: 3ch;
+    min-width: 30px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    font-variant-numeric: inherit;
+    line-height: 1;
+    text-align: center;
+    outline: none;
+}
+
+.criteria-score-input:focus-visible {
+    border-color: var(--eval-accent);
+    background: color-mix(in srgb, var(--eval-accent) 12%, transparent);
+}
+
+.criteria-score-input::-webkit-outer-spin-button,
+.criteria-score-input::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.criteria-score-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.criteria-score-print {
+    display: none;
 }
 
 /* ── Contribution bar (фьюшн weight×score) ─────────────────────────────── */
@@ -869,6 +909,11 @@
         width: 32px;
         height: 32px;
         font-size: 1.05rem;
+    }
+
+    .criteria-score-input {
+        height: 32px;
+        min-width: 34px;
     }
 }
 
@@ -899,6 +944,7 @@
 [data-density="compact"] .criteria-eval-stepper { padding: 0; }
 [data-density="compact"] .criteria-eval-step { width: 20px; height: 20px; font-size: 0.85rem; }
 [data-density="compact"] .criteria-eval-score { font-size: 0.78rem; padding: 1px 3px; }
+[data-density="compact"] .criteria-score-input { height: 20px; min-width: 28px; }
 
 /* Бейдж Priority Score — главная метрика, теперь компактный inline-pill. */
 .priority-score-container {

@@ -1,8 +1,42 @@
 // js/ui/matrix.js
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { formatUiPercent } from '../utils/percent.js';
 
 const TYPE_KEYS = ['bug', 'tech', 'us'];
 const TYPE_LABELS = { bug: 'Bug', tech: 'Tech', us: 'US' };
+const TOTAL_PERCENT_DECIMALS = 0;
+
+function distributeRoundedPercentages(totals, decimals = TOTAL_PERCENT_DECIMALS) {
+    const values = totals.map(total => Math.max(0, Number(total) || 0));
+    const totalWork = values.reduce((sum, value) => sum + value, 0);
+    if (totalWork <= 0) return values.map(() => 0);
+
+    const scale = 10 ** decimals;
+    const targetUnits = 100 * scale;
+    const parts = values.map((value, index) => {
+        const exactUnits = (value / totalWork) * targetUnits;
+        const baseUnits = Math.floor(exactUnits);
+        return {
+            index,
+            value,
+            units: baseUnits,
+            remainder: exactUnits - baseUnits
+        };
+    });
+
+    const remainingUnits = targetUnits - parts.reduce((sum, part) => sum + part.units, 0);
+    const byRemainder = [...parts].sort((a, b) => (
+        b.remainder - a.remainder
+        || b.value - a.value
+        || a.index - b.index
+    ));
+
+    for (let i = 0; i < remainingUnits; i++) {
+        byRemainder[i % byRemainder.length].units += 1;
+    }
+
+    return parts.map(part => part.units / scale);
+}
 
 export function renderMatrix(state, nfs) {
     const matrixBody = document.getElementById('matrixBody');
@@ -41,7 +75,7 @@ export function renderMatrix(state, nfs) {
             const barWidth = colMax[t] > 0 ? (v / colMax[t]) * 100 : 0;
             const pctOfRole = roleTotal > 0 ? (v / roleTotal) * 100 : 0;
             const tip = v > 0
-                ? `${TYPE_LABELS[t]}: ${nfs.formatNumber(v)} ч · ${nfs.formatNumber(pctOfRole)}% от часов роли ${s.name}`
+                ? `${TYPE_LABELS[t]}: ${nfs.formatNumber(v)} ч · ${formatUiPercent(pctOfRole)}% от часов роли ${s.name}`
                 : `${TYPE_LABELS[t]}: задач этого типа нет у роли ${s.name}`;
             const muted = v === 0 ? ' is-empty' : '';
             return `<td class="data-cell number-display${muted}" data-type="${t}" style="--bar-width:${barWidth.toFixed(1)}%" title="${escapeHtml(tip)}">
@@ -67,10 +101,13 @@ export function renderMatrix(state, nfs) {
     // использовано данным типом»), но название блока и пользовательское ожидание
     // — именно distribution. Capacity-сравнение остаётся в Team Capacity Dashboard.
     const totalWork = typeTotals.bug + typeTotals.tech + typeTotals.us;
-    const pctOf = (v) => totalWork > 0 ? (v / totalWork) * 100 : 0;
-    const bugPercent = pctOf(typeTotals.bug);
-    const techPercent = pctOf(typeTotals.tech);
-    const usPercent = pctOf(typeTotals.us);
+    // v8.30.39: распределяем уже округлённые целые по largest remainder, чтобы
+    // видимая строка ИТОГО тоже давала ровно 100% (1/3 + 1/3 + 1/3 → 34/33/33).
+    const [bugPercent, techPercent, usPercent] = distributeRoundedPercentages([
+        typeTotals.bug,
+        typeTotals.tech,
+        typeTotals.us
+    ]);
 
     const totalCells = [
         { type: 'bug', total: typeTotals.bug, pct: bugPercent },
@@ -78,10 +115,10 @@ export function renderMatrix(state, nfs) {
         { type: 'us', total: typeTotals.us, pct: usPercent }
     ].map(({ type, total, pct }) => {
         const tip = totalWork > 0
-            ? `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (${nfs.formatNumber(pct)}% от общего объёма работ)`
+            ? `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (${formatUiPercent(pct)}% от общего объёма работ)`
             : `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (задач нет)`;
         return `<td class="matrix-total number-display" data-type="${type}" title="${escapeHtml(tip)}">
-            <div class="matrix-total__percent percentage-cell">${nfs.formatNumber(pct)}%</div>
+            <div class="matrix-total__percent percentage-cell">${formatUiPercent(pct)}%</div>
             <div class="matrix-total__value">${nfs.formatNumber(total)} ч</div>
         </td>`;
     }).join('');

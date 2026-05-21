@@ -1,5 +1,64 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.39) — UI percent contract + editable criteria score
+
+> User-reported repair-pass после v8.30.38. Закрывает две видимые UX-поверхности:
+> проценты в UI должны быть целыми неотрицательными числами, а score критериев
+> в карточке задачи нельзя оставлять stepper-only. Контракты FTE/Off сохранены:
+> FTE — целый ≥0 БЕЗ верхнего лимита, Off — decimal ≥0 c точностью 1 знак.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (user-reported)** | В «Распределение работ по типам задач (ч)» строка ИТОГО показывала дробные проценты `38,97% / 10,48% / 3,6%`, сумма видимой строки не была 100%. | Matrix totals теперь считают share от общего объёма работ по типам и отображают целые проценты через largest-remainder rounding: для кейса со скрина `119 / 32 / 11 ч` → `73% / 20% / 7%`, сумма = 100%. | [matrix.js](../js/ui/matrix.js), [percent.js](../js/utils/percent.js), [matrix.test.js](../tests/unit/ui/matrix.test.js) |
+| 2 | **P2 (product rule)** | Отображаемые UI-проценты форматировались разными локальными способами: `formatNumber(... )%`, дробные tooltip/message проценты, отрицательные `-20%`. | Введён единый helper `formatUiPercent` / `formatSignedUiPercent` / `clampPercentWidth`; user-facing text/title/aria/message проценты стали целыми неотрицательными, отрицательная дельта показывается как `↓20%`. | [percent.js](../js/utils/percent.js), [teamCapacity.js](../js/ui/teamCapacity.js), [selectionReport.js](../js/ui/selectionReport.js), [selectionRecommendations.js](../js/ui/selectionRecommendations.js), [analysis.js](../js/domain/selection/analysis.js) |
+| 3 | **P2 (user-reported UX)** | Score критериев в карточке задачи визуально выглядел числом, но редактировался только кнопками `−/+`; нельзя было ввести число или выбрать значение. | Средний контрол стал настоящим `input type="number" min=0 max=10 step=1 list=criteria-score-options`; `−/+` сохранены как быстрые кнопки, прямой ввод и выбор из списка работают. | [taskList.js](../js/ui/taskList.js), [taskController.js](../js/controllers/taskController.js), [task-card.css](../css/task-card.css), [components.css](../css/components.css) |
+| 4 | **P2 (a11y)** | Корень score-контрола был `role="spinbutton"` с вложенными button/span; после добавления input такой паттерн стал бы nested-interactive/ложной ARIA-семантикой. | Корень score-контрола теперь `role="group"`, семантика ввода живёт на нативном input; фокус после re-render восстанавливается на input. | [taskList.js](../js/ui/taskList.js), [taskController.js](../js/controllers/taskController.js), [CODE_REVIEW_GUIDELINES.md](CODE_REVIEW_GUIDELINES.md) |
+| 5 | **P3 (print/docs/process)** | Print view ожидал score как текстовый span; UserManual не описывал прямой ввод score; memory не закрепляла новый UX-урок. | Для печати добавлен `.criteria-score-print`, input скрывается; UserManual описывает `−/+`, keyboard input и список; CLAUDE/CODE_REVIEW_GUIDELINES/memory получили правило «numeric stepper не заменяет прямой ввод». | [print.css](../css/print.css), [UserManual.md](UserManual.md), [CLAUDE.md](../CLAUDE.md), memory `feedback_numeric_stepper_direct_entry.md` |
+
+### Новые тесты (TDD / guard)
+
+- `matrix.test.js` — скрин-кейс `119 / 32 / 11 ч`: **red на старом коде** (`38.97% / 10.48% / 3.60%`), green после `73% / 20% / 7%`; отдельные кейсы на `10/20/70`, `1/1/1 → 34/33/33`, zero-work `0%`.
+- `percent.test.js` — новый helper: целые неотрицательные `%`, направление отрицательной дельты без отрицательного числа, CSS-width clamp.
+- `ui-percent-display-integer.test.js` — arch-guard: user-facing percent strings не должны возвращаться к локальным `formatNumber(... )%` / `toFixed(... )%`.
+- `teamCapacity.test.js`, `selectionReport.test.js`, `selectionRecommendations.test.js`, `analysis.test.js` — регрессии для whole-percent text/title/message.
+- `taskList.test.js` — **2 теста red на старом DOM** (`spinbutton + span`): score должен быть editable input 0..10 + datalist, stepper рендерит `[-] input [+]`.
+- `taskController.test.js` — **3 теста red на старом controller path**: `change` от score input обновляет evaluation; `[+]` читает текущее input value; Arrow/Home/End/Enter работают через input.
+- `planner.spec.js` — e2e criteria flow обновлён: прямой ввод `7`, click `[+]`, keyboard Home/End проверяются на реальном UI.
+
+### Visual / manual verification
+
+- Desktop Chromium screenshot: `test-results/criteria-score-input-desktop.png` — score input виден между `−/+`, `datalist` подключён.
+- Mobile Chromium screenshot: `test-results/criteria-score-input-mobile-task-only.png` — карточка задачи не теряет score-контрол; input видим.
+- A4 print media screenshot: `test-results/criteria-score-input-print-task-only.png` — input скрыт, печатный текст `0/10` отображается.
+- Browser repro matrix: `119 / 32 / 11 ч` → visible totals `73% / 20% / 7%`.
+
+### Уроки и классы ошибок
+
+1. **Displayed percent contract — отдельный UI-инвариант.** Внутренние дробные расчёты допустимы, но пользовательский текст `%` должен быть целым и неотрицательным. CSS-геометрия (`width`, `stroke-dasharray`) — отдельная поверхность.
+2. **Stepper-only — не полноценный числовой ввод.** Если пользователь видит число и регулярно его меняет, `−/+` могут ускорять, но не заменять `input`/`select`/combobox.
+3. **A11y semantics must follow native controls.** Контейнер с вложенными `input`/`button` не должен притворяться `spinbutton`; лучше `role="group"` или без ARIA override.
+4. **Print surface реагирует на DOM-shape.** Замена text span на input требует явного print-only textual fallback.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1648/1648 PASS, 104 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 235/235 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `17/17 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e: chromium `197/197`, mobile-chromium `17/17`, webkit `4/4`, mobile-webkit `17/17`; все child exits clean, wrapper exit 0, без override.
+- Post-bump verification: `npx jest --no-coverage` → 1648/1648 PASS; `npm run test:e2e:smoke` → 17/17 PASS, wrapper exit 0, child exit 0, без override.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.38) — audit hardening: strict criteria score / doc alignment / fast parallel e2e gates
 
 > Audit-pass после v8.30.37. Цель — закрыть найденные при глубоком аудите

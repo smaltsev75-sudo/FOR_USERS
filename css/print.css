@@ -497,6 +497,14 @@
         min-width: 0 !important;
     }
 
+    .criteria-score-input {
+        display: none !important;
+    }
+
+    .criteria-score-print {
+        display: inline !important;
+    }
+
     .criteria-eval-score::before {
         content: "\00a0";
     }

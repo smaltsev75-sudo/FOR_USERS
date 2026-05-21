@@ -13,6 +13,7 @@ import { messageService } from '../services/message.js';
 import { showModal, hideModal } from './modalManager.js';
 import { icon } from '../utils/icons.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { formatUiPercent } from '../utils/percent.js';
 
 /**
  * Builds the HTML for a single recommendation card.
@@ -38,7 +39,7 @@ function buildRecCardHtml(rec, modifier = '') {
 /**
  * Группирует «общие» (team-*) рекомендации по `type`, склеивая проценты
  * от разных алгоритмов в диапазон. До v8.29.2 dedup шёл по `message`, но
- * процент в строке («60.7%», «66.4%», «65.7%») делал каждое сообщение
+ * процент в строке («61%», «66%», «66%») делал каждое сообщение
  * формально уникальным — пользователь видел 3 одинаковые карточки подряд.
  *
  * @param {Array<{type:string, message:string, percentage?:number, severity:string, suggestion?:string}>} recs
@@ -56,17 +57,23 @@ export function aggregateGeneralRecommendations(recs) {
     });
 
     return Array.from(byType.values()).map(({ rec, percentages }) => {
-        if (percentages.length <= 1) return rec; // ничего склеивать
+        if (percentages.length <= 1) {
+            const pct = percentages[0];
+            if (typeof pct !== 'number') return rec; // ничего склеивать
+            return { ...rec, message: replaceMessagePercentage(rec.message, `${formatUiPercent(pct)}%`) };
+        }
         const min = Math.min(...percentages);
         const max = Math.max(...percentages);
-        const minStr = min.toFixed(1);
-        const maxStr = max.toFixed(1);
+        const minStr = formatUiPercent(min);
+        const maxStr = formatUiPercent(max);
         const rangeText = minStr === maxStr ? `${minStr}%` : `${minStr}%–${maxStr}%`;
-        // Заменяем единичный «(NN.N%)» в исходном message на диапазон.
-        // Подходит для шаблонов: «… (60.7%) …» / «… (60.7%)»
-        const msgWithRange = rec.message.replace(/\(\d+(?:[.,]\d+)?%\)/, `(${rangeText})`);
+        const msgWithRange = replaceMessagePercentage(rec.message, rangeText);
         return { ...rec, message: msgWithRange };
     });
+}
+
+function replaceMessagePercentage(message, replacement) {
+    return String(message).replace(/\(\d+(?:[.,]\d+)?%\)/, `(${replacement})`);
 }
 
 /**

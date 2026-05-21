@@ -5,6 +5,7 @@ import { calculateTaskTotal } from '../domain/task.js';
 import { calculatePriorityScore, parseCriteriaScore } from '../domain/criteria.js';
 import { createTaskRowVM, getPriorityLevel, getPriorityLabel } from './createTaskRowVM.js';
 import { icon } from '../utils/icons.js';
+import { formatUiPercent } from '../utils/percent.js';
 
 const ROLE_ICON_MAP = {
     uiux: 'rolePalette',
@@ -45,6 +46,18 @@ let renderGeneration = 0;
 export function _getRenderGeneration() { return renderGeneration; }
 
 const VALID_DENSITIES = ['compact', 'comfortable'];
+const CRITERIA_SCORE_OPTIONS_ID = 'criteria-score-options';
+
+function createCriteriaScoreDatalist() {
+    const datalist = document.createElement('datalist');
+    datalist.id = CRITERIA_SCORE_OPTIONS_ID;
+    for (let score = 0; score <= 10; score++) {
+        const option = document.createElement('option');
+        option.value = String(score);
+        datalist.appendChild(option);
+    }
+    return datalist;
+}
 
 export function filterTasks(tasks, taskFilter) {
     let filtered = [...tasks];
@@ -125,13 +138,18 @@ export function renderTaskList(state, nfs, taskController = null) {
         if (valueEl && id) previousScores.set(id, valueEl.textContent);
     });
 
-    // v8.27.2: запоминаем focused stepper (если был внутри #taskList), чтобы
-    // вернуть фокус после replaceChildren — иначе пользователь, нажимающий
-    // ArrowUp/Down подряд, видит сброс фокуса после первого изменения.
-    let focusedStepperKey = null;
+    // v8.30.39: запоминаем focused criteria score input/stepper (если был
+    // внутри #taskList), чтобы вернуть фокус после replaceChildren.
+    let focusedCriteriaScoreKey = null;
     const active = document.activeElement;
-    if (active && taskListEl.contains(active) && active.classList.contains('criteria-eval-stepper')) {
-        focusedStepperKey = `${active.dataset.id}::${active.dataset.criterionId}`;
+    if (active && taskListEl.contains(active)) {
+        const input = active.closest?.('.criteria-score-input');
+        const stepper = active.closest?.('.criteria-eval-stepper');
+        const taskId = input?.dataset.id || stepper?.dataset.id;
+        const criterionId = input?.dataset.criterionId || stepper?.dataset.criterionId;
+        if (taskId && criterionId) {
+            focusedCriteriaScoreKey = `${taskId}::${criterionId}`;
+        }
     }
 
     taskListEl.replaceChildren();
@@ -157,6 +175,10 @@ export function renderTaskList(state, nfs, taskController = null) {
     const config = state.config;
     const availMap = {};
     roles.forEach(r => availMap[r.id] = calculateAvailability(r, config).useful);
+
+    if (criteria.length > 0 && filteredTasks.some(task => !task.excluded)) {
+        taskListEl.appendChild(createCriteriaScoreDatalist());
+    }
 
     // --- Progressive Rendering ---
     const BATCH_SIZE = 20;
@@ -216,7 +238,7 @@ export function renderTaskList(state, nfs, taskController = null) {
     highlightNewTask(state, taskListEl);
     updateOverloadIndicators(state, nfs);
     pulseChangedPriorityScores(taskListEl, previousScores);
-    restoreStepperFocus(taskListEl, focusedStepperKey);
+    restoreCriteriaScoreFocus(taskListEl, focusedCriteriaScoreKey);
 }
 
 // v8.30.31: экспорт updateOverloadIndicators — renderGroupedTasks теперь тоже
@@ -224,18 +246,19 @@ export function renderTaskList(state, nfs, taskController = null) {
 export { updateOverloadIndicators };
 
 /**
- * v8.27.2: восстанавливает фокус на step-spinbutton после re-render.
- * Без этого подряд нажатия ArrowUp/ArrowDown теряют фокус после первого
- * (replaceChildren сносит focused-узел).
+ * v8.30.39: восстанавливает фокус на editable criteria score input после
+ * re-render. Без этого подряд Enter/ArrowUp/ArrowDown теряют фокус после
+ * первого изменения (replaceChildren сносит focused-узел).
  */
-function restoreStepperFocus(taskListEl, key) {
+function restoreCriteriaScoreFocus(taskListEl, key) {
     if (!key) return;
     const [taskId, criterionId] = key.split('::');
     const stepper = taskListEl.querySelector(
         `.criteria-eval-stepper[data-id="${taskId}"][data-criterion-id="${criterionId}"]`
     );
-    if (stepper && typeof stepper.focus === 'function') {
-        stepper.focus({ preventScroll: true });
+    const input = stepper?.querySelector('.criteria-score-input');
+    if (input && typeof input.focus === 'function') {
+        input.focus({ preventScroll: true });
     }
 }
 
@@ -361,9 +384,9 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
         `;
     }
 
-    // v8.27.2: <select> заменён на stepper [−] N [+] + spinbutton-фокусируемый
-    // дисплей. Контракт события — CustomEvent('criteria-score-change') с
-    // detail { taskId, criterionId, score }. Контроллер слушает на #taskList.
+    // v8.30.39: быстрые [−]/[+] сохранены, но само число снова editable:
+    // input 0..10 + datalist. Корень — group, не spinbutton, чтобы не было
+    // вложенного интерактива с ложной ARIA-семантикой.
     let criteriaRows = '';
     criteria.forEach((criterion, idx) => {
         const evaluation = taskEvaluations[criterion.id] || { score: 0, value: 0 };
@@ -385,16 +408,28 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
                     <span class="criteria-eval-contribution" title="Вклад в Priority Score (score × weight / 10)">+${nfs.formatNumber(value)}</span>
                 </div>
                 <div class="criteria-eval-stepper"
-                     role="spinbutton"
-                     aria-valuemin="0" aria-valuemax="10" aria-valuenow="${score}"
-                     aria-label="${criterionNameSafe} оценка"
+                     role="group"
+                     aria-label="${criterionNameSafe} оценка от 0 до 10"
                      data-id="${task.id}"
-                     data-criterion-id="${criterion.id}"
-                     tabindex="0">
+                     data-criterion-id="${criterion.id}">
                     <button type="button" class="criteria-eval-step criteria-eval-step--minus"
                             data-action="decrement" aria-label="Уменьшить" tabindex="-1"
                             ${minDisabled ? 'disabled' : ''}>−</button>
-                    <span class="criteria-eval-score criteria-score-input" data-id="${task.id}" data-criterion-id="${criterion.id}">${score}</span>
+                    <span class="criteria-eval-score">
+                        <input type="number"
+                               class="criteria-score-input"
+                               data-id="${task.id}"
+                               data-criterion-id="${criterion.id}"
+                               value="${score}"
+                               min="0"
+                               max="10"
+                               step="1"
+                               inputmode="numeric"
+                               list="${CRITERIA_SCORE_OPTIONS_ID}"
+                               autocomplete="off"
+                               aria-label="${criterionNameSafe} оценка от 0 до 10">
+                        <span class="criteria-score-print" aria-hidden="true">${score}</span>
+                    </span>
                     <button type="button" class="criteria-eval-step criteria-eval-step--plus"
                             data-action="increment" aria-label="Увеличить" tabindex="-1"
                             ${maxDisabled ? 'disabled' : ''}>+</button>
@@ -555,7 +590,7 @@ function updateOverloadIndicators(state, nfs) {
             const pctOverload = cap > 0 ? (diff / cap * 100) : 0;
             if (cap > 0 && diff > 0 && pctOverload > config.alert) {
                 const pct = (cumulativeTotal / cap * 100) - 100;
-                container.innerHTML = `<div class="overload-tag" title="Перегрузка: +${nfs.formatNumber(diff)} ч (+${nfs.formatNumber(pctOverload)}%)">+${nfs.formatNumber(diff)} <span class="overload-percent">+${nfs.formatNumber(pct)}%</span></div>`;
+                container.innerHTML = `<div class="overload-tag" title="Перегрузка: +${nfs.formatNumber(diff)} ч (+${formatUiPercent(pctOverload)}%)">+${nfs.formatNumber(diff)} <span class="overload-percent">+${formatUiPercent(pct)}%</span></div>`;
             } else {
                 container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
             }

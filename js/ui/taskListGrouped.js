@@ -13,6 +13,7 @@ import { calculateTaskTotal } from '../domain/task.js';
 import { calculatePriorityScore } from '../domain/criteria.js';
 import { assignQuadrants, QUADRANT_KEYS_WITH_EXCLUDED, getQuadrantLabel, getQuadrantDescription } from '../domain/selection/quadrants.js';
 import { ICONS } from '../utils/icons.js';
+import { formatUiPercent } from '../utils/percent.js';
 import { filterTasks, createTaskElement, resolveDensity, updateOverloadIndicators } from './taskList.js';
 
 /**
@@ -182,7 +183,7 @@ function formatGroupSummary(count, effort, capacityPct, nfs) {
 
     const tasksText = formatTaskCount(count);
     const effortText = `${safeNfs.formatNumber(effort)}ч`;
-    const pctText = `${safeNfs.formatNumber(capacityPct, 0)}%`;
+    const pctText = `${formatUiPercent(capacityPct)}%`;
 
     return `
         <span class="quadrant-summary-tasks">${escapeHtml(String(count))} ${escapeHtml(tasksText)}</span>

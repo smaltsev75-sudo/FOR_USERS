@@ -26,6 +26,7 @@ import {
 } from '../domain/role.js';
 import { ICONS } from '../utils/icons.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { clampPercentWidth, formatSignedUiPercent, formatUiPercent } from '../utils/percent.js';
 
 const ROLE_ICON_MAP = {
     uiux: 'rolePalette',
@@ -68,7 +69,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
     const header = document.createElement('header');
     header.className = `team-cap__header team-cap__header--${totalLevel}`;
     header.setAttribute('role', 'group');
-    header.setAttribute('aria-label', `Общая загрузка команды ${nfs.formatNumber(total.percentage, 0)}%`);
+    header.setAttribute('aria-label', `Общая загрузка команды ${formatUiPercent(total.percentage)}%`);
 
     const headerText = document.createElement('div');
     headerText.className = 'team-cap__header-text';
@@ -85,7 +86,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
     percentBlock.className = 'team-cap__header-percent';
     const percentValue = document.createElement('span');
     percentValue.className = 'team-cap__header-percent-value';
-    percentValue.textContent = nfs.formatNumber(total.percentage, 0);
+    percentValue.textContent = formatUiPercent(total.percentage);
     const percentSign = document.createElement('span');
     percentSign.className = 'team-cap__header-percent-sign';
     percentSign.textContent = '%';
@@ -96,7 +97,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
     const gauge = document.createElement('div');
     gauge.className = 'team-cap__gauge';
     gauge.setAttribute('aria-hidden', 'true');
-    const cappedPct = Math.min(total.percentage, 100);
+    const cappedPct = clampPercentWidth(total.percentage);
     const dashLen = (cappedPct / 100) * 213.6; // 2*PI*r где r=34
     gauge.innerHTML = `
         <svg class="team-cap__gauge-svg" viewBox="0 0 80 80" focusable="false">
@@ -137,16 +138,16 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
             card.classList.add(data.delta > 0 ? 'cap-segment--preview-up' : 'cap-segment--preview-down');
         }
         card.dataset.role = role.id;
-        card.dataset.percent = String(Math.round(displayPercent));
+        card.dataset.percent = formatUiPercent(displayPercent);
         card.dataset.delta = String(data.delta);
         card.setAttribute('role', 'listitem');
 
-        const labelText = `${role.name}: ${nfs.formatNumber(data.current)} из ${nfs.formatNumber(data.capacity)} ч (${nfs.formatNumber(data.currentPercent, 0)}%)`;
+        const labelText = `${role.name}: ${nfs.formatNumber(data.current)} из ${nfs.formatNumber(data.capacity)} ч (${formatUiPercent(data.currentPercent)}%)`;
         card.setAttribute('aria-label', labelText);
         let titleText = labelText;
         if (previewTask && data.delta !== 0) {
             const sign = data.delta > 0 ? '+' : '';
-            titleText += ` → ${sign}${nfs.formatNumber(data.delta)} ч (${sign}${nfs.formatNumber(data.deltaPercent, 0)}%)`;
+            titleText += ` → ${sign}${nfs.formatNumber(data.delta)} ч (${formatSignedUiPercent(data.deltaPercent)})`;
         }
         card.title = titleText;
 
@@ -168,7 +169,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
         pctWrap.className = 'team-cap__card-percent cap-segment__percent';
         const pctNum = document.createElement('span');
         pctNum.className = 'team-cap__card-percent-num';
-        pctNum.textContent = nfs.formatNumber(displayPercent, 0);
+        pctNum.textContent = formatUiPercent(displayPercent);
         const pctSup = document.createElement('sup');
         pctSup.textContent = '%';
         pctWrap.appendChild(pctNum);
@@ -177,8 +178,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
         if (previewTask && data.delta !== 0) {
             const deltaEl = document.createElement('span');
             deltaEl.className = 'team-cap__card-delta cap-segment__delta';
-            const sign = data.delta > 0 ? '+' : '';
-            deltaEl.textContent = `${sign}${nfs.formatNumber(data.deltaPercent, 0)}%`;
+            deltaEl.textContent = formatSignedUiPercent(data.deltaPercent);
             pctWrap.appendChild(deltaEl);
         }
 
@@ -193,7 +193,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
 
         const fill = document.createElement('div');
         fill.className = 'team-cap__card-bar-fill cap-segment__fill';
-        fill.style.width = `${Math.min(displayPercent, 100)}%`;
+        fill.style.width = `${clampPercentWidth(displayPercent)}%`;
         barWrap.appendChild(fill);
 
         if (overload) {
@@ -205,7 +205,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
         if (previewTask && data.delta !== 0) {
             const previewFill = document.createElement('div');
             previewFill.className = 'team-cap__card-bar-preview cap-segment__preview-fill';
-            previewFill.style.width = `${Math.min(data.nextPercent, 100)}%`;
+            previewFill.style.width = `${clampPercentWidth(data.nextPercent)}%`;
             barWrap.appendChild(previewFill);
         }
 

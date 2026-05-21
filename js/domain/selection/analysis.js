@@ -3,6 +3,7 @@ import { selectTasksMatrix } from './matrix.js';
 import { selectTasksValueDensity } from './valueDensity.js';
 import { selectTasksHybrid } from './hybrid.js';
 import { SELECTION_CONFIG } from './config.js';
+import { formatUiPercent } from '../../utils/percent.js';
 
 export function selectTasks(tasks, capacityByRole, algorithm) {
     switch (algorithm) {
@@ -69,7 +70,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'overload',
                 role,
-                message: `Роль ${role} перегружена на ${(percentage - 100).toFixed(1)}%`,
+                message: `Роль ${role} перегружена на ${formatUiPercent(percentage - 100)}%`,
                 severity: 'high',
                 suggestion: 'Рассмотрите возможность передачи части задач или расширения команды'
             });
@@ -80,7 +81,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'underload',
                 role,
-                message: `Роль ${role} недогружена (${percentage.toFixed(1)}%)`,
+                message: `Роль ${role} недогружена (${formatUiPercent(percentage)}%)`,
                 severity: 'medium',
                 suggestion: 'Ищите задачи, которые требуют данной роли'
             });
@@ -91,7 +92,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'warning',
                 role,
-                message: `Роль ${role} близка к перегрузке (${percentage.toFixed(1)}%)`,
+                message: `Роль ${role} близка к перегрузке (${formatUiPercent(percentage)}%)`,
                 severity: 'low',
                 suggestion: 'Мониторьте загрузку в течение спринта'
             });
@@ -107,7 +108,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'team-underload',
                 percentage: totalPercentage,
-                message: `Общая загрузка команды низкая (${totalPercentage.toFixed(1)}%). Рекомендуется добавить больше задач.`,
+                message: `Общая загрузка команды низкая (${formatUiPercent(totalPercentage)}%). Рекомендуется добавить больше задач.`,
                 severity: 'medium',
                 suggestion: 'Просмотрите задачи из всех квадрантов, включая Q3 и Q4'
             });
@@ -115,7 +116,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'team-overload',
                 percentage: totalPercentage,
-                message: `Общая загрузка команды высокая (${totalPercentage.toFixed(1)}%). Рассмотрите возможность переноса части задач.`,
+                message: `Общая загрузка команды высокая (${formatUiPercent(totalPercentage)}%). Рассмотрите возможность переноса части задач.`,
                 severity: 'high',
                 suggestion: 'Перенесите задачи с низким приоритетом на следующий спринт'
             });
@@ -123,7 +124,7 @@ export function getOptimizationRecommendations(selectionResult, capacityByRole) 
             recommendations.push({
                 type: 'team-optimal',
                 percentage: totalPercentage,
-                message: `Общая загрузка команды оптимальна (${totalPercentage.toFixed(1)}%)`,
+                message: `Общая загрузка команды оптимальна (${formatUiPercent(totalPercentage)}%)`,
                 severity: 'info',
                 suggestion: 'Текущая загрузка соответствует целевым показателям'
             });

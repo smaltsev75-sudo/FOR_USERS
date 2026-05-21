@@ -150,6 +150,9 @@ export class TaskController {
 
             taskList.addEventListener('change', (e) => {
                 if (e.target.dataset.action === 'updateEst') this.handleUpdateEst(e);
+                if (e.target.classList?.contains('criteria-score-input')) {
+                    this.handleCriteriaScoreChange(e);
+                }
             });
 
             // v8.30.24: live cap для inline est inputs через делегацию `input`
@@ -162,7 +165,7 @@ export class TaskController {
                 }
             });
 
-            // v8.27.2: stepper-кнопки criteria-eval вместо <select>.
+            // v8.30.39: stepper-кнопки criteria-eval вокруг editable input.
             // Контракт: click на .criteria-eval-step с data-action=decrement|increment
             // меняет score и пересчитывает priority через handleCriteriaScoreChange.
             taskList.addEventListener('click', (e) => {
@@ -171,7 +174,9 @@ export class TaskController {
                 const stepper = btn.closest('.criteria-eval-stepper');
                 if (!stepper) return;
                 const action = btn.dataset.action;
-                const current = parseCriteriaScore(stepper.getAttribute('aria-valuenow'));
+                const input = stepper.querySelector('.criteria-score-input');
+                if (!input) return;
+                const current = parseCriteriaScore(input.value);
                 let next = current;
                 if (action === 'decrement') next = Math.max(0, current - 1);
                 if (action === 'increment') next = Math.min(10, current + 1);
@@ -179,12 +184,16 @@ export class TaskController {
                 this._dispatchCriteriaScore(stepper, next);
             });
 
-            // Клавиатура на spinbutton: ↑/→/PgUp = +1, ↓/←/PgDn = −1, Home = 0, End = 10.
+            // Клавиатура на input: ↑/→/PgUp = +1, ↓/←/PgDn = −1,
+            // Home = 0, End = 10, Enter = commit typed value.
             taskList.addEventListener('keydown', (e) => {
-                const stepper = e.target.closest('.criteria-eval-stepper');
-                if (!stepper || e.target !== stepper) return;
-                const current = parseCriteriaScore(stepper.getAttribute('aria-valuenow'));
+                const input = e.target.closest?.('.criteria-score-input');
+                if (!input) return;
+                const stepper = input.closest('.criteria-eval-stepper');
+                if (!stepper) return;
+                const current = parseCriteriaScore(input.value);
                 let next;
+                let forceCommit = false;
                 switch (e.key) {
                     case 'ArrowUp':
                     case 'ArrowRight':
@@ -194,9 +203,13 @@ export class TaskController {
                     case 'PageDown': next = Math.max(0, current - 1); break;
                     case 'Home':     next = 0; break;
                     case 'End':      next = 10; break;
+                    case 'Enter':
+                        next = current;
+                        forceCommit = true;
+                        break;
                     default: return;
                 }
-                if (next === current) return;
+                if (next === current && !forceCommit) return;
                 e.preventDefault();
                 this._dispatchCriteriaScore(stepper, next);
             });
@@ -333,9 +346,9 @@ export class TaskController {
     handleCriteriaScoreChange(e) { this._list.handleCriteriaScoreChange(e); }
 
     /**
-     * v8.27.2: применяет новое значение score к задаче через stepper.
+     * v8.30.39: применяет новое значение score к задаче через stepper group.
      * Эмулирует change-событие для совместимости с _list.handleCriteriaScoreChange().
-     * @param {HTMLElement} stepper — корень spinbutton'а с data-id и data-criterion-id
+     * @param {HTMLElement} stepper — корень group с data-id и data-criterion-id
      * @param {number} score — новое значение 0..10
      */
     _dispatchCriteriaScore(stepper, score) {
