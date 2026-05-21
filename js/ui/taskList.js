@@ -46,17 +46,13 @@ let renderGeneration = 0;
 export function _getRenderGeneration() { return renderGeneration; }
 
 const VALID_DENSITIES = ['compact', 'comfortable'];
-const CRITERIA_SCORE_OPTIONS_ID = 'criteria-score-options';
 
-function createCriteriaScoreDatalist() {
-    const datalist = document.createElement('datalist');
-    datalist.id = CRITERIA_SCORE_OPTIONS_ID;
+function buildCriteriaScoreOptions(selectedScore) {
+    let options = '';
     for (let score = 0; score <= 10; score++) {
-        const option = document.createElement('option');
-        option.value = String(score);
-        datalist.appendChild(option);
+        options += `<option value="${score}"${score === selectedScore ? ' selected' : ''}>${score}</option>`;
     }
-    return datalist;
+    return options;
 }
 
 export function filterTasks(tasks, taskFilter) {
@@ -175,10 +171,6 @@ export function renderTaskList(state, nfs, taskController = null) {
     const config = state.config;
     const availMap = {};
     roles.forEach(r => availMap[r.id] = calculateAvailability(r, config).useful);
-
-    if (criteria.length > 0 && filteredTasks.some(task => !task.excluded)) {
-        taskListEl.appendChild(createCriteriaScoreDatalist());
-    }
 
     // --- Progressive Rendering ---
     const BATCH_SIZE = 20;
@@ -384,9 +376,9 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
         `;
     }
 
-    // v8.30.39: быстрые [−]/[+] сохранены, но само число снова editable:
-    // input 0..10 + datalist. Корень — group, не spinbutton, чтобы не было
-    // вложенного интерактива с ложной ARIA-семантикой.
+    // v8.30.40: быстрые [−]/[+] сохранены, само число editable input, а
+    // dropdown — отдельный native select со всеми 0..10. Datalist не подходит:
+    // браузер фильтрует options по текущему тексту и показывает один вариант.
     let criteriaRows = '';
     criteria.forEach((criterion, idx) => {
         const evaluation = taskEvaluations[criterion.id] || { score: 0, value: 0 };
@@ -399,6 +391,7 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
         const minDisabled = score <= 0;
         const maxDisabled = score >= 10;
         const criterionNameSafe = escapeHtml(criterion.name);
+        const scoreOptions = buildCriteriaScoreOptions(score);
         criteriaRows += `
             <div class="criteria-eval-item" data-criterion-id="${criterion.id}" data-score-level="${level}">
                 <div class="criteria-eval-head">
@@ -425,9 +418,16 @@ function buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore) 
                                max="10"
                                step="1"
                                inputmode="numeric"
-                               list="${CRITERIA_SCORE_OPTIONS_ID}"
                                autocomplete="off"
-                               aria-label="${criterionNameSafe} оценка от 0 до 10">
+                               aria-label="${criterionNameSafe} ввод оценки от 0 до 10">
+                        <span class="criteria-score-dropdown">
+                            <select class="criteria-score-select"
+                                    data-id="${task.id}"
+                                    data-criterion-id="${criterion.id}"
+                                    aria-label="${criterionNameSafe} выбрать оценку от 0 до 10">
+                                ${scoreOptions}
+                            </select>
+                        </span>
                         <span class="criteria-score-print" aria-hidden="true">${score}</span>
                     </span>
                     <button type="button" class="criteria-eval-step criteria-eval-step--plus"

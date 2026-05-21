@@ -150,7 +150,8 @@ export class TaskController {
 
             taskList.addEventListener('change', (e) => {
                 if (e.target.dataset.action === 'updateEst') this.handleUpdateEst(e);
-                if (e.target.classList?.contains('criteria-score-input')) {
+                if (e.target.classList?.contains('criteria-score-input')
+                    || e.target.classList?.contains('criteria-score-select')) {
                     this.handleCriteriaScoreChange(e);
                 }
             });
@@ -343,7 +344,28 @@ export class TaskController {
      * Сейчас главный путь идёт через _dispatchCriteriaScore (stepper).
      * @param {Event} e
      */
-    handleCriteriaScoreChange(e) { this._list.handleCriteriaScoreChange(e); }
+    handleCriteriaScoreChange(e) {
+        this._syncCriteriaScoreControls(e.target);
+        this._list.handleCriteriaScoreChange(e);
+    }
+
+    /**
+     * v8.30.40: task-card has two controls for the same score: direct input and
+     * native select. Selecting from the dropdown can blur the input; depending on
+     * browser event order, that late input change must not re-commit the old value.
+     * @param {EventTarget|null} target
+     */
+    _syncCriteriaScoreControls(target) {
+        if (!target || !('value' in target)) return;
+        const normalizedScore = String(parseCriteriaScore(target.value));
+        target.value = normalizedScore;
+        const stepper = target.closest?.('.criteria-eval-stepper');
+        if (!stepper) return;
+        const input = stepper.querySelector('.criteria-score-input');
+        const select = stepper.querySelector('.criteria-score-select');
+        if (input) input.value = normalizedScore;
+        if (select) select.value = normalizedScore;
+    }
 
     /**
      * v8.30.39: применяет новое значение score к задаче через stepper group.

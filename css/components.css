@@ -652,7 +652,7 @@
     text-align: right;
 }
 
-.criteria-score-input {
+.criteria-eval-score .criteria-score-input {
     background: var(--bg-main);
     border: 1px solid var(--border);
     color: var(--text);
@@ -663,7 +663,7 @@
     text-align: center;
 }
 
-.criteria-score-input:focus {
+.criteria-eval-score .criteria-score-input:focus {
     outline: none;
     border-color: var(--accent);
 }

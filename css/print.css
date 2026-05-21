@@ -497,7 +497,9 @@
         min-width: 0 !important;
     }
 
-    .criteria-score-input {
+    .criteria-score-input,
+    .criteria-score-select,
+    .criteria-score-dropdown {
         display: none !important;
     }
 

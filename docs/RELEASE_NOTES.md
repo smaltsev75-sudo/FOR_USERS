@@ -1,5 +1,56 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.40) — criteria score native dropdown hotfix
+
+> User-reported hotfix к v8.30.39. `input[list]` оказался неверным UI-контрактом
+> для bounded range `0..10`: браузер фильтрует `datalist` по текущему input value
+> и может показывать только одно значение. Исправлено на явный native `select`
+> 0..10 рядом с прямым числовым input; кнопки `−/+` сохранены.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (user-reported UX)** | В карточке задачи dropdown score показывал только текущее значение, а не полный диапазон `0..10`. Причина: `datalist` работает как autocomplete и фильтрует options. | `datalist` удалён. Score-контрол теперь состоит из `input type="number" min=0 max=10 step=1` для клавиатуры и отдельного native `select` с option `0..10` для выбора из списка. | [taskList.js](../js/ui/taskList.js), [task-card.css](../css/task-card.css), [components.css](../css/components.css), [print.css](../css/print.css) |
+| 2 | **P1 (browser event order)** | После выбора значения из select поздний `change` от соседнего input мог повторно применить старое значение и откатить score. | Controller синхронизирует sibling input/select на нормализованный `parseCriteriaScore` перед записью в store. | [taskController.js](../js/controllers/taskController.js), [taskController.test.js](../tests/unit/controllers/taskController.test.js) |
+| 3 | **P2 (process memory)** | Повторяющийся ручной вопрос пользователя: после PLANNER-фикса приходится отдельно напоминать про `sprint-planner` и GH Release. | Зафиксировано правило: пользовательский PLANNER-фикс по умолчанию доводится до full release-chain, если явно не сказано «только локально» / «без релиза». | [CLAUDE.md](../CLAUDE.md), memory `feedback_planner_release_chain_default.md` |
+
+### Новые тесты (TDD / guard)
+
+- `taskList.test.js` — red на старом DOM: score input не должен иметь `list`, рядом должен быть `select.criteria-score-select` с options `0..10`, `#criteria-score-options` отсутствует.
+- `taskController.test.js` — red на старом controller path: `change` от select обновляет evaluation; stale `change` от sibling input не откатывает выбранное select значение.
+- `planner.spec.js` — e2e criteria flow проверяет options `0..10` и реальный `selectOption('10')` после прямого ввода `7`.
+
+### Visual / manual verification
+
+- Desktop Chromium screenshot: `test-results/criteria-score-select-desktop.png` — score input и отдельная стрелка select видны между `−/+`.
+- Mobile Chromium screenshot: `test-results/criteria-score-select-mobile-task.png` — score-контрол остаётся доступным на narrow viewport.
+- Browser DOM repro: options `["0","1","2","3","4","5","6","7","8","9","10"]`, `hasDatalist=false`, после `selectOption('10')` input/select синхронно `10`.
+
+### Уроки и классы ошибок
+
+1. **`datalist` ≠ select.** Для bounded enum/range, где UI обещает «выбрать из списка», нужен native `select` или combobox. `input[list]` — autocomplete surface.
+2. **Два entry point для одного значения требуют синхронизации до persistence.** Direct input, select и stepper-кнопки должны сходиться в один normalized controller path.
+3. **Локальный PLANNER-фикс без handoff/release — незавершённая поставка.** Если фикс предназначен пользователю, release-chain теперь является default.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1650/1650 PASS, 104 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 235/235 PASS, parallel projects | **0** | **1** on mobile-webkit | **yes** |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `17/17 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e: chromium `197/197`, mobile-chromium `17/17`, webkit `4/4`, mobile-webkit `17/17`; wrapper exit 0. Mobile-webkit child exit 1 с `[OVERRIDE]` из-за известной worker shutdown race на Node/Windows; это НЕ clean child exit.
+- Post-bump verification: `npx jest --no-coverage` → 1650/1650 PASS; `npm run test:e2e:smoke` → 17/17 PASS, wrapper exit 0, child exit 0, без override.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.39) — UI percent contract + editable criteria score
 
 > User-reported repair-pass после v8.30.38. Закрывает две видимые UX-поверхности:
