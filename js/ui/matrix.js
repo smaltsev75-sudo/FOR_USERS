@@ -1,6 +1,5 @@
 // js/ui/matrix.js
 import { escapeHtml } from '../utils/escapeHtml.js';
-import { calculateAvailability } from '../domain/role.js';
 
 const TYPE_KEYS = ['bug', 'tech', 'us'];
 const TYPE_LABELS = { bug: 'Bug', tech: 'Tech', us: 'US' };
@@ -9,13 +8,6 @@ export function renderMatrix(state, nfs) {
     const matrixBody = document.getElementById('matrixBody');
     const matrixFooter = document.getElementById('matrixFooter');
     if (!matrixBody || !matrixFooter) return;
-    const config = state.config;
-
-    let totalAvailable = 0;
-    state.roles.forEach(role => {
-        const avail = calculateAvailability(role, config);
-        totalAvailable += avail.useful;
-    });
 
     const stats = state.roles.map(r => ({ name: r.name, bug: 0, tech: 0, us: 0 }));
     state.tasks.forEach(t => {
@@ -68,18 +60,26 @@ export function renderMatrix(state, nfs) {
     }).join('');
     matrixBody.innerHTML = rows;
 
-    const bugPercent = totalAvailable > 0 ? (typeTotals.bug / totalAvailable) * 100 : 0;
-    const techPercent = totalAvailable > 0 ? (typeTotals.tech / totalAvailable) * 100 : 0;
-    const usPercent = totalAvailable > 0 ? (typeTotals.us / totalAvailable) * 100 : 0;
+    // v8.30.37 (user audit): семантика «Распределение работ по типам задач» —
+    // ДОЛЯ работы по типу от ОБЩЕЙ работы (сумма по строке ИТОГО = 100%).
+    // Раньше: pct = type_hours / team_capacity → сумма ≠ 100% (бывает <100% при
+    // недозагрузке, >100% при перегрузке). Это была другая метрика («% capacity
+    // использовано данным типом»), но название блока и пользовательское ожидание
+    // — именно distribution. Capacity-сравнение остаётся в Team Capacity Dashboard.
+    const totalWork = typeTotals.bug + typeTotals.tech + typeTotals.us;
+    const pctOf = (v) => totalWork > 0 ? (v / totalWork) * 100 : 0;
+    const bugPercent = pctOf(typeTotals.bug);
+    const techPercent = pctOf(typeTotals.tech);
+    const usPercent = pctOf(typeTotals.us);
 
     const totalCells = [
         { type: 'bug', total: typeTotals.bug, pct: bugPercent },
         { type: 'tech', total: typeTotals.tech, pct: techPercent },
         { type: 'us', total: typeTotals.us, pct: usPercent }
     ].map(({ type, total, pct }) => {
-        const tip = totalAvailable > 0
-            ? `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (${nfs.formatNumber(pct)}% от ёмкости команды)`
-            : `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (ёмкость команды не задана)`;
+        const tip = totalWork > 0
+            ? `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (${nfs.formatNumber(pct)}% от общего объёма работ)`
+            : `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (задач нет)`;
         return `<td class="matrix-total number-display" data-type="${type}" title="${escapeHtml(tip)}">
             <div class="matrix-total__percent percentage-cell">${nfs.formatNumber(pct)}%</div>
             <div class="matrix-total__value">${nfs.formatNumber(total)} ч</div>

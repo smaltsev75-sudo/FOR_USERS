@@ -66,8 +66,20 @@ export function migratePersistedState(rawState = {}) {
     // v8.30.36: criteria нормализуются ПЕРЕД tasks, чтобы передать valid criterion
     // ids в normalizeTasks → normalizeCriteriaEvaluations (orphan keys drop).
     const criteria = normalizeCriteria(safe.criteria);
-    const validCriterionIds = new Set(criteria.map(c => c.id));
-    const tasks = normalizeTasks(safe.tasks, { validCriterionIds });
+    // v8.30.37 S2/S3: используем RAW set уникальных strict-int ids ИЗ исходного
+    // safe.criteria (до reallocation). Это согласуется с тем, что отчитывает
+    // analyzeImportIssues — alignment invariant. После реаллокации criteria.id
+    // могут получить другие значения; eval ключ ссылается на «изначально
+    // импортированный» id, поэтому используем raw view.
+    const rawCriterionIdSet = collectRawCriterionIds(safe.criteria);
+    // criteriaContextProvided=true если поле criteria явно задано (даже [] —
+    // явное «нет критериев»). Если поле вообще отсутствует — отложить filter:
+    // runtime (App.js / FileController) подмешивает DEFAULT_CRITERIA, поэтому
+    // valid-key eval'ы должны выжить.
+    const criteriaContextProvided = safe.criteria !== undefined;
+    const tasks = normalizeTasks(safe.tasks, {
+        validCriterionIds: criteriaContextProvided ? rawCriterionIdSet : null
+    });
     const numberFormatSettings = normalizeNumberFormat(safe.numberFormatSettings);
 
     return {
@@ -94,6 +106,8 @@ export function migratePersistedState(rawState = {}) {
  */
 export function serializeStateForStorage(state, criteria, decimalSeparator) {
     const normalizedCriteria = normalizeCriteria(criteria);
+    // v8.30.37 S3: при сериализации (post-runtime) используем normalized ids —
+    // здесь все ids уже settled, нет смысла моделировать raw view.
     const validCriterionIds = new Set(normalizedCriteria.map(c => c.id));
     return {
         version: APP_CONFIG.STORAGE_VERSION,
@@ -378,26 +392,57 @@ function normalizeCriteria(criteria) {
     });
 }
 
+// v8.30.37 S3: helper для сбора raw уникальных strict-int criterion ids ИЗ
+// исходного payload (до reallocation в normalizeCriteria). Используется для
+// «view of orphan» в normalizeTasks → normalizeCriteriaEvaluations, чтобы
+// alignment'нуть с analyzeImportIssues (которое работает с тем же raw view).
+function collectRawCriterionIds(rawCriteria) {
+    const ids = new Set();
+    if (!Array.isArray(rawCriteria)) return ids;
+    for (const c of rawCriteria) {
+        if (c && typeof c === 'object' && !Array.isArray(c)) {
+            const cid = parseStrictIntegerInRange(c.id, 1, Number.MAX_SAFE_INTEGER);
+            if (cid !== null) ids.add(cid);
+        }
+    }
+    return ids;
+}
+
 // v8.30.36: context-aware. Принимает Set валидных criterion ids;
 // invalid keys (non-strict int) и orphan keys (нет в validIds) ВЫБРАСЫВАЮТСЯ
 // из state, не остаются как silent ghost-entries. Раньше analyzeImportIssues
 // reports'ил их как issue, но migrate сохранял — alignment fail.
+//
+// v8.30.37 S1: canonical keys + collision policy. Key '01' parsed → 1, но
+// раньше сохранялся как '01' → runtime `evaluations[c.id=1]` промахивался,
+// priority=0. Теперь canonical key = `String(parseStrictIntegerInRange(...))`,
+// то есть всегда без leading-zero. Collision (например {"1":6, "01":8}):
+// first canonical key wins (детерминистично, та же политика что для task id).
+//
+// v8.30.37 S2: validCriterionIds может быть `null` — это означает «контекст
+// criteria не задан в payload, валидные ключи оставляем, runtime подмешает
+// criteria из CriteriaManager». Только invalid keys (non-strict int) дропаются.
 function normalizeCriteriaEvaluations(evaluations, validCriterionIds = null) {
     const safe = safePlainObject(evaluations);
     const normalized = {};
-    Object.keys(safe).forEach((key) => {
+    for (const key of Object.keys(safe)) {
         const keyId = parseStrictIntegerInRange(key, 1, Number.MAX_SAFE_INTEGER);
         // Invalid key (non-strict int) — drop полностью.
-        if (keyId === null) return;
-        // Orphan key (нет такого criterion) — drop.
-        if (validCriterionIds !== null && !validCriterionIds.has(keyId)) return;
+        if (keyId === null) continue;
+        // Orphan key (нет такого criterion в payload) — drop. validCriterionIds=null
+        // означает «нет context'а» (criteria field absent) → keep.
+        if (validCriterionIds !== null && !validCriterionIds.has(keyId)) continue;
+        // v8.30.37 S1: canonical-key first-wins. Если уже есть entry для этого
+        // numeric id (от предыдущего ключа в collision), пропускаем — детерминистично.
+        const canonicalKey = String(keyId);
+        if (Object.prototype.hasOwnProperty.call(normalized, canonicalKey)) continue;
         const item = safe[key];
         const safeItem = (item && typeof item === 'object' && !Array.isArray(item)) ? item : {};
-        normalized[key] = {
+        normalized[canonicalKey] = {
             score: normalizeInteger(safeItem.score, 0, 0, 10),
             value: normalizeNumber(safeItem.value, 0, 0, Number.POSITIVE_INFINITY, 2)
         };
-    });
+    }
     return normalized;
 }
 
@@ -603,6 +648,8 @@ export function analyzeImportIssues(rawState) {
                 // v8.30.36: task.est — strict effort parser. Раньше silent
                 // corruption (Number('5abc')=NaN→0, -3→clamp 0, 1.234→1.23 round,
                 // Infinity→0, '1e10'→exponent accepted) — НЕ репортилось.
+                // v8.30.37 S4: + warning для unknown role keys (devops, и т.п.) —
+                // раньше silently dropped, теперь честно reported.
                 if (t.est !== undefined) {
                     if (t.est === null
                         || typeof t.est !== 'object'
@@ -610,7 +657,13 @@ export function analyzeImportIssues(rawState) {
                         const sample = JSON.stringify(t.est) || String(t.est);
                         issues.push(`tasks[${i}].est = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применены 0 для всех ролей`);
                     } else {
+                        const validRoleIds = new Set(ROLES.map(r => r.id));
                         for (const roleId of Object.keys(t.est)) {
+                            // S4: неизвестная роль — поле физически отбрасывается migrate'ом.
+                            if (!validRoleIds.has(roleId)) {
+                                issues.push(`tasks[${i}].est.${roleId} — unknown role; поле отброшено (валидные: ${ROLES.map(r => r.id).join(', ')})`);
+                                continue;
+                            }
                             const v = t.est[roleId];
                             if (v === undefined || v === null) continue;
                             const parsed = parseStrictDecimal(v, { min: 0, max: Number.POSITIVE_INFINITY, maxDecimals: 2 });
@@ -622,6 +675,9 @@ export function analyzeImportIssues(rawState) {
                 }
 
                 // v8.30.35: criteriaEvaluations — расширенная проверка.
+                // v8.30.37 S1: canonical-key normalization + collision detection.
+                // v8.30.37 S3: используется RAW criterion-id view — тот же что
+                //              normalizeTasks применяет (alignment invariant).
                 if (t.criteriaEvaluations !== undefined) {
                     if (t.criteriaEvaluations === null
                         || typeof t.criteriaEvaluations !== 'object'
@@ -629,6 +685,10 @@ export function analyzeImportIssues(rawState) {
                         const sample = JSON.stringify(t.criteriaEvaluations) || String(t.criteriaEvaluations);
                         issues.push(`tasks[${i}].criteriaEvaluations = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применён пустой`);
                     } else {
+                        // Track canonical keys, чтобы детектировать collision
+                        // {"1":x, "01":y} → одно и то же id=1.
+                        const seenCanonical = new Map(); // canonicalKey → first rawKey
+                        const criteriaProvided = Array.isArray(rawState.criteria);
                         Object.entries(t.criteriaEvaluations).forEach(([critKey, ev]) => {
                             // Key должен быть strict positive integer
                             const parsedKey = parseStrictIntegerInRange(critKey, 1, Number.MAX_SAFE_INTEGER);
@@ -636,8 +696,23 @@ export function analyzeImportIssues(rawState) {
                                 issues.push(`tasks[${i}].criteriaEvaluations[${JSON.stringify(critKey)}] — invalid key (требуется целое ≥1)`);
                                 return;
                             }
-                            // Orphan: ключ не соответствует ни одному criterion id
-                            if (validCritIds.size > 0 && !validCritIds.has(parsedKey)) {
+                            const canonicalKey = String(parsedKey);
+                            // v8.30.37 S1: non-canonical форма (leading zero, " 1" и т.п.) —
+                            // явный сигнал что ключ будет нормализован.
+                            if (critKey !== canonicalKey) {
+                                issues.push(`tasks[${i}].criteriaEvaluations["${critKey}"] — non-canonical key; нормализован к "${canonicalKey}"`);
+                            }
+                            // v8.30.37 S1: collision — несколько ключей мапятся в один canonical.
+                            if (seenCanonical.has(canonicalKey)) {
+                                const firstRaw = seenCanonical.get(canonicalKey);
+                                issues.push(`tasks[${i}].criteriaEvaluations — canonical key collision: "${firstRaw}" и "${critKey}" → "${canonicalKey}"; first-wins ("${firstRaw}" сохранён)`);
+                            } else {
+                                seenCanonical.set(canonicalKey, critKey);
+                            }
+                            // v8.30.37 S2: orphan только когда criteria field задано.
+                            // Если criteria absent — runtime подмешает DEFAULT_CRITERIA,
+                            // и eval может оказаться валидным → не warn'им.
+                            if (criteriaProvided && !validCritIds.has(parsedKey)) {
                                 issues.push(`tasks[${i}].criteriaEvaluations[${critKey}] — orphaned key (нет criterion с id=${parsedKey})`);
                             }
                             // Item должен быть plain-object

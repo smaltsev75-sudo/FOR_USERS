@@ -1,5 +1,66 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.37) — alignment invariant pass 2: legacy criteria / canonical keys / dup ids / unknown role / honest exit reporting
+
+> Adversarial repair-pass v8.30.37 после внешнего аудита v8.30.36. Цель — закрыть
+> оставшиеся дырки alignment invariant: `analyzeImportIssues` и
+> `migratePersistedState` обязаны давать **одну и ту же картину распадов**, а
+> `RELEASE_NOTES` обязан различать wrapper exit и Playwright child exit. Контракты
+> FTE/Off сохранены: FTE — целый ≥0 БЕЗ верхнего лимита, Off — decimal ≥0 c
+> точностью 1 знак.
+
+### Закрытые поверхности (7: 5 audit + 1 honest reporting + 1 user-reported)
+
+| # | Severity | Класс ошибки | Фикс |
+|---|---|---|---|
+| 1 | **P1** | **Legacy/default criteria data loss.** Импорт `{tasks:[{id:1, criteriaEvaluations:{'1':{score:8}}}]}` без поля `criteria`: `analyzeImportIssues` `issues=[]`, но `migratePersistedState` физически удалял evaluations (validCriterionIds=Set()). При load в App.js / FileController подмешиваются `DEFAULT_CRITERIA` (ids 1..4), eval'ы уже потеряны → `priorityScore=0` silently. | `migratePersistedState` различает: `criteria` поле **присутствует** (даже `[]`) → orphan-фильтрация активна; **отсутствует** → передаём `validCriterionIds=null`, `normalizeCriteriaEvaluations` оставляет valid-key entries verbatim. Runtime (CriteriaManager → DEFAULT_CRITERIA) подмешивает critria; eval для id=1 выживает. `analyzeImportIssues` соответственно не warn'ит orphan для отсутствующего поля. |
+| 2 | **P1** | **Non-canonical eval key `"01"`.** `parseStrictIntegerInRange('01', 1, MAX)=1`, ключ проходил validation, но сохранялся как `"01"`. `calculatePriorityScore` читает `evaluations[c.id=1]` → JS coerce'ит к `"1"` → промах → priority=0. | `normalizeCriteriaEvaluations` теперь использует canonical key = `String(parseStrictIntegerInRange(...))` (без leading-zero). `analyzeImportIssues` warns `non-canonical key; нормализован к "1"`. Тест: `priorityScore` стал = 8 (был = 0). |
+| 3 | **P1** | **Collision `{"1":6, "01":8}`.** Оба ключа проходили validation, оба сохранялись, runtime читал `"1":6` (детерминированно по JSON-order, но **скрыто** — пользователь видит и `1` и `01`, не знает какое значение применяется). | First-canonical-wins policy: при duplicate canonical key — пропускаем последующие. `analyzeImportIssues` warns `canonical key collision: "1" и "01" → "1"; first-wins ("1" сохранён)`. Та же политика что для task id collision (see [persistence.js → normalizeTasks](../js/state/persistence.js)). |
+| 4 | **P1** | **Raw-vs-normalized criterion id mismatch.** `criteria=[{id:1},{id:1}]` + eval `'2'`: `analyzeImportIssues` warn'ил orphan (raw view={1}), но `migratePersistedState` сохранял ключ `'2'` (post-reallocation view={1,2} — второй duplicate получал id=2). | `normalizeTasks` принимает **raw** criterion-id set (через helper `collectRawCriterionIds`), не post-reallocation. Это та же view что использует `analyzeImportIssues`. Alignment ✓ — `'2'` теперь дропается в обоих местах. |
+| 5 | **P2** | **Unknown role effort keys silent.** `est:{devops:5, fe:2}`: `migrate` итерирует `ROLES`, поле `devops` физически выбрасывалось, но `analyzeImportIssues` `issues=[]`. Пользователь не знал что часть данных потеряна. | В `analyzeImportIssues` добавлен per-key check: если `roleId` не в `ROLES`, push warning `tasks[i].est.devops — unknown role; поле отброшено (валидные: uiux, ca, fe, be, qa)`. Migrate-поведение не изменено (поле уже выбрасывалось — просто теперь честно reported). |
+| 6 | **P2** | **e2e reporting в RELEASE_NOTES не разделял wrapper exit и Playwright child exit.** Если `decision.override=true`, релиз называл это «clean», что вводило в заблуждение. | RELEASE_NOTES обязательная разбивка: **Wrapper exit** (что вернул runner) и **Playwright child exit** (что отдал Playwright CLI). При `override=true` строка «**not** clean child exit — worker shutdown race override». |
+| 7 | **P1 (user-reported)** | **«Распределение работ по типам задач (ч)» — сумма % по строке ИТОГО ≠ 100%.** В matrix.js v8.30.36 проценты считались как `type_hours / totalAvailable` (% от ёмкости команды). Семантически неверно для блока с названием «распределение» — пользователь ожидает share, сумма = 100%. UserManual FAQ даже объяснял что «может быть >100% — это нормально», вместо того чтобы признать другую метрику в неправильном блоке. | `pct = type_hours / Σ(typeTotals) × 100`. Сумма = 100% (или 0% при пустых данных). Tooltip: «% от общего объёма работ». UserManual FAQ переписан. Capacity-сравнение остаётся в Team Capacity Dashboard. |
+
+### Новые тесты (TDD — падали на v8.30.36 коде)
+
+- [tests/unit/state/persistence.alignmentV37.test.js](../tests/unit/state/persistence.alignmentV37.test.js) — **новый файл**, 13 тестов. Покрывает 4 surface: legacy default criteria (4 теста — eval survives migrate, runtime priority non-zero, явный `criteria=[]` drops, no orphan warning без context), canonical key (4 теста — `"01"` canonicalized, runtime reads `"1"`, collision first-wins, warning emitted), raw-vs-normalized (2 теста — orphan eval `'2'` при duplicate ids dropped в обоих местах, valid eval keeps), unknown role (3 теста — `devops` warns, migrate drops, valid roles не warn'ят). **8/13 падали на v8.30.36** (verified).
+- Существующие 1597 тестов не пострадали — 1610/1610 PASS.
+
+### Уроки и классы ошибок
+
+1. **«Криterii отсутствуют»** не равно **«криterii=[]»**. Первое — отложенный контекст (runtime подмешает DEFAULT_CRITERIA), второе — явное «список пуст». Контракт нормализатора должен различать через `null` vs пустой Set.
+2. **Canonical key для ANY referential-integrity field.** Если ключ — это нумерический id, всегда нормализовать к `String(parseStrict(...))`. Leading-zero / whitespace / `'01'` vs `'1'` — все коллапсируют в одну canonical форму, иначе runtime lookup промахивается.
+3. **Raw view vs post-reallocation view — разные семантики.** `analyzeImportIssues` отчитывается о том, что было в payload; `migratePersistedState` производит state с allocate'нутыми id. Eval ключ ссылается на **то, что было**, не на «реаллоцированное» — иначе один баг (duplicate criterion id) накладывается на другой (eval orphan), и анализ говорит одно, миграция делает другое.
+4. **Unknown enum value — обязательное warning.** Если migrate физически дропает поле (ROLE id не в whitelist, status not in enum, и т.д.), `analyzeImportIssues` обязан reported. «Silently dropped because unknown» — это data loss без сигнала.
+5. **Wrapper exit ≠ child exit.** Любой runner с override-логикой обязан в RELEASE_NOTES различать обе колонки. «Clean exit» — только когда обе равны 0 БЕЗ override.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1612/1612 PASS, 98 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 17/17 PASS (5.2 min) | **0** | **1** | **yes** (worker shutdown race на Node 22+ Windows) |
+| `npm run test:e2e` | пред. запуск: 234/235 PASS, 1 flaky webkit sticky (modal не закрылся в loop на 14 задачах) | **1** | **1** | **no** (1 unexpected failure — НЕ regression v8.30.37, не трогал modal/sticky код; pre-existing webkit flakiness, см. v8.30.27→28 known limitation) | 
+
+**Честный отчёт по e2e:**
+- Smoke (17 mobile-webkit tests): **wrapper exit 0**, но **child exit 1** — это **НЕ clean exit**. `[OVERRIDE]` фактически сработал: `child exit=1 but JSON status=passed expected=17 unexpected=0`. Decision helper применил worker-shutdown-race override (узкое legitimate path). Stderr явно вывел `[OVERRIDE]` marker и WARN.
+- Full e2e (235 tests across chromium/mobile-chromium/webkit/mobile-webkit) — последний полный запуск завершился 234 passed / 1 unexpected (webkit sticky test, `#createTaskModal` не перешёл в hidden в setup loop на 14-й итерации). Это **известная flakiness в webkit под Node 22+ Windows** (см. ловушки v8.30.27→28). НЕ regression v8.30.37 — изменения этого релиза касаются только `js/state/persistence.js`, `js/ui/matrix.js`, тестов, docs. Ни modal, ни webkit, ни scroll-логика не тронуты. Полный e2e не перезапущен после фикса matrix — user попросил не зависать.
+
+### Node repro (alignment подтверждён) — scripts/repro-alignment-v37.mjs
+
+```
+=== 1. legacy default criteria === Issues 0; priority @ runtime DEFAULT_CRITERIA = 3.2 (было 0)
+=== 2. canonical "01" key === Issues 1 (non-canonical → "1"); migrated key="1"; priority=8 (было 0)
+=== 2b. collision { "1":6, "01":8 } === Issues 2 (non-canonical + collision); first-wins "1":6; priority=6
+=== 3. duplicate criterion ids + eval "2" === Issues 2 (dup id + orphan "2"); migrated evaluations={} (было {"2":...})
+=== 4. unknown role devops === Issues 1 (unknown role); migrated est без devops (warning теперь честный)
+```
+
+Каждый случай: issue text **соответствует** реальному post-migration state. Alignment invariant ✓.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.36) — alignment invariant: analyzeImportIssues ↔ migratePersistedState
 
 > Adversarial repair-pass после v8.30.35. Главная цель — **выровнять** warnings и
