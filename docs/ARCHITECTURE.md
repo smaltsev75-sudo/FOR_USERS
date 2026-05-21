@@ -73,6 +73,55 @@ JSON. Тот же контракт применять для любых крит
 давали коллизии — несколько импортированных записей получали один id,
 `Store.updateTask`/`updateCriteria` потом промахивались.
 
+### 2.4 safePlainObject + total migration (v8.30.34 → v8.30.35)
+
+`migratePersistedState` и все nested-normalizers — total functions для
+любого JSON-ish input. `function f(x = {})` ловит ТОЛЬКО `undefined`;
+на `null`/`'string'`/`[]` default не срабатывает, downstream бросает
+TypeError или загрязняется numeric/char ключами через spread.
+
+Helper `safePlainObject(value)` в [persistence.js](../js/state/persistence.js):
+plain object → passthrough; null/array/primitive → `{}`. Применяется к
+`normalizeConfig` / `normalizeRoles` / `normalizeTaskFilter` / `normalizeTaskSort`
+/ `normalizeUi` / `normalizeNumberFormat` / `normalizeCriteriaEvaluations`
++ `criteria.scale` spread.
+
+`analyzeImportIssues` сообщает shape-distortion для каждого nested поля:
+`config = "abc" отвергнуто (требуется plain object)`,
+`tasks[i].criteriaEvaluations[k] = [...] отвергнуто (требуется object)`,
+`roles = {} отвергнуто (требуется array)`.
+
+### 2.5 Strict dependencies contract (v8.30.35)
+
+`task.dependencies` — массив **strict positive integer task id**.
+Принимается number-integer или строка из чистых цифр (`'2'` → `2`).
+Отбрасывается без silent fallback:
+
+- non-integer (`'JIRA-42'`, `1.9`, `NaN`, `Infinity`, `{}`) → invalid id;
+- self-id (cycle of length 1);
+- unknown id (нет такой задачи в импорте);
+- duplicates → схлопываются.
+
+`analyzeImportIssues` сообщает каждый случай отдельным issue. DFS cycle detection
+(post-pass) сообщает циклы `A→B→A`, `A→B→C→A`. Cap 100 элементов сохранён —
+защита от раздутия cache key в `buildAlgorithmsCacheKey`.
+
+### 2.6 e2e-runner: pure decideExitCode + честные лимиты process-tree (v8.30.35)
+
+`scripts/e2eRunnerDecision.js` — pure-функция, 14 unit-тестов. Условия:
+stale JSON / interrupted / timedOut / 0 tests / unexpected>0 / clean pass
++ worker shutdown race override. Каждое condition покрывается отдельно,
+inline-логика в `child.on('exit')` запрещена (arch-test).
+
+`scripts/processTreeKill.js` — Windows `taskkill /F /T /PID` (T = tree),
+Unix `process.kill(-pgid)`. Работает по pid, без `exitCode !== null` guard.
+
+**Лимит документирован**: post-exit cleanup через original parent pid
+**не работает на Windows** (taskkill /T не находит tree mortvo parent).
+Pre-exit summary-watchdog — единственный реальный механизм. Подробности —
+[docs/RELEASE_PROCESS.md#e2e-runner](RELEASE_PROCESS.md) + тест
+[windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js).
+
 ## 3. State и Render Flow
 
 ```

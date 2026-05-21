@@ -104,17 +104,31 @@ export function serializeStateForStorage(state, criteria, decimalSeparator) {
     };
 }
 
-function normalizeConfig(config = {}, defaults) {
+// v8.30.35: safePlainObject — единый helper для всех nested JSON-ish shapes.
+// Раньше каждый normalize*-функция использовала `function f(x = {})` default-
+// параметр который ловил ТОЛЬКО undefined. На `null`/`'string'`/`[1,2,3]`:
+//   - normalizeConfig(null, def) → `null.days` → TypeError.
+//   - normalizeConfig([1,2,3], def) → `{...def, ...[1,2,3]}` загрязняет
+//     config numeric keys 0/1/2. Скрытый distortion.
+//   - normalizeConfig('abc', def) → `{...def, ..."abc"}` загрязняет char-keys.
+// Этот helper: всё что не plain-object (null/array/primitive) → {}.
+function safePlainObject(value) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+    return {};
+}
+
+function normalizeConfig(config, defaults) {
+    const safe = safePlainObject(config);
     return {
         ...defaults,
-        ...config,
-        days: normalizeInteger(config.days, defaults.days, 1),
-        holidays: normalizeInteger(config.holidays, defaults.holidays ?? 0, 0),
-        availCoef: normalizeNumber(config.availCoef, defaults.availCoef, 0, 100, 2),
-        alert: normalizeInteger(config.alert, defaults.alert, 0),
-        product: String(config.product ?? defaults.product),
-        startDate: String(config.startDate ?? defaults.startDate ?? ''),
-        endDate: String(config.endDate ?? defaults.endDate ?? '')
+        ...safe,
+        days: normalizeInteger(safe.days, defaults.days, 1),
+        holidays: normalizeInteger(safe.holidays, defaults.holidays ?? 0, 0),
+        availCoef: normalizeNumber(safe.availCoef, defaults.availCoef, 0, 100, 2),
+        alert: normalizeInteger(safe.alert, defaults.alert, 0),
+        product: String(safe.product ?? defaults.product),
+        startDate: String(safe.startDate ?? defaults.startDate ?? ''),
+        endDate: String(safe.endDate ?? defaults.endDate ?? '')
     };
 }
 
@@ -181,21 +195,33 @@ function collectValidIds(items, minValue = 1) {
  * делает `JSON.stringify(task.dependencies || [])`, что:
  *   1) бросает `TypeError` на циклическом объекте из malicious JSON импорта;
  *   2) для не-массива даёт мусорный hash → cache stale.
- * Symmetric guard на entry point (§3.quat): нормализуем при load, не пытаемся
- * лечить в downstream.
  *
- * Контракт: только массив примитивных id (number/string), max 100 элементов
- * чтобы не раздувать ключ при злоупотреблении.
+ * v8.30.35: контракт ужесточён. Раньше принимали любую string ≤64ch, что
+ * позволяло хранить '2abc' / '1.9' / 'self' и тащить их в selection
+ * (где они не матчились ни с одной task id, тихо игнорировались). Теперь:
+ *   - только strict positive integer (number или string из чистых цифр);
+ *   - string из чистых цифр → number (remap "2" → 2);
+ *   - дубли убираются (Set);
+ *   - self-id игнорируется;
+ *   - всё что не валидный id → отбрасывается (warnings собирает analyzeImportIssues).
+ *
+ * @param {*} deps
+ * @param {number} [selfId] — id текущей задачи, для self-cycle фильтра
  */
-function normalizeTaskDependencies(deps) {
+function normalizeTaskDependencies(deps, selfId = null) {
     if (!Array.isArray(deps)) return [];
-    const filtered = [];
+    const seen = new Set();
+    const result = [];
     for (const dep of deps) {
-        if (typeof dep === 'number' && Number.isFinite(dep)) filtered.push(dep);
-        else if (typeof dep === 'string' && dep.length > 0 && dep.length < 64) filtered.push(dep);
-        if (filtered.length >= 100) break;
+        const parsed = parseStrictIntegerInRange(dep, 1, Number.MAX_SAFE_INTEGER);
+        if (parsed === null) continue;       // invalid → skip
+        if (parsed === selfId) continue;     // self-cycle → skip
+        if (seen.has(parsed)) continue;       // duplicate → skip
+        seen.add(parsed);
+        result.push(parsed);
+        if (result.length >= 100) break;
     }
-    return filtered;
+    return result;
 }
 
 function normalizeTasks(tasks) {
@@ -229,9 +255,20 @@ function normalizeTasks(tasks) {
             exclusionReason: String(task.exclusionReason ?? ''),
             criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
             priorityScore: normalizeNumber(task.priorityScore, 0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, 2),
-            dependencies: normalizeTaskDependencies(task.dependencies)
+            // v8.30.35: dependencies нормализуются ПОСЛЕ resolution id, с
+            // selfId-фильтром (self-cycle отбрасывается). Unknown id (нет
+            // соответствующей task) фильтруются во втором проходе ниже,
+            // где есть полный список validTaskIds.
+            dependencies: normalizeTaskDependencies(task.dependencies, id)
         };
     });
+    // v8.30.35: второй проход — отфильтровать unknown id из dependencies.
+    // Это симметричный guard на entry point: cache key и selection алгоритмы
+    // полагаются что dependencies — это array of valid existing task ids.
+    const validTaskIds = new Set(normalized.map(t => t.id));
+    for (const t of normalized) {
+        t.dependencies = t.dependencies.filter(d => validTaskIds.has(d));
+    }
     return fixTaskOrder(normalized);
 }
 
@@ -263,50 +300,62 @@ function normalizeCriteria(criteria) {
             abbreviation: String(criterion.abbreviation ?? ''),
             weight: normalizeInteger(criterion.weight, 0, 0, 100),
             rationale: String(criterion.rationale ?? ''),
-            scale: { ...(criterion.scale || {}) }
+            // v8.30.35: safePlainObject — раньше `{...(criterion.scale || {})}`
+            // на array принимал numeric-key spread (`{...[1,2,3]}` → {0:1,1:2,2:3}),
+            // на string — char-key spread. Теперь только plain object → spread,
+            // иначе пустой объект.
+            scale: { ...safePlainObject(criterion.scale) }
         };
     });
 }
 
-function normalizeCriteriaEvaluations(evaluations = {}) {
-    if (!evaluations || typeof evaluations !== 'object') return {};
+function normalizeCriteriaEvaluations(evaluations) {
+    // v8.30.35: safePlainObject. Раньше {1: 'string'} ловил `'string' || {}` →
+    // truthy, потом `'string'.score` = undefined → silent fallback 0 без issue.
+    const safe = safePlainObject(evaluations);
     const normalized = {};
-    Object.keys(evaluations).forEach((key) => {
-        const item = evaluations[key] || {};
+    Object.keys(safe).forEach((key) => {
+        const item = safe[key];
+        // v8.30.35: только plain-object item считается valid; примитивы/array → defaults.
+        const safeItem = (item && typeof item === 'object' && !Array.isArray(item)) ? item : {};
         normalized[key] = {
-            score: normalizeInteger(item.score, 0, 0, 10),
-            value: normalizeNumber(item.value, 0, 0, Number.POSITIVE_INFINITY, 2)
+            score: normalizeInteger(safeItem.score, 0, 0, 10),
+            value: normalizeNumber(safeItem.value, 0, 0, Number.POSITIVE_INFINITY, 2)
         };
     });
     return normalized;
 }
 
-function normalizeNumberFormat(settings = {}) {
-    const separator = settings?.decimalSeparator === '.' ? '.' : ',';
+function normalizeNumberFormat(settings) {
+    const safe = safePlainObject(settings);
+    const separator = safe.decimalSeparator === '.' ? '.' : ',';
     return { ...DEFAULT_NUMBER_FORMAT_SETTINGS, decimalSeparator: separator };
 }
 
-function normalizeTaskFilter(filter = {}) {
+function normalizeTaskFilter(filter) {
+    const safe = safePlainObject(filter);
     return {
         ...DEFAULT_TASK_FILTER,
-        search: String(filter?.search ?? ''),
-        type: ['us', 'bug', 'tech', ''].includes(filter?.type) ? filter.type : ''
+        search: String(safe.search ?? ''),
+        type: ['us', 'bug', 'tech', ''].includes(safe.type) ? safe.type : ''
     };
 }
 
-function normalizeTaskSort(sort = {}) {
+function normalizeTaskSort(sort) {
+    const safe = safePlainObject(sort);
     return {
         ...DEFAULT_TASK_SORT,
-        by: String(sort?.by || DEFAULT_TASK_SORT.by),
-        order: sort?.order === 'asc' ? 'asc' : 'desc'
+        by: String(safe.by || DEFAULT_TASK_SORT.by),
+        order: safe.order === 'asc' ? 'asc' : 'desc'
     };
 }
 
-function normalizeUi(ui = {}) {
-    const algorithm = ui?.activeAlgorithm;
-    const density = ui?.density;
-    const viewMode = ui?.viewMode;
-    const rawExpanded = ui?.expandedQuadrants;
+function normalizeUi(ui) {
+    const safe = safePlainObject(ui);
+    const algorithm = safe.activeAlgorithm;
+    const density = safe.density;
+    const viewMode = safe.viewMode;
+    const rawExpanded = safe.expandedQuadrants;
 
     const expandedQuadrants = Array.isArray(rawExpanded)
         ? rawExpanded.filter((k) => VALID_QUADRANT_KEYS.includes(k))
@@ -344,9 +393,18 @@ export function analyzeImportIssues(rawState) {
         return { issues };
     }
 
-    // config: days ≥1, holidays ≥0, alert ≥0 (целые)
+    // v8.30.35: config shape — раньше null/[]/"abc" silently fell back в
+    // defaults без issue. Теперь report'им любое отклонение от plain-object.
+    if (rawState.config !== undefined && (rawState.config === null
+        || typeof rawState.config !== 'object'
+        || Array.isArray(rawState.config))) {
+        const sample = JSON.stringify(rawState.config) || String(rawState.config);
+        issues.push(`config = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применены defaults`);
+    }
+
+    // config: days ≥1, holidays ≥0, alert ≥0 (целые) — только если config plain object
     const cfg = rawState.config;
-    if (cfg && typeof cfg === 'object') {
+    if (cfg && typeof cfg === 'object' && !Array.isArray(cfg)) {
         checkIntegerField(issues, 'config.days', cfg.days, 1, Number.MAX_SAFE_INTEGER);
         checkIntegerField(issues, 'config.holidays', cfg.holidays, 0, Number.MAX_SAFE_INTEGER);
         checkIntegerField(issues, 'config.alert', cfg.alert, 0, Number.MAX_SAFE_INTEGER);
@@ -410,34 +468,143 @@ export function analyzeImportIssues(rawState) {
         });
     }
 
-    // tasks: id (strict positive int), criteriaEvaluations.score (integer 0..10)
+    // v8.30.35: pre-compute valid criterion ids ДЛЯ orphan detection в evaluations
+    const validCritIds = new Set();
+    if (Array.isArray(rawState.criteria)) {
+        for (const c of rawState.criteria) {
+            if (c && typeof c === 'object' && !Array.isArray(c)) {
+                const cid = parseStrictIntegerInRange(c.id, 1, Number.MAX_SAFE_INTEGER);
+                if (cid !== null) validCritIds.add(cid);
+            }
+        }
+    }
+    // v8.30.35: pre-compute valid task ids ДЛЯ unknown-dependency detection
+    const validTaskIds = new Set();
+    if (Array.isArray(rawState.tasks)) {
+        for (const t of rawState.tasks) {
+            if (t && typeof t === 'object' && !Array.isArray(t)) {
+                const tid = parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER);
+                if (tid !== null) validTaskIds.add(tid);
+            }
+        }
+    }
+
+    // tasks: id (strict positive int), criteriaEvaluations.score (integer 0..10),
+    // dependencies (strict integer, no self, no unknown, no cycle).
     if (Array.isArray(rawState.tasks)) {
         const seenTaskIds = new Set();
         rawState.tasks.forEach((t, i) => {
             if (t && typeof t === 'object' && !Array.isArray(t)) {
-                if (t.id !== undefined && parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER) === null) {
+                const taskId = parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER);
+                if (t.id !== undefined && taskId === null) {
                     issues.push(`tasks[${i}].id = ${JSON.stringify(t.id)} отвергнуто (требуется целое ≥1); назначен новый id`);
-                } else if (t.id !== undefined) {
-                    const sid = parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER);
-                    if (seenTaskIds.has(sid)) {
-                        issues.push(`tasks[${i}].id = ${sid} — duplicate task id; назначен новый (risk: update/delete мог попасть в несколько задач)`);
+                } else if (taskId !== null) {
+                    if (seenTaskIds.has(taskId)) {
+                        issues.push(`tasks[${i}].id = ${taskId} — duplicate task id; назначен новый (risk: update/delete мог попасть в несколько задач)`);
                     } else {
-                        seenTaskIds.add(sid);
+                        seenTaskIds.add(taskId);
                     }
                 }
-                if (t.criteriaEvaluations && typeof t.criteriaEvaluations === 'object') {
-                    Object.entries(t.criteriaEvaluations).forEach(([critId, ev]) => {
-                        if (ev && typeof ev === 'object' && ev.score !== undefined && parseStrictIntegerInRange(ev.score, 0, 10) === null) {
-                            issues.push(`tasks[${i}].criteriaEvaluations[${critId}].score = ${JSON.stringify(ev.score)} отвергнуто (требуется целое 0..10); применён fallback`);
-                        }
-                    });
+
+                // v8.30.35: criteriaEvaluations — расширенная проверка.
+                if (t.criteriaEvaluations !== undefined) {
+                    if (t.criteriaEvaluations === null
+                        || typeof t.criteriaEvaluations !== 'object'
+                        || Array.isArray(t.criteriaEvaluations)) {
+                        const sample = JSON.stringify(t.criteriaEvaluations) || String(t.criteriaEvaluations);
+                        issues.push(`tasks[${i}].criteriaEvaluations = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применён пустой`);
+                    } else {
+                        Object.entries(t.criteriaEvaluations).forEach(([critKey, ev]) => {
+                            // Key должен быть strict positive integer
+                            const parsedKey = parseStrictIntegerInRange(critKey, 1, Number.MAX_SAFE_INTEGER);
+                            if (parsedKey === null) {
+                                issues.push(`tasks[${i}].criteriaEvaluations[${JSON.stringify(critKey)}] — invalid key (требуется целое ≥1)`);
+                                return;
+                            }
+                            // Orphan: ключ не соответствует ни одному criterion id
+                            if (validCritIds.size > 0 && !validCritIds.has(parsedKey)) {
+                                issues.push(`tasks[${i}].criteriaEvaluations[${critKey}] — orphaned key (нет criterion с id=${parsedKey})`);
+                            }
+                            // Item должен быть plain-object
+                            if (ev === null || typeof ev !== 'object' || Array.isArray(ev)) {
+                                const sample = JSON.stringify(ev) || String(ev);
+                                issues.push(`tasks[${i}].criteriaEvaluations[${critKey}] = ${sample.slice(0, 60)} отвергнуто (требуется object); применён {score:0,value:0}`);
+                                return;
+                            }
+                            // score должен быть целое 0..10
+                            if (ev.score !== undefined && parseStrictIntegerInRange(ev.score, 0, 10) === null) {
+                                issues.push(`tasks[${i}].criteriaEvaluations[${critKey}].score = ${JSON.stringify(ev.score)} отвергнуто (требуется целое 0..10); применён fallback`);
+                            }
+                        });
+                    }
                 }
-                if (t.dependencies !== undefined && !Array.isArray(t.dependencies)) {
-                    issues.push(`tasks[${i}].dependencies = ${JSON.stringify(t.dependencies).slice(0, 80)} отвергнуто (требуется array); применён []`);
+
+                // v8.30.35: dependencies — детальная проверка контракта.
+                if (t.dependencies !== undefined) {
+                    if (!Array.isArray(t.dependencies)) {
+                        issues.push(`tasks[${i}].dependencies = ${JSON.stringify(t.dependencies).slice(0, 80)} отвергнуто (требуется array); применён []`);
+                    } else {
+                        const normalized = [];
+                        t.dependencies.forEach((dep, j) => {
+                            const parsed = parseStrictIntegerInRange(dep, 1, Number.MAX_SAFE_INTEGER);
+                            if (parsed === null) {
+                                issues.push(`tasks[${i}].dependencies[${j}] = ${JSON.stringify(dep)} — invalid id (требуется целое ≥1); отброшено`);
+                                return;
+                            }
+                            if (taskId !== null && parsed === taskId) {
+                                issues.push(`tasks[${i}].dependencies[${j}] = ${parsed} — self-dependency (cycle of length 1); отброшено`);
+                                return;
+                            }
+                            if (validTaskIds.size > 0 && !validTaskIds.has(parsed)) {
+                                issues.push(`tasks[${i}].dependencies[${j}] = ${parsed} — unknown task id (нет такой задачи); отброшено`);
+                                return;
+                            }
+                            normalized.push(parsed);
+                        });
+                    }
                 }
             } else if (t !== undefined) {
                 issues.push(`tasks[${i}] = ${JSON.stringify(t)} отвергнуто (требуется object); пропущено`);
             }
+        });
+
+        // v8.30.35: detect cycles (A→B→A, A→B→C→A) поверх валидных id.
+        // Используем normalized depencies = только valid in-range integer-ids
+        // (без junk и self).
+        const adj = new Map();
+        rawState.tasks.forEach((t) => {
+            if (!t || typeof t !== 'object' || Array.isArray(t)) return;
+            const tid = parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER);
+            if (tid === null) return;
+            if (!Array.isArray(t.dependencies)) return;
+            const deps = [];
+            for (const d of t.dependencies) {
+                const dn = parseStrictIntegerInRange(d, 1, Number.MAX_SAFE_INTEGER);
+                if (dn === null || dn === tid) continue;
+                if (validTaskIds.has(dn)) deps.push(dn);
+            }
+            adj.set(tid, deps);
+        });
+        const WHITE = 0, GRAY = 1, BLACK = 2;
+        const color = new Map();
+        const cycles = new Set(); // canonical-key для дедупа
+        function dfs(u, path) {
+            color.set(u, GRAY);
+            for (const v of (adj.get(u) || [])) {
+                if (color.get(v) === GRAY) {
+                    const cyclePath = [...path.slice(path.indexOf(v)), v];
+                    cycles.add(cyclePath.slice().sort((a, b) => a - b).join('→'));
+                } else if ((color.get(v) || WHITE) === WHITE) {
+                    dfs(v, [...path, v]);
+                }
+            }
+            color.set(u, BLACK);
+        }
+        for (const node of adj.keys()) {
+            if ((color.get(node) || WHITE) === WHITE) dfs(node, [node]);
+        }
+        cycles.forEach(c => {
+            issues.push(`tasks.dependencies cycle detected: ${c.replace(/→/g, ' → ')}; зависимости отброшены`);
         });
     }
 

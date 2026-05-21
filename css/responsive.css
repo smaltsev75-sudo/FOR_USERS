@@ -166,12 +166,16 @@
     /* Legacy .est-box rules удалены v8.22.2 — task-card.css управляет всем. */
 }
 
-/* ---------- Mobile FAB (v8.30.34) ---------- */
+/* ---------- Mobile FAB (v8.30.34 → v8.30.35 design tokens) ---------- */
 /*
  * Floating Action Button для primary planning action на mobile.
  * Audit T4: пользователь mobile долго скроллит config+capacity+criteria
  * прежде чем доберётся до toolbar с «Новая задача». FAB position:fixed
  * даёт мгновенный доступ.
+ *
+ * v8.30.35: использует существующие design tokens `--accent` / `--accent-text` /
+ * `--accent-bg-strong` (из css/base.css). Раньше hardcoded #2563eb/#fff/#60a5fa
+ * не следовали проектной палитре и не адаптировались под light/dark/sandy.
  *
  * Десктоп: скрыт (display:none — toolbar.export-btn primary даёт ту же функцию).
  * Mobile (≤600px): visible, position fixed bottom-right.
@@ -193,20 +197,23 @@
         height: 56px;
         border-radius: 50%;
         border: none;
-        background: var(--primary, #2563eb);
-        color: var(--text-on-primary, #fff);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        background: var(--accent);
+        color: var(--accent-text);
+        box-shadow: 0 4px 12px var(--shadow-md, rgba(0, 0, 0, 0.25));
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .mobile-fab:hover,
     .mobile-fab:focus-visible {
         transform: scale(1.05);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 6px 16px var(--shadow-lg, rgba(0, 0, 0, 0.3));
     }
     .mobile-fab:focus-visible {
-        outline: 3px solid var(--focus-ring, #60a5fa);
-        outline-offset: 2px;
+        /* Использует общий a11y focus-ring контракт (см. css/a11y.css):
+           outline в цвет --accent + box-shadow halo через --accent-bg-strong */
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 6px var(--accent-bg-strong), 0 6px 16px var(--shadow-lg, rgba(0, 0, 0, 0.3));
     }
     .mobile-fab:active {
         transform: scale(0.95);

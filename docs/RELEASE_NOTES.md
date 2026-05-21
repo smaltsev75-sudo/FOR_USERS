@@ -1,5 +1,57 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.35) — nested shape harden + honest process-tree limit + FAB design tokens
+
+> Adversarial repair-pass после v8.30.34. Закрывает класс **«helper в одном месте — забытые места»** для nested shape, ужесточает контракт dependencies, **честно убирает ложное заявление о post-exit cleanup на Windows**.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1** | `normalizeConfig(null, defaults)` бросал `TypeError` на `null.days`. `config:[1,2,3]` через `{...defaults, ...[1,2,3]}` загрязнял config numeric keys 0/1/2. `config:"abc"` — char-индексами. Применялось к taskFilter/taskSort/ui/numberFormatSettings/criteria.scale тоже | `safePlainObject(value)` helper в [persistence.js](../js/state/persistence.js): только plain object → passthrough; null/array/primitive → `{}`. Применён к **всем** nested shape'ам. `analyzeImportIssues` сообщает `config = "abc" отвергнуто (требуется plain object)` | [persistence.js → safePlainObject + 6 нормализаторов](../js/state/persistence.js), [persistence.nestedShapes.test.js](../tests/unit/state/persistence.nestedShapes.test.js) (29 тестов) |
+| 2 | **P1** | `normalizeCriteriaEvaluations({1: 'string'})` тихо превращал primitive item в `{score:0, value:0}` без issue. `evaluations[i]` мог быть array, key мог быть non-numeric, orphan key (нет criterion с таким id) — всё пропускалось молча | Расширенный contract в `analyzeImportIssues`: invalid key (non-strict int), orphan key (не в `validCritIds`), non-object item — каждое issue с file:index. `normalizeCriteriaEvaluations` использует `safePlainObject` + filter на plain-object items | [persistence.js → analyzeImportIssues + normalizeCriteriaEvaluations](../js/state/persistence.js) |
+| 3 | **P1** | `normalizeTaskDependencies` v8.30.25 принимал любую string ≤63ch (`'JIRA-42'`, `'self'`, `'2abc'`) — тащил их в selection, где они не матчились ни с одной task id. self-dependency и cycles не детектировались | Новый strict-контракт: только positive integer (`parseStrictIntegerInRange(d, 1, MAX)`); string из цифр → number remap; self-id → skip; unknown id (нет такой задачи) → skip; duplicate → schлопывается. DFS cycle detection в `analyzeImportIssues`. Каждое нарушение — отдельный issue с index | [persistence.js → normalizeTaskDependencies + cycle DFS](../js/state/persistence.js), [persistence.nestedShapes.test.js](../tests/unit/state/persistence.nestedShapes.test.js), [persistence.test.js обновлён](../tests/unit/state/persistence.test.js) |
+| 4 | **P1 — честность** | v8.30.34 lifecycle тест передавал в `killProcessTree` **grandchild.pid**, а не **parent.pid** — маскировал реальный Windows-лимит. `killChildTree('SIGKILL')` в `child.on('exit')` создавал впечатление post-exit защиты, которой НЕТ на Windows: после exit'а direct child связь parent→descendants в OS-tree разорвана, `taskkill /F /T /PID <dead_pid>` не находит grandchildren | **Удалён** ложный `if (summarySeen) killChildTree('SIGKILL')` из `child.on('exit')`. Lifecycle тест переименован честно: «killProcessTree(grandchildPid) работает по pid, НЕ доказывает post-exit cleanup через parent.pid». Добавлен [windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js) который **явно документирует** что grandchild ВЫЖИВАЕТ после taskkill(dead parent). Pre-exit summary-watchdog остаётся как единственный реальный механизм cleanup. Limitation документирован в [RELEASE_PROCESS.md](RELEASE_PROCESS.md) | [scripts/e2e-runner.mjs](../scripts/e2e-runner.mjs), [windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js), [e2e-runner-lifecycle.test.js обновлён](../tests/unit/architecture/e2e-runner-lifecycle.test.js) |
+| 5 | **P2** | Arch-invariant отсутствовал: если кто-то поменяет `spawn(..., { detached: !IS_WINDOWS })` на `detached: false` — `process.kill(-pid)` на Unix молча сломается без сигнала | Arch-test `tests/unit/architecture/windows-post-exit-cleanup-lie.test.js` парсит runner-source на regex `/detached:\s*!IS_WINDOWS/` | [windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js) |
+| 6 | **P2** | FAB v8.30.34 использовал hardcoded `#2563eb` / `#fff` / `#60a5fa` — не следовал design palette, не адаптировался под light/dark/sandy темы | FAB переведён на `var(--accent)` / `var(--accent-text)` / `var(--accent-bg-strong)` (существующие токены из `css/base.css`). 2 новых e2e теста: light vs dark цвет различается, outline в цвет --accent | [css/responsive.css](../css/responsive.css), [mobile.spec.js +2 теста](../tests/e2e/mobile.spec.js) |
+
+### Новые тесты (TDD — падают на v8.30.34, проверено)
+
+- [tests/unit/state/persistence.nestedShapes.test.js](../tests/unit/state/persistence.nestedShapes.test.js) — **новый**, 29 тестов: config:null/[]/"abc" не бросают и не загрязняют numeric keys; taskFilter/taskSort/ui/numberFormatSettings/criteria.scale safePlainObject; criteriaEvaluations primitive/array/invalid-key; dependencies strict-id remap/invalid/unknown/self/cycle.
+- [tests/unit/architecture/windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js) — **новый**, 3 теста: Windows post-exit lie (grandchild ВЫЖИВАЕТ после taskkill dead parent — документированный лимит); killProcessTree по grandchild's own pid работает; arch-invariant detached:!IS_WINDOWS.
+- [tests/unit/state/persistence.test.js](../tests/unit/state/persistence.test.js) — **обновлён**: 4 теста v8.30.25 переписаны под новый strict контракт (string-id "JIRA-42" → отбрасывается; unknown id → отбрасывается; self-cycle → отбрасывается).
+- [tests/e2e/mobile.spec.js](../tests/e2e/mobile.spec.js) — **+2 теста**: FAB light/dark тема различается; FAB outline в цвет --accent.
+
+### Уроки и классы ошибок
+
+1. **Default-параметры `function f(x = {})` ловят ТОЛЬКО `undefined`.** На `null`/`'string'`/`[]` они не срабатывают. Каждая migrate-функция всех уровней (не только top-level) должна явно фильтровать через `safePlainObject`. Без этого `{...defaults, ...[1,2,3]}` загрязняет numeric keys.
+2. **«Helper в одном месте» ≠ «класс закрыт».** v8.30.34 ввёл safePlainObject для top-level rawState, забыл про nested. Аудит через 5 минут нашёл. Каждое введение helper'а требует `grep -rn` всех мест где старый паттерн (`= {}`, `|| {}`, `{...x || {}}`) должен быть заменён.
+3. **Lifecycle test ОБЯЗАН вызывать helper в РЕАЛЬНОМ сценарии, не cheat-варианте.** v8.30.34 я передавал `killProcessTree(grandchildPid)` — это test of helper-by-pid, не test of post-exit cleanup. Аудитор за минуты увидел: «передавай parent.pid, как делает runner».
+4. **«Belt-and-suspenders» в cleanup-функциях после exit'а direct child — антипаттерн на Windows.** На Windows process-tree relationship разорвана после exit'а parent'а. Любой `taskkill /T /PID <dead_pid>` — no-op. Если class не закрывается технически — **честное documenting** > ложное заявление.
+5. **Hardcoded цвета в UI = регрессия под темизацию.** Любая UI-компонента должна использовать `var(--accent)` / `var(--accent-text)` / etc., не `#2563eb`. Архитектурно — все цвета в одном месте (`base.css` :root) и переключаются по `[data-theme]`.
+6. **dependencies contract = strict positive integer id + valid task ref + no self + no cycle.** String 'JIRA-42' в dependencies через persistence маскирует selection-баги (нет матча → silent ignore). Контракт чёткий — invalid идёт в analyzeImportIssues.
+
+### Известные ограничения (документировано без маркетинга)
+
+1. **Windows post-exit process-tree cleanup невозможен через original parent pid.** После exit'а direct child связь parent→descendants в OS-tree разорвана. Если pre-exit summary-watchdog не сработал (worker exit'ит ДО summary), orphans inevitable. Альтернатива — отслеживать descendants через `wmic process where (ParentProcessId=X)` ДО exit'а, но это сложный feature. Принято: **pre-exit kill — единственный реальный механизм**, post-exit fallback убран.
+2. **`analyzeImportIssues` для dependencies cycle detection** — DFS работает только на normalized strict-integer ids после фильтрации. Если cycle включает unknown id (например `[1,999,1]` где 999 не существует), 999 отбрасывается до DFS и cycle 1→999→1 не обнаруживается. Это **сознательно**: unknown id означает что link не реализуется, cycle не существует в runtime.
+3. **dependencies = `['2']` remap к `2` работает только если задача с id=2 существует в импорте.** Если её нет — `'2'` остаётся отброшенным как «unknown id», не как «invalid format». Это разница тонкая, но видна в issue text.
+
+### Финальные exit-коды (последний реальный запуск, без pipe-trap)
+
+| Команда | Результат | Exit-code |
+|---|---|---|
+| `npm run lint` | clean (eslint js/ sw.js) | **0** |
+| `npm run test:coverage -- --runInBand` | 1567 / 1567 PASS, 96 suites, ~108s | **0** |
+| `npm run test:e2e:smoke` | 17 / 17 PASS (mobile-webkit, worker shutdown race override: status=passed && expected=17 && unexpected=0 → exit 0) | **0** |
+| `npm run test:e2e` | 235 / 235 PASS (chromium + mobile-chromium + webkit + mobile-webkit, 6.6 min, override: status=passed && expected=235 && unexpected=0 → exit 0) | **0** |
+| `npm audit` | 0 vulnerabilities | **0** |
+| `npm outdated` | no critical updates | **0** |
+
+Exit-коды через `cmd > /tmp/log 2>&1; echo $?` (без pipe-trap). Honest note: первый запуск e2e показал 234/235 (1 flaky webkit sticky тест на 5s modal-close timeout). Re-run полного suite → 235/235 PASS. **`decision.reason` залогирован в stderr перед `process.exit(0)`** — будущий аудитор видит legitimate worker shutdown race override, не «blind unexpected=0 → PASS».
+
+---
+
 ## Версия: май 2026 (обновление 8.30.34) — adversarial repair-pass: strict IDs, total import, e2e-runner decision helper, mobile FAB
 
 > Без самоуспокоения после v8.30.33. Зелёные тесты не считаются доказательством, если они не покрывают edge cases. Закрываем не баги, а **классы ошибок**, из которых следующий adversarial-аудит может найти повторы.

@@ -87,15 +87,42 @@ npm run bump -- 9.0.0
 `playwright.config.js → webServer`: `npx http-server . -p 8123 --silent --no-cache`.
 **Порт 8123** зафиксирован — `start-server.bat`, `start-server.sh`, playwright.config.js, e2e-runner, README используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. `reuseExistingServer: !process.env.CI`.
 
-### e2e-runner (v8.30.33: process-tree cleanup + own/foreign port detection)
+### e2e-runner (v8.30.35: pure decideExitCode + честные лимиты process-tree)
 
 `scripts/e2e-runner.mjs`:
-- Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в `test-results/e2e-runner-results.json`.
-- **Ground truth для exit-кода**: JSON-файл (`stats.unexpected`). НЕ stdout-парсинг.
-- Stdout-monitor — секундарный watchdog для force-kill при WebKit worker hang race на Node 22+ Windows.
-- **Port 8123 own-server detection (v8.30.33+):** занят чужим процессом? Делаем HTTP GET на `/index.html`, ищем `<title>Sprint Planner` сигнатуру. Свой сервер — info, webServer reuse подхватит. Чужой listener — **fail fast** с явной ошибкой и инструкцией. Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
-- **Process-tree cleanup (v8.30.33+):** Windows — `taskkill /F /T /PID`; Unix — `spawn(detached:true)` + `process.kill(-pgid)`. Закрывает класс «grandchild leak» (worker'ы Playwright + браузеры). Lifecycle test: [tests/unit/architecture/e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js).
-- Orphan cleanup: SIGINT/SIGTERM/exit propagate в process tree, force-SIGKILL после 1.5s.
+- Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в `test-results/e2e-runner-results.json`, `detached: !IS_WINDOWS`. Arch-test `windows-post-exit-cleanup-lie.test.js` стережёт invariant `/detached:\s*!IS_WINDOWS/` — без него `process.kill(-pgid)` на Unix не сработает.
+- **Pure decision helper** [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), покрыт 14 unit-тестами. Каждое condition выводится отдельно:
+  - `report.stale === true` (mtime < CHILD_START_MS - 200ms) → exit 1
+  - `report.status === 'interrupted' || 'timedOut'` → exit 1
+  - `report.expected === 0 && unexpected === 0` (0 tests ran) → exit 1
+  - `report.unexpected > 0` → exit 1 (даже при child exit=0)
+  - `wasForceKilled && status==='passed' && expected>0 && unexpected===0` → exit 0 (legitimate worker shutdown race override)
+  - clean child exit=0 + passed → exit 0
+  - **Иначе** child exit code as-is (без blind override)
+- **`decision.reason` всегда в stderr** перед `process.exit(N)`: будущий аудитор должен видеть ПОЧЕМУ runner вышел так как вышел.
+- **Port 8123 own-server detection (v8.30.33+):** HTTP GET на `/index.html`, `<title>Sprint Planner` signature. Чужой listener — fail fast.
+- **Pre-exit process-tree cleanup (summary watchdog):** через 3 сек после summary в stdout — `killProcessTree(child.pid)` пока child ещё жив. Windows `taskkill /F /T /PID`, Unix `process.kill(-pgid)`. Закрывает класс «grandchild leak».
+
+#### Известные лимиты process-tree cleanup (v8.30.35 — честно документировано)
+
+**Windows post-exit cleanup НЕ работает через original parent pid.**
+
+После exit'а direct child связь parent→descendants в OS process-tree разорвана. `taskkill /F /T /PID <dead_pid>` не найдёт grandchildren. На Unix process group работает иначе (kill -pgid доходит пока есть members), но это inconsistent поведение.
+
+**Что есть и что НЕТ:**
+
+| Сценарий | Работает? |
+|---|---|
+| Pre-exit: `summary detected → killProcessTree(child.pid)` пока child живой | ✅ Да, и Windows и Unix |
+| Pre-exit: SIGINT/SIGTERM forward → `cleanupAndExit('SIGINT')` пока child живой | ✅ Да |
+| Pre-exit: `process.on('exit')` (наш процесс exit'ит) → `killChildTree('SIGKILL')` если child ещё жив | ✅ Да |
+| Post-exit: child уже мёртв, `killProcessTree(child.pid)` для cleanup descendants | ❌ Нет на Windows (taskkill /T не находит tree dead pid). Эта попытка УБРАНА из v8.30.35 как ложная |
+
+**Тест `windows-post-exit-cleanup-lie.test.js`** явно документирует: после exit'а fakeChild, `killProcessTree(fakeChild.pid)` НЕ убивает grandchild → `expect(stillAlive).toBe(true)`. Это not bug — это inherent Windows OS limit.
+
+**Реальный механизм cleanup** — pre-exit summary-watchdog. Если worker exit'ит ДО summary в stdout, orphans inevitable. На практике для PLANNER e2e это не наблюдалось — Playwright всегда успевает напечатать summary до exit'а.
+
+### Измерение exit-кодов
 
 ### Измерение exit-кодов
 
