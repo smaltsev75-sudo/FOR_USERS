@@ -19,7 +19,8 @@ export function prepareTasks(tasks) {
         const effort = task.effort || 0;         // общие трудозатраты (часы)
         const priorityScore = task.priorityScore || 0; // взвешенный приоритет (0-100)
         // Плотность ценности: сколько «приоритета» приходится на 1 час работы.
-        // Чем выше — тем эффективнее задача с точки зрения value/effort.
+        // Zero-effort задачи всё равно hard-excluded в selectTasksUniform();
+        // fallback на priorityScore нужен только для стабильного report-ordering.
         const valueDensity = effort > 0 ? priorityScore / effort : priorityScore;
         return {
             id: task.id,

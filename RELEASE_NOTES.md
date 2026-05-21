@@ -1,5 +1,56 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.44) — a11y selector guard + zero-effort contract note
+
+> Малый hardening-pass после внешнего аудита v8.30.43. Закрыт реальный P3:
+> stale `#editModal` оставался в axe-core excludes после унификации edit-flow
+> через `#createTaskModal`. Добавлен architecture guard, чтобы axe include/exclude
+> selectors не ссылались на удалённые DOM ids. Спорный `valueDensity` для
+> zero-effort задач не менялся поведенчески: контракт закреплён тестом и
+> комментарием.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P3 (dead test config)** | `accessibility.spec.js` трижды исключал несуществующий `#editModal`; axe-core молча игнорирует stale selector, поэтому тестовая конфигурация дрейфовала без fail. | Удалены stale `.exclude('#editModal')` из planning/color/dark-theme checks; реальные edit-mode проверки продолжают анализировать `#createTaskModal[data-mode="edit"]`. | [accessibility.spec.js](../tests/e2e/accessibility.spec.js) |
+| 2 | **P3 (architecture guard)** | Удалённый modal id мог снова остаться в `.include('#id')` / `.exclude('#id')` без сигнала от e2e. | Добавлен unit architecture-test: все axe id-selectors в `accessibility.spec.js` должны существовать в `index.html`. | [a11y-modal-selectors-exist.test.js](../tests/unit/architecture/a11y-modal-selectors-exist.test.js) |
+| 3 | **P3 (audit calibration / domain clarity)** | `valueDensity` для zero-effort задач выглядел как dead-path и мог спровоцировать неверный 1-line fix. | Поведение не изменено: zero-effort сохраняет `valueDensity = priorityScore` только для report-ordering, а `selectTasksUniform` hard-excludes такие задачи до включения в спринт. Контракт закреплён тестом. | [base.js](../js/domain/selection/base.js), [base.test.js](../tests/unit/domain/selection/base.test.js) |
+
+### Новые тесты (TDD / guard)
+
+- `a11y-modal-selectors-exist.test.js` — **red на старом дереве**: нашёл `#editModal` на строках 36, 204, 251.
+- `base.test.js` — закрепляет, что zero-effort задача с высоким priority/valueDensity всё равно hard-excluded с reason `Нулевая оценка трудозатрат`.
+
+Всего unit-тесты: `1673 → 1675` (+2), suites `108 → 109` (+1).
+
+### Уроки и классы ошибок
+
+1. **Axe selectors должны быть grounded в реальном DOM.** Missing `.exclude('#id')` не fail'ит сам по себе, поэтому нужен architecture guard.
+2. **Не чинить “dead computation” без проверки downstream semantics.** Zero-effort density выглядит странно, но смена на `0` меняет ordering в отчётах; доменный contract здесь — hard-exclude при selection, не обязательно density=0.
+3. **Audit calibration полезна, когда превращается в guard.** P3 dead string сам по себе мелкий, но тест предотвращает повторение класса.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1675/1675 PASS, 109 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm run verify:release-metrics -- --command="npm run test:e2e"` | RELEASE_NOTES ↔ full summary OK | **0** | n/a | — |
+| `npm run verify:release-metrics -- --command="npm run test:e2e:smoke"` | RELEASE_NOTES ↔ smoke summary OK | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`, webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` сверяет latest release row с `test-results/e2e-parallel-summary.json`; full row сверен до post-bump smoke, smoke row сверяется после post-bump smoke.
+- Node repro: не применимо, алгоритмических runtime-изменений нет.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.43) — keyboard/touch task reorder controls
 
 > Desktop-first hardening после внешнего аудита v8.30.42. Native drag-and-drop
