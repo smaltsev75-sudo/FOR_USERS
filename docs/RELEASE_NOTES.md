@@ -1,5 +1,47 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.31) — десятый внешний аудит: undo + FTE + overload + e2e-runner + a11y + selection deps + mobile UI
+
+> 8 поверхностей внешнего жёсткого аудита закрыты. По каждому — реальный код-фикс плюс тест, который падает на старом коде.
+
+### Что закрыто (по 8 пунктам аудита)
+
+| # | Severity | Закрыто |
+|---|---|---|
+| 1 | **P1** Undo delete — pending timer не отменялся + stale full snapshot | `handleDeleteTask` в [taskListHandler.js](../js/controllers/task/taskListHandler.js): локальный `pendingTimer` в closure (не на `this`, чтобы конкурентные delete не перетирали), `clearTimeout` на undo, snapshot ТОЛЬКО удалённой задачи + `originalIndex`. Восстановление через `splice(originalIndex, 0, deletedTask)` — сохраняет позицию и НЕ затирает intermediate edits / новые задачи. |
+| 2 | **P1** FTE/off parseInt-мусор + дроби принимались | Единый контракт [domain/roleFieldContract.js](../js/domain/roleFieldContract.js): strict integer, FTE 0..100, off ≥0. `'12abc'`, `'12.5'`, `-10`, `150` → null. Подключён в [roleController.js](../js/controllers/roleController.js) (UI ввод) и [persistence.js](../js/state/persistence.js) (JSON импорт). |
+| 3 | **P1** Overload indicators не работали после progressive batch и в Quadrants view | `updateOverloadIndicators(state, nfs)` экспортирован из [taskList.js](../js/ui/taskList.js), вызывается ПОСЛЕ каждого async-batch'а (раньше — только после первого 20-задач batch'а) и из [taskListGrouped.js](../js/ui/taskListGrouped.js) (Quadrants view раньше не вызывал его совсем). |
+| 4 | **P1** e2e-runner зависел от stdout-парсинга как единственного source-of-truth | [scripts/e2e-runner.mjs](../scripts/e2e-runner.mjs) v8.30.31: Playwright запускается с `--reporter=list,json`, ground truth для exit-кода — JSON-файл (`test-results/e2e-runner-results.json`, `stats.unexpected`). Stdout-monitor сохранён как secondary watchdog для worker-hang force-kill. EADDRINUSE-info, orphan-cleanup на SIGINT/SIGTERM/exit. |
+| 5 | **P1** A11y — main landmark не существовал; edit modal не анализировался; contrast гейт допускал ≤3 violations без явной причины; форма не выставляла aria-invalid | `<main role="main" id="main-content">` обёртка в [index.html](../index.html). `aria-invalid` set/clear в [taskFormController._validateField](../js/controllers/task/taskFormController.js) и в [roleController](../js/controllers/roleController.js). [accessibility.spec.js](../tests/e2e/accessibility.spec.js) переписан: strict `toHaveCount(1)` для main, реальный анализ `#createTaskModal[data-mode="edit"]`, explicit `ALLOWED_CONTRAST_VIOLATIONS = []` allowlist + новый тест на aria-invalid. |
+| 6 | **P2** Selection ignored dependencies semantics — single-pass | [base.js selectTasksUniform](../js/domain/selection/base.js): pass0 + fixed-point retry loop. Если A зависит от B и B встречается позже в sortedTasks — обе попадают в спринт. Циклы и зависимости от excluded — корректно terminate'ятся как unmet. |
+| 7 | **P2** RELEASE_PROCESS и ARCHITECTURE не отражали 4 Playwright projects / порт 8123 / e2e как release gate | [docs/RELEASE_PROCESS.md](RELEASE_PROCESS.md) и [docs/ARCHITECTURE.md](ARCHITECTURE.md): полный чек-лист с обязательными exit 0 gates (lint, coverage `--runInBand`, e2e:smoke, e2e, audit, outdated), измерение exit-кодов БЕЗ pipe-trap. |
+| 8 | **P2** Mobile UI — первый экран занят cfg-panel, ключевой workflow далеко вниз | `.toolbar { position: sticky; top: 4px }` на mobile (`@media (max-width: 900px)`) — кнопка «Новая задача» доступна при любом скролле. `.cfg-section--coef` скрыта на ≤600px — реже-используемая секция коэффициентов не занимает первый экран. |
+
+### Тесты добавлены / усилены (TDD)
+
+| Тест | Покрывает |
+|---|---|
+| `tests/unit/controllers/task/taskListHandler.test.js` → новый describe «v8.30.31 — pending timer + index preservation» | 3 fake-timer теста: undo до 300ms отменяет timer; undo после 400ms восстанавливает на original index; undo не затирает intermediate-edits |
+| `tests/unit/domain/roleFieldContract.test.js` (NEW) | strict integer contract: 6 описаний по 5+ assertions для FTE + off + normalizeForPersistence + parseInt-мусор |
+| `tests/unit/controllers/roleController.test.js` (updated) | aria-invalid set/clear, валидный ввод снимает aria-invalid; strict отказ от `-10`, `'93,5'`, `'150'`, `'50abc'` |
+| `tests/unit/domain/selection/base.test.js` (updated + new) | topological retry: chain A→B→C в любом порядке, dependency-cycle terminate без зависания, dep на excluded → unmet |
+| `tests/unit/domain/selection/matrix.test.js` (updated) | matrix-алгоритм с топологическим retry |
+| `tests/e2e/planner.spec.js` → новый describe «Undo delete task — real-time guarantees (v8.30.31)» | e2e: создать 3 задач → удалить среднюю → wait 500ms → undo → восстановлена на тот же индекс |
+| `tests/e2e/accessibility.spec.js` (rewritten) | main landmark strict, edit modal real анализ, contrast allowlist=[], aria-invalid в форме |
+
+### Реальные exit codes (измерено `cmd > /tmp/log; echo $?`, без pipe-trap)
+
+| Команда | EXIT | Метрика |
+|---|---|---|
+| `npm run lint` | **0** | clean |
+| `npm run test:coverage -- --runInBand` | **0** | 89 suites, 1415+ tests |
+| `npm run test:e2e:smoke` | **0** | mobile-webkit smoke |
+| `npm run test:e2e` | **0** | полный suite (4 Playwright projects) |
+| `npm audit --audit-level=moderate` | **0** | 0 vulnerabilities |
+| `npm outdated --long` | **0** | clean |
+
+---
+
 ## Версия: май 2026 (обновление 8.30.30) — девятый внешний аудит: `npm run test:e2e` РЕАЛЬНО exit 0 (custom reporter force-exit), drag E2E реально assert'ят
 
 > Аудитор v8.30.29 показал что моё «exit 0» из прошлого release notes было артефактом измерения: `npm run test:e2e ... | tail -10; echo "[EXIT=$?]"` возвращал exit code `tail`, не `npm`. Real exit под официальным npm-script был 1 (worker hang race на WebKit + Node 22 + Windows). Также в `tests/e2e/planner.spec.js` тест «drag and drop reorders tasks» имел fake-assert `expect(typeof newFirstTitle).toBe('string')` (всегда true) + комментарий «drag may not work in all environments». А три drag preview теста полагались на synthetic `page.evaluate(new DragEvent(...))` — не воспроизводили real user path.
