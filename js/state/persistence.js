@@ -5,7 +5,7 @@ import { createDefaultRoles } from '../domain/role.js';
 import { fixTaskOrder } from '../domain/task.js';
 import { ROLES } from '../utils/constants.js';
 import { normalizeRoleFieldForPersistence, parseRoleField } from '../domain/roleFieldContract.js';
-import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
+import { parseStrictIntegerInRange, parseStrictDecimal } from '../domain/strictInteger.js';
 
 const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
 
@@ -63,8 +63,11 @@ export function migratePersistedState(rawState = {}) {
 
     const config = normalizeConfig(safe.config, defaultConfig);
     const roles = normalizeRoles(safe.roles, defaultRoles);
-    const tasks = normalizeTasks(safe.tasks);
+    // v8.30.36: criteria нормализуются ПЕРЕД tasks, чтобы передать valid criterion
+    // ids в normalizeTasks → normalizeCriteriaEvaluations (orphan keys drop).
     const criteria = normalizeCriteria(safe.criteria);
+    const validCriterionIds = new Set(criteria.map(c => c.id));
+    const tasks = normalizeTasks(safe.tasks, { validCriterionIds });
     const numberFormatSettings = normalizeNumberFormat(safe.numberFormatSettings);
 
     return {
@@ -90,12 +93,14 @@ export function migratePersistedState(rawState = {}) {
  * @returns {Object}
  */
 export function serializeStateForStorage(state, criteria, decimalSeparator) {
+    const normalizedCriteria = normalizeCriteria(criteria);
+    const validCriterionIds = new Set(normalizedCriteria.map(c => c.id));
     return {
         version: APP_CONFIG.STORAGE_VERSION,
         config: normalizeConfig(state.config, createDefaultConfig()),
         roles: normalizeRoles(state.roles, createDefaultRoles()),
-        tasks: normalizeTasks(state.tasks),
-        criteria: normalizeCriteria(criteria),
+        tasks: normalizeTasks(state.tasks, { validCriterionIds }),
+        criteria: normalizedCriteria,
         numberFormatSettings: normalizeNumberFormat({ decimalSeparator }),
         activeTab: state.activeTab === 'criteria' ? 'criteria' : 'planning',
         taskFilter: normalizeTaskFilter(state.taskFilter),
@@ -224,10 +229,47 @@ function normalizeTaskDependencies(deps, selfId = null) {
     return result;
 }
 
-function normalizeTasks(tasks) {
+// v8.30.36: cycle remediation deterministic policy.
+//
+// Policy: "clear participants" — все nodes, участвующие в любом cycle,
+// получают `dependencies = []`. Не «удаление одного edge'а»: это:
+//   (a) проще и детерминистично (DFS color-marking ловит ALL participants);
+//   (b) семантически чище — если задача А зависит от В через cycle, обе зависят
+//       друг от друга, разорвать одно edge произвольно — fragile.
+// Альтернатива «удалять edges» возвращала бы партиальный orderings зависимый
+// от order traversal'а, что бесполезно для selection алгоритмов.
+function findCycleParticipants(adj) {
+    const WHITE = 0, GRAY = 1, BLACK = 2;
+    const color = new Map();
+    const inCycle = new Set();
+    function visit(u, stack, onStack) {
+        color.set(u, GRAY);
+        stack.push(u);
+        onStack.add(u);
+        for (const v of (adj.get(u) || [])) {
+            if (color.get(v) === GRAY) {
+                // Cycle: все вершины от v до конца stack — участники.
+                const idx = stack.indexOf(v);
+                for (let i = idx; i < stack.length; i++) inCycle.add(stack[i]);
+            } else if ((color.get(v) || WHITE) === WHITE) {
+                visit(v, stack, onStack);
+            }
+        }
+        color.set(u, BLACK);
+        stack.pop();
+        onStack.delete(u);
+    }
+    for (const node of adj.keys()) {
+        if ((color.get(node) || WHITE) === WHITE) visit(node, [], new Set());
+    }
+    return inCycle;
+}
+
+function normalizeTasks(tasks, opts = {}) {
     // v8.30.34: total — non-array (включая {}) → []. Non-object элементы (null,
     // undefined, скаляры) skip'аются полностью, не превращаются в blank-задачи.
     if (!Array.isArray(tasks)) return [];
+    const { validCriterionIds = null } = opts;
     const objectTasks = tasks.filter((t) => t && typeof t === 'object' && !Array.isArray(t));
     const validIds = collectValidIds(objectTasks, 1);
     // База Date.now() сохраняет существующий контракт: новые id выглядят как timestamp.
@@ -253,7 +295,8 @@ function normalizeTasks(tasks) {
             excluded: task.excluded ? 1 : 0,
             est: normalizeTaskEst(task.est),
             exclusionReason: String(task.exclusionReason ?? ''),
-            criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations),
+            // v8.30.36: context-aware — orphan/invalid keys выбрасываются.
+            criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations, validCriterionIds),
             priorityScore: normalizeNumber(task.priorityScore, 0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, 2),
             // v8.30.35: dependencies нормализуются ПОСЛЕ resolution id, с
             // selfId-фильтром (self-cycle отбрасывается). Unknown id (нет
@@ -269,12 +312,38 @@ function normalizeTasks(tasks) {
     for (const t of normalized) {
         t.dependencies = t.dependencies.filter(d => validTaskIds.has(d));
     }
+    // v8.30.36: третий проход — cycle remediation. Раньше analyzeImportIssues
+    // reports'ил «cycle отброшено», но migrate сохранял 1→2→1 — alignment fail.
+    // Policy: clear deps у ВСЕХ cycle participants (DFS).
+    const adj = new Map();
+    for (const t of normalized) adj.set(t.id, [...t.dependencies]);
+    const cycleNodes = findCycleParticipants(adj);
+    if (cycleNodes.size > 0) {
+        for (const t of normalized) {
+            if (cycleNodes.has(t.id)) t.dependencies = [];
+        }
+    }
     return fixTaskOrder(normalized);
 }
 
-function normalizeTaskEst(est = {}) {
+// v8.30.36: strict effort parser. Раньше normalizeNumber принимал:
+//   '5abc' → 0 (silent — Number('5abc') = NaN → fallback)
+//   -3 → 0 (silent clamp)
+//   1.234 → 1.23 (silent round)
+//   Infinity → 0 (silent fallback)
+//   '1e10' → 10000000000 (exponent принимался)
+// Все silent — analyzeImportIssues не репортил. Сейчас strict:
+// finite, ≥0, max 2 decimals, точка/запятая взаимозаменяемы.
+function normalizeTaskEst(est) {
+    const safe = safePlainObject(est);
     return Object.fromEntries(
-        ROLES.map(r => [r.id, normalizeNumber(est?.[r.id], 0, 0, Number.POSITIVE_INFINITY, 2)])
+        ROLES.map(r => {
+            const raw = safe[r.id];
+            // Отсутствие поля — норма (default = 0)
+            if (raw === undefined || raw === null) return [r.id, 0];
+            const parsed = parseStrictDecimal(raw, { min: 0, max: Number.POSITIVE_INFINITY, maxDecimals: 2 });
+            return [r.id, parsed === null ? 0 : parsed];
+        })
     );
 }
 
@@ -309,14 +378,20 @@ function normalizeCriteria(criteria) {
     });
 }
 
-function normalizeCriteriaEvaluations(evaluations) {
-    // v8.30.35: safePlainObject. Раньше {1: 'string'} ловил `'string' || {}` →
-    // truthy, потом `'string'.score` = undefined → silent fallback 0 без issue.
+// v8.30.36: context-aware. Принимает Set валидных criterion ids;
+// invalid keys (non-strict int) и orphan keys (нет в validIds) ВЫБРАСЫВАЮТСЯ
+// из state, не остаются как silent ghost-entries. Раньше analyzeImportIssues
+// reports'ил их как issue, но migrate сохранял — alignment fail.
+function normalizeCriteriaEvaluations(evaluations, validCriterionIds = null) {
     const safe = safePlainObject(evaluations);
     const normalized = {};
     Object.keys(safe).forEach((key) => {
+        const keyId = parseStrictIntegerInRange(key, 1, Number.MAX_SAFE_INTEGER);
+        // Invalid key (non-strict int) — drop полностью.
+        if (keyId === null) return;
+        // Orphan key (нет такого criterion) — drop.
+        if (validCriterionIds !== null && !validCriterionIds.has(keyId)) return;
         const item = safe[key];
-        // v8.30.35: только plain-object item считается valid; примитивы/array → defaults.
         const safeItem = (item && typeof item === 'object' && !Array.isArray(item)) ? item : {};
         normalized[key] = {
             score: normalizeInteger(safeItem.score, 0, 0, 10),
@@ -428,6 +503,19 @@ export function analyzeImportIssues(rawState) {
         issues.push(`criteria = ${JSON.stringify(rawState.criteria).slice(0, 80)} отвергнуто (требуется array); пустой список`);
     }
 
+    // v8.30.36: nested plain-object shape — taskFilter/taskSort/ui/numberFormatSettings.
+    // Раньше ARCHITECTURE.md заявлял что "каждое nested поле reported", но
+    // analyzeImportIssues пропускал эти shape distortions молча. Alignment fix.
+    const nestedPlainShapeFields = ['taskFilter', 'taskSort', 'ui', 'numberFormatSettings'];
+    for (const field of nestedPlainShapeFields) {
+        if (rawState[field] === undefined) continue;
+        const v = rawState[field];
+        if (v === null || typeof v !== 'object' || Array.isArray(v)) {
+            const sample = JSON.stringify(v) || String(v);
+            issues.push(`${field} = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применены defaults`);
+        }
+    }
+
     // roles: fte (integer ≥0), off (decimal ≥0, 1 знак)
     if (Array.isArray(rawState.roles)) {
         rawState.roles.forEach((role, i) => {
@@ -461,6 +549,12 @@ export function analyzeImportIssues(rawState) {
                 }
                 if (c.weight !== undefined && parseStrictIntegerInRange(c.weight, 0, 100) === null) {
                     issues.push(`criteria[${i}].weight = ${JSON.stringify(c.weight)} отвергнуто (требуется целое 0..100); применён fallback`);
+                }
+                // v8.30.36: criteria[i].scale — plain-object distortion.
+                if (c.scale !== undefined
+                    && (c.scale === null || typeof c.scale !== 'object' || Array.isArray(c.scale))) {
+                    const sample = JSON.stringify(c.scale) || String(c.scale);
+                    issues.push(`criteria[${i}].scale = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применён {}`);
                 }
             } else if (c !== undefined) {
                 issues.push(`criteria[${i}] = ${JSON.stringify(c)} отвергнуто (требуется object); пропущено`);
@@ -503,6 +597,27 @@ export function analyzeImportIssues(rawState) {
                         issues.push(`tasks[${i}].id = ${taskId} — duplicate task id; назначен новый (risk: update/delete мог попасть в несколько задач)`);
                     } else {
                         seenTaskIds.add(taskId);
+                    }
+                }
+
+                // v8.30.36: task.est — strict effort parser. Раньше silent
+                // corruption (Number('5abc')=NaN→0, -3→clamp 0, 1.234→1.23 round,
+                // Infinity→0, '1e10'→exponent accepted) — НЕ репортилось.
+                if (t.est !== undefined) {
+                    if (t.est === null
+                        || typeof t.est !== 'object'
+                        || Array.isArray(t.est)) {
+                        const sample = JSON.stringify(t.est) || String(t.est);
+                        issues.push(`tasks[${i}].est = ${sample.slice(0, 80)} отвергнуто (требуется plain object); применены 0 для всех ролей`);
+                    } else {
+                        for (const roleId of Object.keys(t.est)) {
+                            const v = t.est[roleId];
+                            if (v === undefined || v === null) continue;
+                            const parsed = parseStrictDecimal(v, { min: 0, max: Number.POSITIVE_INFINITY, maxDecimals: 2 });
+                            if (parsed === null) {
+                                issues.push(`tasks[${i}].est.${roleId} = ${JSON.stringify(v)} отвергнуто (требуется finite ≥0, max 2 decimals, "."/","); применён fallback=0`);
+                            }
+                        }
                     }
                 }
 
@@ -585,15 +700,35 @@ export function analyzeImportIssues(rawState) {
             }
             adj.set(tid, deps);
         });
+        // v8.30.36: canonical-rotation для дедупа — не sorted мусор.
+        // Cycle A→B→C→A и B→C→A→B — один и тот же cycle, ротация. Чтобы
+        // дедупнуть в Set, поворачиваем так, чтобы min-id был первым.
+        // В issue text сохраняем REAL traversal order, плюс закрытие cycle.
         const WHITE = 0, GRAY = 1, BLACK = 2;
         const color = new Map();
-        const cycles = new Set(); // canonical-key для дедупа
+        const cycles = new Set();
+        function canonical(arr) {
+            // Поиск минимума и ротация
+            let minIdx = 0;
+            for (let i = 1; i < arr.length; i++) {
+                if (arr[i] < arr[minIdx]) minIdx = i;
+            }
+            return [...arr.slice(minIdx), ...arr.slice(0, minIdx)].join(',');
+        }
         function dfs(u, path) {
             color.set(u, GRAY);
             for (const v of (adj.get(u) || [])) {
                 if (color.get(v) === GRAY) {
-                    const cyclePath = [...path.slice(path.indexOf(v)), v];
-                    cycles.add(cyclePath.slice().sort((a, b) => a - b).join('→'));
+                    // path: [v, x, y, u]; cycle: v → x → y → u → v
+                    const startIdx = path.indexOf(v);
+                    const cycleNodes = path.slice(startIdx);  // [v, ..., u]
+                    const key = canonical(cycleNodes);
+                    if (!cycles.has(key)) {
+                        cycles.add(key);
+                        // Display: реальный traversal + закрытие
+                        const display = [...cycleNodes, cycleNodes[0]].join(' → ');
+                        issues.push(`tasks.dependencies cycle detected: ${display}; зависимости отброшены`);
+                    }
                 } else if ((color.get(v) || WHITE) === WHITE) {
                     dfs(v, [...path, v]);
                 }
@@ -603,9 +738,6 @@ export function analyzeImportIssues(rawState) {
         for (const node of adj.keys()) {
             if ((color.get(node) || WHITE) === WHITE) dfs(node, [node]);
         }
-        cycles.forEach(c => {
-            issues.push(`tasks.dependencies cycle detected: ${c.replace(/→/g, ' → ')}; зависимости отброшены`);
-        });
     }
 
     return { issues };

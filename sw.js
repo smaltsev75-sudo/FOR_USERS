@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.35-nested-shapes-honest-process-tree-fab-tokens';
+const CACHE_VERSION = 'sp-v8.30.36-alignment-invariant-cycle-evaluations-est-strict';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена

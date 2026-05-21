@@ -80,3 +80,55 @@ export function normalizeStrictIntegerForPersistence(raw, fallback, min = -Infin
     }
     return { value: parsed, warning: null };
 }
+
+/**
+ * v8.30.36: strict decimal parser для effort/capacity полей.
+ *
+ * Контракт:
+ *   - number: должен быть finite (не NaN, не Infinity), ≥ min, ≤ max
+ *   - string: trim → принимается только формат `^-?\d+(?:[.,]\d{1,maxDecimals})?$`
+ *   - запятая ↔ точка взаимозаменяемы (русская локаль)
+ *   - запрещены: exponent ('1e10'), suffix ('5abc'), пустая строка,
+ *     Infinity, NaN, > N знаков после разделителя
+ *
+ * Возвращает number или null. Number имеет нормализованный разделитель
+ * (всегда `.` в результате), округлён до maxDecimals.
+ *
+ * @param {*} raw
+ * @param {{min?: number, max?: number, maxDecimals?: number}} [opts]
+ * @returns {number|null}
+ */
+export function parseStrictDecimal(raw, opts = {}) {
+    const { min = -Infinity, max = Infinity, maxDecimals = 2 } = opts;
+    if (raw === null || raw === undefined) return null;
+    let n;
+    if (typeof raw === 'number') {
+        if (!Number.isFinite(raw)) return null;
+        // Проверка точности — number 1.234 имеет 3 decimals.
+        // Используем strict-check через string representation.
+        const s = String(raw);
+        if (s.includes('e') || s.includes('E')) return null;  // exponent banned
+        const decIdx = s.indexOf('.');
+        if (decIdx !== -1 && (s.length - decIdx - 1) > maxDecimals) return null;
+        n = raw;
+    } else if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (trimmed.length === 0) return null;
+        // Допустим только: -?digits(.digits)? или digits(,digits)?
+        // Никаких +, никаких exponent, никаких prefix/suffix.
+        const decimalsPattern = maxDecimals > 0
+            ? `(?:[.,]\\d{1,${maxDecimals}})?`
+            : '';
+        const re = new RegExp(`^-?\\d+${decimalsPattern}$`);
+        if (!re.test(trimmed)) return null;
+        // Нормализуем запятую → точка
+        n = Number(trimmed.replace(',', '.'));
+        if (!Number.isFinite(n)) return null;
+    } else {
+        return null;
+    }
+    if (n < min || n > max) return null;
+    // Round to maxDecimals (защита от FP-погрешности 0.1+0.2)
+    const factor = 10 ** Math.floor(maxDecimals);
+    return Math.round(n * factor) / factor;
+}

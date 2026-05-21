@@ -73,7 +73,7 @@ JSON. Тот же контракт применять для любых крит
 давали коллизии — несколько импортированных записей получали один id,
 `Store.updateTask`/`updateCriteria` потом промахивались.
 
-### 2.4 safePlainObject + total migration (v8.30.34 → v8.30.35)
+### 2.4 safePlainObject + total migration + alignment invariant (v8.30.34 → v8.30.36)
 
 `migratePersistedState` и все nested-normalizers — total functions для
 любого JSON-ish input. `function f(x = {})` ловит ТОЛЬКО `undefined`;
@@ -84,12 +84,39 @@ Helper `safePlainObject(value)` в [persistence.js](../js/state/persistence.js):
 plain object → passthrough; null/array/primitive → `{}`. Применяется к
 `normalizeConfig` / `normalizeRoles` / `normalizeTaskFilter` / `normalizeTaskSort`
 / `normalizeUi` / `normalizeNumberFormat` / `normalizeCriteriaEvaluations`
-+ `criteria.scale` spread.
+/ `normalizeTaskEst` + `criteria.scale` spread.
 
-`analyzeImportIssues` сообщает shape-distortion для каждого nested поля:
-`config = "abc" отвергнуто (требуется plain object)`,
-`tasks[i].criteriaEvaluations[k] = [...] отвергнуто (требуется object)`,
-`roles = {} отвергнуто (требуется array)`.
+**Alignment invariant (v8.30.36):** для КАЖДОГО issue в `analyzeImportIssues`
+с формулировкой «отброшено / применён fallback», post-migration state физически
+**не содержит junk**. Раньше UI говорил «cycle отброшено» а migrate сохранял
+1→2→1. Сейчас:
+
+- **cycle remediation**: DFS-detected cycle participants получают `dependencies=[]`.
+  Policy «clear all participants», документирован как deterministic.
+- **criteriaEvaluations context-aware**: invalid keys (non-strict int) и orphan
+  keys (нет соответствующего criterion id) **выбрасываются** из state.
+  `normalizeTasks` принимает `validCriterionIds`; nesting через `serializeStateForStorage`.
+- **task.est strict**: `parseStrictDecimal` (finite, ≥0, max 2 decimals,
+  `.` или `,`). `'5abc'`/`-3`/`1.234`/`Infinity`/`'1e10'` → 0 + issue,
+  не silent corruption.
+
+`analyzeImportIssues` сообщает shape-distortion для **каждого** покрытого
+поля (см. таблицу ниже). Тесты `tests/unit/state/persistence.alignmentInvariants.test.js`
+проверяют для **каждого** issue, что junk физически отсутствует в migrated state.
+
+#### Покрытие analyzeImportIssues (v8.30.36)
+
+| Поле | Shape | Range/Type | Cycle/Orphan |
+|---|:---:|:---:|:---:|
+| `config` | ✅ | ✅ days/holidays/alert/availCoef | — |
+| `roles` | ✅ array shape | ✅ fte (int≥0), off (decimal 1) | — |
+| `criteria` | ✅ array shape | ✅ id strict, weight 0..100 | ✅ duplicate id |
+| `criteria[i].scale` | ✅ | — | — |
+| `tasks` | ✅ array shape | ✅ id strict | ✅ duplicate id |
+| `tasks[i].est` | ✅ | ✅ strict decimal ≥0, ≤2 dec | — |
+| `tasks[i].criteriaEvaluations` | ✅ | ✅ score 0..10 | ✅ invalid/orphan key |
+| `tasks[i].dependencies` | ✅ array | ✅ strict positive int | ✅ self/unknown/cycle |
+| `taskFilter` / `taskSort` / `ui` / `numberFormatSettings` | ✅ | (валидация в normalizers) | — |
 
 ### 2.5 Strict dependencies contract (v8.30.35)
 

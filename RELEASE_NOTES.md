@@ -1,5 +1,82 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.36) — alignment invariant: analyzeImportIssues ↔ migratePersistedState
+
+> Adversarial repair-pass после v8.30.35. Главная цель — **выровнять** warnings и
+> post-migration state. Если UI говорит «отброшено», post-migration state
+> обязан это реально отражать. Раньше v8.30.35 reports'ил cycle / orphan keys
+> / invalid est, но migrate сохранял junk.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1** | `tasks.dependencies` cycle detected в `analyzeImportIssues`, но `migrate` сохранял `1→2→1` — alignment fail. Issue path был sorted мусором `1 → 1 → 2` без traversal-order. | `findCycleParticipants` (DFS color-marking) в `normalizeTasks` post-pass: все cycle nodes получают `dependencies=[]`. Issue path показывает реальный traversal (canonical-rotation по min-id для дедупа). Policy «clear participants» документирован в ARCHITECTURE.md. | [persistence.js → normalizeTasks/findCycleParticipants](../js/state/persistence.js), [persistence.alignmentInvariants.test.js](../tests/unit/state/persistence.alignmentInvariants.test.js) |
+| 2 | **P1** | `criteriaEvaluations` invalid keys (`'abc'`) и orphan keys (`'999'` где нет criterion с id=999) reported, но **оставались в state**. `fileController` reintroduce'ил их через spread. | `normalizeCriteriaEvaluations(evaluations, validCriterionIds)` context-aware — invalid/orphan keys физически выбрасываются. `normalizeTasks(tasks, {validCriterionIds})` принимает Set; `migratePersistedState` нормализует criteria ПЕРЕД tasks. `fileController` rebuilds evaluations ТОЛЬКО для current valid criteria. | [persistence.js → normalizeCriteriaEvaluations](../js/state/persistence.js), [fileController.js](../js/controllers/fileController.js) |
+| 3 | **P1** | `task.est:{fe:'5abc', be:-3, qa:1.234, ca:Infinity}` → `issues=[]`, capacity silently corrupted. `Number('5abc')=NaN→0`, `-3→clamp 0`, `1.234→1.23 round`, `Infinity→0`, `'1e10'→exponent accepted` — всё silent. | `parseStrictDecimal(raw, {min, max, maxDecimals})` в [strictInteger.js](../js/domain/strictInteger.js): finite, ≥min, ≤max, **строгий regex** `^-?\d+(?:[.,]\d{1,2})?$` (no exponent, no suffix). Поддержка `.` и `,`. `normalizeTaskEst` использует safePlainObject + parseStrictDecimal. `analyzeImportIssues` репортит каждое испорченное поле отдельно. | [strictInteger.js → parseStrictDecimal](../js/domain/strictInteger.js), [persistence.js → normalizeTaskEst](../js/state/persistence.js) |
+| 4 | **P2** | ARCHITECTURE заявлял «каждое nested поле reported», но `analyzeImportIssues` пропускал shape distortions для `taskFilter`/`taskSort`/`ui`/`numberFormatSettings`/`criteria[i].scale`. | Расширен `analyzeImportIssues`: для каждого из этих полей shape distortion → explicit issue. ARCHITECTURE обновлена с **таблицей покрытия** какие поля валидируются. | [persistence.js → analyzeImportIssues](../js/state/persistence.js) |
+| 5 | **P2** | Weak assertion `deps.filter(d => d === 2).length > 0` (всегда true для `[2]`/`[2,2,2]`/`[2,3]`). Не проверяет actual deduplication. | Исправлено на `expect(...).toEqual([2])` — exact equality. Добавлена **adversarial fixture** (corrupt config + bad est + bad evaluations + dependency cycles) + invariant test «для каждого issue с "отброшено" junk физически отсутствует в migrated state». | [persistence.nestedShapes.test.js](../tests/unit/state/persistence.nestedShapes.test.js), [persistence.alignmentInvariants.test.js](../tests/unit/state/persistence.alignmentInvariants.test.js) |
+| 6 | **P2** | e2e-runner override (`exit 0` при `child exit=1` через worker shutdown race) был тихим. Релиз называл это «clean». | `decision.override: true/false` explicit-флаг. Stderr выводит `[OVERRIDE]` marker + WARN с «это НЕ clean child exit». Декларативно покрыто `decideExitCode` unit-тестами (override=true проверяется отдельно). | [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), [e2e-runner.mjs](../scripts/e2e-runner.mjs), [e2eRunnerDecision.test.js](../tests/unit/scripts/e2eRunnerDecision.test.js) |
+| 7 | **P3** | Дубль заголовка `### Измерение exit-кодов` в RELEASE_PROCESS.md. ARCHITECTURE утверждал «каждое поле reported» — неверно до этого релиза. | Дубль удалён. ARCHITECTURE 2.4 переписан с **точной таблицей покрытия**. | [docs/RELEASE_PROCESS.md](RELEASE_PROCESS.md), [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
+
+### Новые тесты (TDD — падали на v8.30.35 коде)
+
+- [tests/unit/state/persistence.alignmentInvariants.test.js](../tests/unit/state/persistence.alignmentInvariants.test.js) — **новый файл**, 29 тестов. Покрывает: cycle remediation (A→B→A, A→B→C→A, self, unknown+cycle, duplicates), criteriaEvaluations (invalid/orphan/primitive item с valid и invalid key), est (strict decimal: 5abc, -3, 1.234, Infinity, NaN, 1e10, 1,23, 0, 1.23, non-object), shape distortions taskFilter/taskSort/ui/numberFormatSettings/scale, adversarial fixture invariant. 21/29 падали на v8.30.35 (verified).
+- [tests/unit/scripts/e2eRunnerDecision.test.js](../tests/unit/scripts/e2eRunnerDecision.test.js) — обновлён: проверяет `override: true/false` явно для clean vs worker-race override.
+- [tests/unit/state/persistence.test.js](../tests/unit/state/persistence.test.js) — 4 теста v8.30.23 обновлены под v8.30.36 strict est контракт (silent rounding запрещён).
+- [tests/unit/state/persistence.honestImport.test.js](../tests/unit/state/persistence.honestImport.test.js) + [tests/unit/state/persistence.nestedShapes.test.js](../tests/unit/state/persistence.nestedShapes.test.js) — обновлены: orphan key dropping требует подавать `criteria` явно.
+
+### Уроки и классы ошибок
+
+1. **Alignment invariant — обязательная часть honest import.** Если UI/issue говорит «отброшено», migrate **обязан** это реально сделать. Иначе пользователь видит warning и думает «приложение защищает», а в state junk. Это хуже чем silent fallback — это explicit ложь.
+2. **Context-aware normalizers критичны для referential-integrity полей.** `criteriaEvaluations` keys ссылаются на criterion ids — нормализатор без контекста (Set valid ids) не может фильтровать orphans.
+3. **Silent rounding **= silent corruption** для critical numeric input.** `1.234 → 1.23` без issue выглядит «исправлением», но это контракт violation — пользователь думает что ввёл то, что ввёл.
+4. **Cycle remediation policy должна быть deterministic + documented.** «Clear all cycle participants» — единственный детерминистский вариант. «Drop one edge» зависит от order traversal'а.
+5. **`override: true` — explicit-флаг, не комментарий.** Если runner делает worker-race override, релизный отчёт ОБЯЗАН явно сказать «exit 0 via override, Playwright child exit 1», не «clean».
+
+### Финальные exit-коды (последний реальный запуск, без pipe-trap)
+
+| Команда | Результат | Exit-code | Override |
+|---|---|---|---|
+| `npm run lint` | clean | **0** | — |
+| `npm run test:coverage -- --runInBand` | 1597/1597 PASS, 97 suites, ~108s | **0** | — |
+| `npm run test:e2e:smoke` | 17/17 PASS (mobile-webkit, 13.4s) | **0** | **no** (clean child exit) |
+| `npm run test:e2e` | 235/235 PASS (chromium + mobile-chromium + webkit + mobile-webkit, 1.6 min) | **0** | **no** (clean child exit) |
+| `npm audit` | 0 vulnerabilities | **0** | — |
+| `npm outdated` | no critical updates | **0** | — |
+
+**Особо**: e2e на v8.30.36 запустился с **clean child exit=0** — worker shutdown race **не сработал** в этом конкретном run'е, decision helper не делал override. Stderr выводит `[e2e-runner] decision: exit=0 — clean exit; JSON: 235 passed` без override-marker. Если в будущем race снова всплывёт, stderr явно покажет `[OVERRIDE]` + WARN.
+
+### Node repro (alignment подтверждён)
+
+`scripts/repro-alignment.mjs`:
+
+```
+=== cycle A→B→A ===
+Issues: tasks.dependencies cycle detected: 1 → 2 → 1; зависимости отброшены
+Migrated tasks[0].dependencies=[]   ← реально пусто
+
+=== cycle A→B→C→A ===
+Issues: tasks.dependencies cycle detected: 1 → 2 → 3 → 1; зависимости отброшены
+Migrated tasks[0].dependencies=[]   ← реальный traversal, не sorted мусор
+
+=== evaluations invalid + orphan ===
+Issues: orphaned key (нет criterion с id=999); invalid key ("abc"; требуется целое ≥1)
+Migrated criteriaEvaluations={"1":{"score":7,"value":0}}   ← 999 и "abc" физически удалены
+
+=== est junk: 5abc, -3, 1.234, Infinity, 1e10 ===
+Issues: 5 issues — fe/be/qa/ca/uiux каждое reported
+Migrated est={"uiux":0,"ca":0,"fe":0,"be":0,"qa":0}   ← все fallback'нуты
+
+=== est valid: 1.23, 0, "1,23" ===
+Issues: 0
+Migrated est={fe:1.23, be:0, qa:1.23}   ← запятая корректно parsed как точка
+```
+
+Каждый случай: issue text **соответствует** реальному post-migration state.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.35) — nested shape harden + honest process-tree limit + FAB design tokens
 
 > Adversarial repair-pass после v8.30.34. Закрывает класс **«helper в одном месте — забытые места»** для nested shape, ужесточает контракт dependencies, **честно убирает ложное заявление о post-exit cleanup на Windows**.

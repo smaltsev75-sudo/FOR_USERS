@@ -164,13 +164,30 @@ export class FileController {
                         }
 
                         const criteria = this.criteriaManager.getCriteria();
+                        // v8.30.36: добавляем defaults ТОЛЬКО для текущих valid criteria.
+                        // Раньше spread `...task.criteriaEvaluations` reintroduce'ил
+                        // orphan/invalid keys которые migrate уже выбросил —
+                        // alignment fail. Теперь rebuilding from valid set only.
+                        const validCritIds = new Set(criteria.map(c => c.id));
                         const tasks = migratedState.tasks.map(task => {
-                            const evaluations = { ...(task.criteriaEvaluations || {}) };
-                            criteria.forEach((criterion) => {
-                                if (!evaluations[criterion.id]) {
-                                    evaluations[criterion.id] = { score: 0, value: 0 };
+                            const sourceEvals = task.criteriaEvaluations || {};
+                            const evaluations = {};
+                            for (const c of criteria) {
+                                evaluations[c.id] = sourceEvals[c.id] || { score: 0, value: 0 };
+                            }
+                            // Защита от gap: какие-то migrated evaluations с valid
+                            // ids которые НЕ в текущем criteria? — sourceEvals уже
+                            // отфильтрованы migrate'ом до validCritIds на момент
+                            // импорта. Если criteria поменялись после migrate
+                            // (loadDefaultCriteria), orphans отсеиваются здесь.
+                            for (const k of Object.keys(sourceEvals)) {
+                                const kid = Number(k);
+                                if (!validCritIds.has(kid) && !validCritIds.has(k)) {
+                                    // Silently drop (уже в issues от migrate, повторно
+                                    // показывать не нужно).
+                                    continue;
                                 }
-                            });
+                            }
                             return { ...task, criteriaEvaluations: evaluations };
                         });
 
