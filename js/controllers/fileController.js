@@ -110,7 +110,11 @@ export class FileController {
                 return;
             }
 
-            const taskCount = data.tasks ? data.tasks.length : 0;
+            // v8.30.34: task count берётся ПОСЛЕ migrate (post-migration ground
+            // truth), а не из raw data. Раньше data.tasks = {} давало
+            // `(undefined).length` или {}.length=undefined в success message
+            // → «Загружено undefined задач».
+            const rawTaskCount = Array.isArray(data.tasks) ? data.tasks.length : 0;
 
             // v8.30.33: honest import — собираем list невалидных полей ДО
             // подтверждения, показываем пользователю явный отчёт. Success
@@ -176,11 +180,19 @@ export class FileController {
                             tasks
                         });
 
+                        // v8.30.34: ground truth — реально загруженное число задач
+                        // ПОСЛЕ migrate (не из raw data). Раньше при tasks:{} мы
+                        // печатали «Загружено 0 задач» хотя задачи теоретически
+                        // могли быть в raw. Теперь сравниваем raw vs migrated.
+                        const migratedCount = migratedState.tasks.length;
+                        const dropped = rawTaskCount - migratedCount;
+                        const droppedNote = (Array.isArray(data.tasks) && dropped > 0)
+                            ? ` (${dropped} элементов отвергнуто)` : '';
                         // v8.30.33: honest success message — не скрываем
                         // потерю данных. Если были issues, добавляем счётчик.
                         const successMsg = issues.length > 0
-                            ? `Данные загружены: ${taskCount} задач. Применены fallback'и для ${issues.length} невалидных полей (см. подтверждение перед импортом).`
-                            : `Данные успешно загружены! Загружено ${taskCount} задач`;
+                            ? `Данные загружены: ${migratedCount} задач${droppedNote}. Применены fallback'и для ${issues.length} невалидных полей (см. подтверждение перед импортом).`
+                            : `Данные успешно загружены! Загружено ${migratedCount} задач${droppedNote}`;
                         messageService.showMessage(successMsg);
                     } catch (error) {
                         // Atomic rollback: возвращаем все три источника состояния

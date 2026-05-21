@@ -55,6 +55,12 @@ export class TaskController {
         const addBtn = document.getElementById('addTaskBtn');
         if (addBtn) addBtn.addEventListener('click', () => this._form.openCreateModal());
 
+        // v8.30.34: mobile FAB — primary action на mobile viewport ≤600px.
+        // Audit T4: toolbar часто за viewport на 390×844, пользователь долго
+        // скроллит. FAB position:fixed bottom-right. Тот же controller path.
+        const mobileFab = document.getElementById('mobileFab');
+        if (mobileFab) mobileFab.addEventListener('click', () => this._form.openCreateModal());
+
         // v8.27: единый task-form modal — close/cancel/save диспатчат
         // по this._form.editId (если != null → edit, иначе → create).
         const closeCreateBtn = document.getElementById('closeCreateModalBtn');

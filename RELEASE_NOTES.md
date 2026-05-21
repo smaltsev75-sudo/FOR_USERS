@@ -1,5 +1,58 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.34) — adversarial repair-pass: strict IDs, total import, e2e-runner decision helper, mobile FAB
+
+> Без самоуспокоения после v8.30.33. Зелёные тесты не считаются доказательством, если они не покрывают edge cases. Закрываем не баги, а **классы ошибок**, из которых следующий adversarial-аудит может найти повторы.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1** | `Number.parseInt('1abc', 10) === 1` оставался в `collectValidIds`/`normalizeTasks`/`normalizeCriteria` после v8.30.33 — `[{id:"1abc"},{id:1}]` после migrate давал duplicate id=1, `Store.updateTask` промахивался в несколько задач | Strict ID контракт через [`parseStrictIntegerInRange(raw, 1, MAX)`](../js/domain/strictInteger.js); first-owner-wins для дубликатов; allocator выдаёт новый id всем junk/duplicate. `analyzeImportIssues` явно сообщает invalid id и duplicate-risk | [persistence.js → collectValidIds/normalizeTasks/normalizeCriteria/analyzeImportIssues](../js/state/persistence.js), [persistence.strictIds.test.js](../tests/unit/state/persistence.strictIds.test.js) |
+| 2 | **P1** | `migratePersistedState` бросал `TypeError` на `roles: {}` / `tasks: {}` / `criteria: {}` / `rawState=null` — corrupt localStorage делал blank app без recovery UI | `migratePersistedState` — total function: `null`/`undefined`/примитив/array верхнего уровня → `{}`. `normalizeRoles/Tasks/Criteria` отвергают non-array и non-object элементы без падения. `analyzeImportIssues` сообщает invalid top-level shape + non-object items | [persistence.js → migratePersistedState/normalizeRoles/Tasks/Criteria](../js/state/persistence.js) |
+| 3 | **P1** | e2e-runner v8.30.33 трактовал ЛЮБОЙ `JSON.unexpected===0 + child exit !== 0` как PASS — interrupted/timedOut/0-tests/stale JSON маскировались. Audit: «не маскировать любой child exit=1 только потому что JSON unexpected=0» | Pure `decideExitCode(input)` helper в [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), покрыт 14 unit-тестами. Override (worker shutdown race → exit 0) под узкое condition: `status === 'passed' && expected > 0 && unexpected === 0`. Stale JSON (mtime < child start) / interrupted / timedOut / 0 tests → exit 1 | [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), [e2eRunnerDecision.test.js](../tests/unit/scripts/e2eRunnerDecision.test.js), [e2e-runner.mjs](../scripts/e2e-runner.mjs) |
+| 4 | **P2** | `killChildTree` имел guard `child.exitCode !== null` → после exit'а direct child cleanup становился no-op, descendants (Playwright workers / browsers) оставались orphaned. Lifecycle тест дублировал taskkill вместо проверки реального helper'а | `killProcessTree(pid, {isWindows, signal})` extract'нут в [scripts/processTreeKill.js](../scripts/processTreeKill.js) (без `exitCode` guard, работает по pid даже после exit'а). Lifecycle тест импортирует и вызывает РЕАЛЬНЫЙ helper. Добавлен contrast-тест post-exit cleanup | [processTreeKill.js](../scripts/processTreeKill.js), [e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js) |
+| 5 | **P2** | На mobile 390×844 пользователь скроллил config+capacity+criteria прежде чем доходил до toolbar с «Новая задача». Аудит: «primary planning action visible/reachable без прокрутки» | Mobile FAB ([`#mobileFab`](../index.html)) `position: fixed` bottom-right, 56×56, touch-target ≥44×44, `:focus-visible` outline, `prefers-reduced-motion` respect. Display:none на desktop. 5 e2e-тестов на mobile project | [index.html](../index.html), [css/responsive.css](../css/responsive.css), [taskController.js](../js/controllers/taskController.js), [mobile.spec.js](../tests/e2e/mobile.spec.js) |
+
+### Новые тесты (TDD — падают на v8.30.33 коде, проверено)
+
+- [tests/unit/state/persistence.strictIds.test.js](../tests/unit/state/persistence.strictIds.test.js) — **новый файл**, 22 теста: strict id для tasks/criteria, duplicate handling, migration hardening (`roles:{}`, `tasks:{}`, `criteria:{}`, `rawState=null`, scalar items), analyzeImportIssues для shape/duplicates. 20/22 падают на v8.30.33 коде (подтверждено перед фиксом).
+- [tests/unit/scripts/e2eRunnerDecision.test.js](../tests/unit/scripts/e2eRunnerDecision.test.js) — **новый файл**, 14 тестов: каждое условие decision helper отдельно (worker race override, interrupted/timedOut, stale JSON, 0 tests, force-kill без passed signature).
+- [tests/unit/architecture/e2e-runner-lifecycle.test.js](../tests/unit/architecture/e2e-runner-lifecycle.test.js) — **обновлён**: импортирует РЕАЛЬНЫЙ `killProcessTree`; добавлен post-exit cleanup тест с detached grandchild; arch invariant проверяет наличие `decideExitCode`/`killProcessTree` импортов в runner.
+- [tests/e2e/mobile.spec.js](../tests/e2e/mobile.spec.js) — **+5 тестов**: FAB visible на initial viewport (без скролла), FAB открывает create modal без скролла, FAB остаётся visible после `window.scrollTo(0, 800)`, touch target ≥44×44, no horizontal overflow.
+
+### Уроки и классы ошибок (для следующего adversarial-аудита)
+
+1. **Strict ID contract нельзя забывать в collectValidIds / normalizeXxx — даже если он применён в analyzeImportIssues.** Аудитор v8.30.33 → v8.30.34 нашёл, что `parseStrictInteger` был в одном месте (UI controllers), но `Number.parseInt` остался в трёх других местах. Грепать **все** `parseInt`/`Number.parseInt` после фикса класса ошибки.
+2. **`migratePersistedState({}, default)` ≠ `migratePersistedState(null)`.** Default-параметр работает только для `undefined`, не для `null`/`'string'`/`5`. Total function требует явного `(rawState && typeof === 'object' && !Array.isArray) ? rawState : {}`.
+3. **e2e-runner exit-decision: pure helper > inline.** Любая логика «как интерпретировать exit code» должна быть pure-функцией, покрытой unit-тестами для каждого условия. Inline в `child.on('exit')` гарантированно пропустит status=interrupted/timedOut/stale JSON.
+4. **Lifecycle test ДОЛЖЕН вызывать реальный helper, не симулировать его поведение.** Импортировать exported function, вызвать её, проверить эффект.
+5. **`exitCode !== null` guard в cleanup-функции — анти-паттерн.** Cleanup может потребоваться **после** exit'а direct child (descendants живы). Guard превращает helper в no-op именно тогда, когда он больше всего нужен.
+6. **Primary planning action visible на initial mobile viewport без скролла.** Без e2e-теста на bounding box внутри viewport это обнаружат только пользователи.
+
+### Остаточные риски (без самоуспокоения)
+
+1. **WebKit worker shutdown race на Node 22+ Windows остаётся inherent.** Decision helper override exit-кода — legitimate **только** под узкое condition `status === 'passed' && expected > 0 && unexpected === 0`. Не маскирует interrupted/timedOut/0-tests. Если class ошибки эволюционирует — нужно расширить decision conditions, не добавлять новые «exit 1 → 0» исключения.
+2. **`analyzeImportIssues` покрывает основные distortion-классы, но не 100% полей.** title pure-string, type валидируется в `normalizeTaskType` без issue. Это **сознательно**: иначе на любом import будет ≥10 issues. Если в будущем понадобится full coverage — расширять модульно.
+3. **Mobile FAB перекрывает последнюю карточку при `taskList`-overflow.** Стандартный Material/iOS паттерн. Если регрессия — добавить `padding-bottom: 88px` к `#taskList` на mobile.
+4. **`process.kill(-pid, signal)` на Unix требует `detached:true` при spawn'е.** Arch-test проверяет `killProcessTree` импорт, но не проверяет, что spawn передаёт `detached:true` на не-Windows. Если кто-то изменит spawn options — tree-kill сломается тихо. Можно добавить отдельный arch-test.
+5. **decision helper при graceful shutdown (Ctrl+C) → exit 1 (если не было passed-signature).** Корректно семантически. Если кто-то полагался на «partial reports → PASS» — это намеренное изменение поведения.
+
+### Финальные exit-коды (последний реальный запуск, без pipe-trap)
+
+| Команда | Результат | Exit-code |
+|---|---|---|
+| `npm run lint` | clean (eslint js/ sw.js) | **0** |
+| `npm run test:coverage -- --runInBand` | 1531 / 1531 PASS, 94 suites, ~105s, coverage gate ОК | **0** |
+| `npm run test:e2e:smoke` | 15 / 15 PASS (mobile-webkit, 5.2 min — worker shutdown race на Node 22+ Windows: child exit=1, decision helper override under `status=passed && expected=15 && unexpected=0`) | **0** |
+| `npm run test:e2e` | 231 / 231 PASS (chromium + mobile-chromium + webkit + mobile-webkit, 1.6 min, **clean child exit=0** — decision не нужен) | **0** |
+| `npm audit` | 0 vulnerabilities | **0** |
+| `npm outdated` | no critical updates | **0** |
+
+Exit-коды получены через `cmd > /tmp/log 2>&1; echo $?` (без pipe-trap, см. memory `feedback-exit-code-after-pipe-lies`). Decision helper выводит exact reason в stderr перед `process.exit(N)` — больше нет «JSON unexpected=0 → blind PASS».
+
+---
+
 ## Версия: май 2026 (обновление 8.30.33) — repair pass: 6 классов ошибок закрыты
 
 > Жёсткий repair pass. Закрываются не только конкретные баги, но и **классы ошибок**, из которых они выросли. Каждый фикс — TDD-тест, который падал бы на v8.30.32 коде.

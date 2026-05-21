@@ -22,30 +22,30 @@
             document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
-    <link rel="stylesheet" href="css/base.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/layout.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/forms.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/modals.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/components.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/animations.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/progress.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/help.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/responsive.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.33">
-    <link rel="stylesheet" href="css/print.css?v=v8.30.33" media="print">
-    <link rel="manifest" href="manifest.json?v=8.30.33">
+    <link rel="stylesheet" href="css/base.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/layout.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/forms.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/modals.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/components.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/animations.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/progress.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/help.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/responsive.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.34">
+    <link rel="stylesheet" href="css/print.css?v=v8.30.34" media="print">
+    <link rel="manifest" href="manifest.json?v=8.30.34">
     <meta name="theme-color" content="#00d9ff">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -361,6 +361,22 @@
             <!-- Список задач -->
             <div id="taskList"></div>
         </div>
+
+        <!-- v8.30.34: mobile FAB (Floating Action Button) для primary action.
+             На viewport ≤600px пользователь долго скроллит config+capacity+criteria,
+             прежде чем доберётся до toolbar с «Новая задача». FAB position:fixed
+             даёт мгновенный доступ. На desktop скрыт (display:none).
+             Aria-label дублирует label оригинальной кнопки. -->
+        <button class="mobile-fab" id="mobileFab" type="button"
+                aria-label="Создать новую задачу"
+                title="Создать новую задачу">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        </button>
 
         <!-- ВКЛАДКА КРИТЕРИЕВ -->
         <div id="criteriaTabContent" class="tab-content tab-content--hidden" role="tabpanel" aria-labelledby="criteriaTabBtn">
@@ -711,7 +727,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.30.33"></script>
+    <script type="module" src="js/app.js?v=v8.30.34"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

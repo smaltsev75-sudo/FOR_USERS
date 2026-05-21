@@ -50,14 +50,22 @@ const VALID_DENSITIES = ['compact', 'comfortable'];
  * @returns {Object}
  */
 export function migratePersistedState(rawState = {}) {
+    // v8.30.34: total function — любой non-object input (null, undefined,
+    // примитив, массив верхнего уровня) превращается в пустой объект.
+    // Раньше rawState.config / .tasks бросали TypeError при rawState=null
+    // потому что Node не вызывал default-параметр (null !== undefined).
+    const safe = (rawState && typeof rawState === 'object' && !Array.isArray(rawState))
+        ? rawState
+        : {};
+
     const defaultConfig = createDefaultConfig();
     const defaultRoles = createDefaultRoles();
 
-    const config = normalizeConfig(rawState.config, defaultConfig);
-    const roles = normalizeRoles(rawState.roles, defaultRoles);
-    const tasks = normalizeTasks(rawState.tasks);
-    const criteria = normalizeCriteria(rawState.criteria);
-    const numberFormatSettings = normalizeNumberFormat(rawState.numberFormatSettings);
+    const config = normalizeConfig(safe.config, defaultConfig);
+    const roles = normalizeRoles(safe.roles, defaultRoles);
+    const tasks = normalizeTasks(safe.tasks);
+    const criteria = normalizeCriteria(safe.criteria);
+    const numberFormatSettings = normalizeNumberFormat(safe.numberFormatSettings);
 
     return {
         version: APP_CONFIG.STORAGE_VERSION,
@@ -66,10 +74,10 @@ export function migratePersistedState(rawState = {}) {
         tasks,
         criteria,
         numberFormatSettings,
-        activeTab: rawState.activeTab === 'criteria' ? 'criteria' : 'planning',
-        taskFilter: normalizeTaskFilter(rawState.taskFilter),
-        taskSort: normalizeTaskSort(rawState.taskSort),
-        ui: normalizeUi(rawState.ui),
+        activeTab: safe.activeTab === 'criteria' ? 'criteria' : 'planning',
+        taskFilter: normalizeTaskFilter(safe.taskFilter),
+        taskSort: normalizeTaskSort(safe.taskSort),
+        ui: normalizeUi(safe.ui),
         lastAddedTaskId: null
     };
 }
@@ -110,8 +118,17 @@ function normalizeConfig(config = {}, defaults) {
     };
 }
 
-function normalizeRoles(roles = [], defaults) {
-    const map = new Map((roles || []).map((role) => [role.id, role]));
+function normalizeRoles(roles, defaults) {
+    // v8.30.34: total — non-array (включая {}) трактуется как пустой массив,
+    // дефолты применяются. null-элементы внутри массива skip'аются.
+    // Раньше `({}).map(...)` бросал TypeError на load corrupt JSON.
+    const safeArray = Array.isArray(roles) ? roles : [];
+    const map = new Map();
+    for (const role of safeArray) {
+        if (role && typeof role === 'object' && role.id !== undefined && role.id !== null) {
+            map.set(role.id, role);
+        }
+    }
     // v8.30.31: единый контракт через domain/roleFieldContract.js. parseInt-мусор
     // (12abc), дроби (12.5), отрицательные → fallback на default из createDefaultRoles().
     return defaults.map((defaultRole) => {
@@ -141,11 +158,18 @@ function createIdAllocator(existingIds, minBase = 1) {
     };
 }
 
+// v8.30.34: strict ID контракт. Раньше collectValidIds использовал
+// Number.parseInt('1abc', 10) === 1 → принимал parseInt-мусор и создавал
+// коллизии (id "1abc" и id 1 оба становились 1, allocate ничего не делал).
+// Теперь только number-integer или строка из чистых цифр; всё остальное —
+// требует allocate() при последующей нормализации.
 function collectValidIds(items, minValue = 1) {
     const ids = [];
+    if (!Array.isArray(items)) return ids;
     for (const item of items) {
-        const parsed = Number.parseInt(item?.id, 10);
-        if (!Number.isNaN(parsed) && parsed >= minValue) ids.push(parsed);
+        if (!item || typeof item !== 'object') continue;
+        const parsed = parseStrictIntegerInRange(item.id, minValue, Number.MAX_SAFE_INTEGER);
+        if (parsed !== null) ids.push(parsed);
     }
     return ids;
 }
@@ -174,14 +198,26 @@ function normalizeTaskDependencies(deps) {
     return filtered;
 }
 
-function normalizeTasks(tasks = []) {
+function normalizeTasks(tasks) {
+    // v8.30.34: total — non-array (включая {}) → []. Non-object элементы (null,
+    // undefined, скаляры) skip'аются полностью, не превращаются в blank-задачи.
     if (!Array.isArray(tasks)) return [];
-    const validIds = collectValidIds(tasks, 1);
+    const objectTasks = tasks.filter((t) => t && typeof t === 'object' && !Array.isArray(t));
+    const validIds = collectValidIds(objectTasks, 1);
     // База Date.now() сохраняет существующий контракт: новые id выглядят как timestamp.
     const allocate = createIdAllocator(validIds, Date.now());
-    const normalized = tasks.map((task) => {
-        const parsed = Number.parseInt(task?.id, 10);
-        const id = (!Number.isNaN(parsed) && parsed >= 1) ? parsed : allocate();
+    // First-owner-wins: первая задача с конкретным id сохраняет его, последующие
+    // дубликаты получают allocate(). Защищает Store.updateTask от попадания
+    // в несколько задач.
+    const seenIds = new Set();
+    const normalized = objectTasks.map((task) => {
+        // Strict id: только number-integer ≥1 ИЛИ строка из чистых цифр ≥1.
+        // parseInt-мусор '1abc'/'1.9'/1.9/'' → allocate новый уникальный id.
+        let id = parseStrictIntegerInRange(task.id, 1, Number.MAX_SAFE_INTEGER);
+        if (id === null || seenIds.has(id)) {
+            id = allocate();
+        }
+        seenIds.add(id);
         return {
             id,
             title: String(task.title ?? '').trim(),
@@ -205,15 +241,21 @@ function normalizeTaskEst(est = {}) {
     );
 }
 
-function normalizeCriteria(criteria = []) {
+function normalizeCriteria(criteria) {
+    // v8.30.34: total — non-array (включая {}) → []. Non-object элементы skip'аются.
     if (!Array.isArray(criteria)) return [];
-    // v8.30.0: тот же allocator-паттерн что и для tasks — раньше default id=0
-    // приводил к коллизиям если в импорте было >1 критерия без валидного id.
-    const validIds = collectValidIds(criteria, 1);
+    const objectCriteria = criteria.filter((c) => c && typeof c === 'object' && !Array.isArray(c));
+    // v8.30.34: strict id + first-owner-wins. Раньше Number.parseInt('2abc') = 2
+    // приводил к коллизии с реальным id=2.
+    const validIds = collectValidIds(objectCriteria, 1);
     const allocate = createIdAllocator(validIds, 1);
-    return criteria.map((criterion) => {
-        const parsed = Number.parseInt(criterion?.id, 10);
-        const id = (!Number.isNaN(parsed) && parsed >= 1) ? parsed : allocate();
+    const seenIds = new Set();
+    return objectCriteria.map((criterion) => {
+        let id = parseStrictIntegerInRange(criterion.id, 1, Number.MAX_SAFE_INTEGER);
+        if (id === null || seenIds.has(id)) {
+            id = allocate();
+        }
+        seenIds.add(id);
         return {
             ...criterion,
             id,
@@ -298,7 +340,7 @@ function normalizeTaskType(type) {
  */
 export function analyzeImportIssues(rawState) {
     const issues = [];
-    if (!rawState || typeof rawState !== 'object') {
+    if (!rawState || typeof rawState !== 'object' || Array.isArray(rawState)) {
         return { issues };
     }
 
@@ -316,42 +358,85 @@ export function analyzeImportIssues(rawState) {
         }
     }
 
+    // v8.30.34: top-level shape. roles/tasks/criteria должны быть массивами;
+    // объект-вместо-массива → defaults применятся, но это distortion.
+    if (rawState.roles !== undefined && !Array.isArray(rawState.roles)) {
+        issues.push(`roles = ${JSON.stringify(rawState.roles).slice(0, 80)} отвергнуто (требуется array); применены defaults`);
+    }
+    if (rawState.tasks !== undefined && !Array.isArray(rawState.tasks)) {
+        issues.push(`tasks = ${JSON.stringify(rawState.tasks).slice(0, 80)} отвергнуто (требуется array); пустой список`);
+    }
+    if (rawState.criteria !== undefined && !Array.isArray(rawState.criteria)) {
+        issues.push(`criteria = ${JSON.stringify(rawState.criteria).slice(0, 80)} отвергнуто (требуется array); пустой список`);
+    }
+
     // roles: fte (integer ≥0), off (decimal ≥0, 1 знак)
     if (Array.isArray(rawState.roles)) {
         rawState.roles.forEach((role, i) => {
-            if (role && typeof role === 'object') {
+            if (role && typeof role === 'object' && !Array.isArray(role)) {
                 if (role.fte !== undefined && parseRoleField('fte', role.fte) === null) {
                     issues.push(`roles[${i}].fte = ${JSON.stringify(role.fte)} отвергнуто (требуется целое ≥0); применён fallback`);
                 }
                 if (role.off !== undefined && parseRoleField('off', role.off) === null) {
                     issues.push(`roles[${i}].off = ${JSON.stringify(role.off)} отвергнуто (требуется ≥0, точность 1 знак); применён fallback`);
                 }
+            } else if (role !== undefined) {
+                issues.push(`roles[${i}] = ${JSON.stringify(role)} отвергнуто (требуется object); пропущено`);
             }
         });
     }
 
-    // criteria: weight (integer 0..100), score в evaluations (integer 0..10)
+    // criteria: id (strict positive int), weight (integer 0..100), score в evaluations
     if (Array.isArray(rawState.criteria)) {
+        const seenCritIds = new Set();
         rawState.criteria.forEach((c, i) => {
-            if (c && typeof c === 'object') {
+            if (c && typeof c === 'object' && !Array.isArray(c)) {
+                if (c.id !== undefined && parseStrictIntegerInRange(c.id, 1, Number.MAX_SAFE_INTEGER) === null) {
+                    issues.push(`criteria[${i}].id = ${JSON.stringify(c.id)} отвергнуто (требуется целое ≥1); назначен новый id`);
+                } else if (c.id !== undefined) {
+                    const sid = parseStrictIntegerInRange(c.id, 1, Number.MAX_SAFE_INTEGER);
+                    if (seenCritIds.has(sid)) {
+                        issues.push(`criteria[${i}].id = ${sid} — duplicate criterion id; назначен новый`);
+                    } else {
+                        seenCritIds.add(sid);
+                    }
+                }
                 if (c.weight !== undefined && parseStrictIntegerInRange(c.weight, 0, 100) === null) {
                     issues.push(`criteria[${i}].weight = ${JSON.stringify(c.weight)} отвергнуто (требуется целое 0..100); применён fallback`);
                 }
+            } else if (c !== undefined) {
+                issues.push(`criteria[${i}] = ${JSON.stringify(c)} отвергнуто (требуется object); пропущено`);
             }
         });
     }
 
-    // tasks: criteriaEvaluations.score (integer 0..10), priorityScore (число),
-    // dependencies (массив), excluded (0/1) — мягкие, без warning'а на каждый
-    // (слишком многословно). Документируем только score-distortion.
+    // tasks: id (strict positive int), criteriaEvaluations.score (integer 0..10)
     if (Array.isArray(rawState.tasks)) {
+        const seenTaskIds = new Set();
         rawState.tasks.forEach((t, i) => {
-            if (t && typeof t === 'object' && t.criteriaEvaluations) {
-                Object.entries(t.criteriaEvaluations).forEach(([critId, ev]) => {
-                    if (ev && ev.score !== undefined && parseStrictIntegerInRange(ev.score, 0, 10) === null) {
-                        issues.push(`tasks[${i}].criteriaEvaluations[${critId}].score = ${JSON.stringify(ev.score)} отвергнуто (требуется целое 0..10); применён fallback`);
+            if (t && typeof t === 'object' && !Array.isArray(t)) {
+                if (t.id !== undefined && parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER) === null) {
+                    issues.push(`tasks[${i}].id = ${JSON.stringify(t.id)} отвергнуто (требуется целое ≥1); назначен новый id`);
+                } else if (t.id !== undefined) {
+                    const sid = parseStrictIntegerInRange(t.id, 1, Number.MAX_SAFE_INTEGER);
+                    if (seenTaskIds.has(sid)) {
+                        issues.push(`tasks[${i}].id = ${sid} — duplicate task id; назначен новый (risk: update/delete мог попасть в несколько задач)`);
+                    } else {
+                        seenTaskIds.add(sid);
                     }
-                });
+                }
+                if (t.criteriaEvaluations && typeof t.criteriaEvaluations === 'object') {
+                    Object.entries(t.criteriaEvaluations).forEach(([critId, ev]) => {
+                        if (ev && typeof ev === 'object' && ev.score !== undefined && parseStrictIntegerInRange(ev.score, 0, 10) === null) {
+                            issues.push(`tasks[${i}].criteriaEvaluations[${critId}].score = ${JSON.stringify(ev.score)} отвергнуто (требуется целое 0..10); применён fallback`);
+                        }
+                    });
+                }
+                if (t.dependencies !== undefined && !Array.isArray(t.dependencies)) {
+                    issues.push(`tasks[${i}].dependencies = ${JSON.stringify(t.dependencies).slice(0, 80)} отвергнуто (требуется array); применён []`);
+                }
+            } else if (t !== undefined) {
+                issues.push(`tasks[${i}] = ${JSON.stringify(t)} отвергнуто (требуется object); пропущено`);
             }
         });
     }
