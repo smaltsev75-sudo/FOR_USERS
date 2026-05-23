@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.44-a11y-selector-guard';
+const CACHE_VERSION = 'sp-v8.30.44-import-flow-refactor';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -100,6 +100,7 @@ const ASSETS_TO_CACHE = [
     './js/ui/createForm.js',
     './js/ui/criteriaList.js',
     './js/ui/header.js',
+    './js/ui/importIssues.js',
     './js/ui/index.js',
     './js/ui/matrix.js',
     './js/ui/modalManager.js',
@@ -119,6 +120,7 @@ const ASSETS_TO_CACHE = [
     './js/utils/date.js',
     './js/utils/debounce.js',
     './js/utils/escapeHtml.js',
+    './js/utils/fileName.js',
     './js/utils/icons.js',
     './js/utils/lruCache.js',
     './js/utils/percent.js',

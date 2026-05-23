@@ -3,7 +3,9 @@ import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
 import { migratePersistedState, serializeStateForStorage, analyzeImportIssues } from '../state/persistence.js';
 import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
+import { createImportConfirmModel, formatImportSuccessMessage } from '../ui/importIssues.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
+import { buildSprintPlanFilename } from '../utils/fileName.js';
 
 export class FileController {
     constructor(store, numberFormatService, criteriaManager) {
@@ -68,18 +70,7 @@ export class FileController {
                 this.criteriaManager.getCriteria(),
                 this.nfs.decimalSeparator
             );
-            // v8.30.5: sanitize user-input product name для filename.
-            // Запрещённые в Windows/macOS/Linux: / \ : * ? " < > | + control chars.
-            // Длинные имена обрезаем до 60 символов чтобы не упереться в OS limits.
-            const sanitizeForFilename = (s) => String(s || '')
-                // eslint-disable-next-line no-control-regex
-                .replace(/[\\/:*?"<>|\x00-\x1f]+/g, '_')
-                .replace(/[. ]+$/g, '')
-                .slice(0, 60)
-                .trim();
-            const productSlug = sanitizeForFilename(state.config?.product);
-            const productPrefix = productSlug ? productSlug + '-' : '';
-            const filename = productPrefix + 'sprint-plan-' + new Date().toISOString().slice(0, 10) + '.json';
+            const filename = buildSprintPlanFilename(state.config?.product);
             storageService.saveFile(data, filename);
         } catch (error) {
             messageService.showMessage('Не удалось сохранить файл: ' + error.message);
@@ -120,16 +111,10 @@ export class FileController {
             // подтверждения, показываем пользователю явный отчёт. Success
             // message больше не маскирует потерю данных fallback-ом.
             const { issues } = analyzeImportIssues(data);
-            const previewLines = issues.slice(0, 8).map(s => '• ' + s);
-            if (issues.length > 8) previewLines.push(`… ещё ${issues.length - 8} проблем(ы)`);
-            const issuePreview = issues.length > 0
-                ? `\n\nОбнаружены проблемы в файле:\n${previewLines.join('\n')}\n\nЭти значения будут заменены fallback'ами.`
-                : '';
-
-            const confirmText = `Загрузить данные? Текущие данные будут потеряны.${issuePreview}`;
+            const confirmModel = createImportConfirmModel(issues);
 
             messageService.showConfirm(
-                confirmText,
+                confirmModel,
                 async () => {
                     this.showProgress('Загрузка...');
                     // Snapshot для atomic rollback при ошибке во время импорта.
@@ -203,13 +188,12 @@ export class FileController {
                         // могли быть в raw. Теперь сравниваем raw vs migrated.
                         const migratedCount = migratedState.tasks.length;
                         const dropped = rawTaskCount - migratedCount;
-                        const droppedNote = (Array.isArray(data.tasks) && dropped > 0)
-                            ? ` (${dropped} элементов отвергнуто)` : '';
-                        // v8.30.33: honest success message — не скрываем
-                        // потерю данных. Если были issues, добавляем счётчик.
-                        const successMsg = issues.length > 0
-                            ? `Данные загружены: ${migratedCount} задач${droppedNote}. Применены fallback'и для ${issues.length} невалидных полей (см. подтверждение перед импортом).`
-                            : `Данные успешно загружены! Загружено ${migratedCount} задач${droppedNote}`;
+                        const successMsg = formatImportSuccessMessage({
+                            migratedTaskCount: migratedCount,
+                            droppedTaskCount: dropped,
+                            rawTasksWereArray: Array.isArray(data.tasks),
+                            issueCount: issues.length
+                        });
                         messageService.showMessage(successMsg);
                     } catch (error) {
                         // Atomic rollback: возвращаем все три источника состояния

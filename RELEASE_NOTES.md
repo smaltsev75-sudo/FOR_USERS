@@ -1,5 +1,61 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.44) — import flow refactor + compact diagnostics
+
+> Связный рефакторинг потока JSON import/export: `FileController` стал тоньше,
+> имя экспортируемого файла и VM подтверждения импорта вынесены в отдельные
+> тестируемые модули, confirm-модалка получила компактную диагностику с
+> раскрываемыми деталями. Заодно закрыт мобильный визуальный дефект: базовая
+> `.modal-content` теперь использует `box-sizing: border-box`, поэтому confirm
+> не раздувает viewport padding'ом.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (controller bloat / UI policy leakage)** | `FileController` сам собирал filename, сам обрезал список import issues и склеивал длинный plain-text confirm. Сценарный контроллер смешивал storage-flow, UX-текст и platform filename rules. | Добавлены `buildSprintPlanFilename()` / `sanitizeFilenamePart()` и `createImportConfirmModel()` / `formatImportSuccessMessage()`. Контроллер оставлен orchestration-layer: load, migrate, rollback, store update. | [fileController.js](../js/controllers/fileController.js), [fileName.js](../js/utils/fileName.js), [importIssues.js](../js/ui/importIssues.js) |
+| 2 | **P2 (import diagnostics UX)** | При большом числе проблем импорта confirm-разметка раздувалась: пользователь видел длинную простыню до кнопок подтверждения. | `messageService.showConfirm()` принимает структурированную модель: основной текст короткий, предупреждение отдельным блоком, детали в `<details>` со scroll-bound списком. Строки вставляются через `textContent`, без `innerHTML`. | [message.js](../js/services/message.js), [modals.css](../css/modals.css) |
+| 3 | **P2 (mobile modal overflow)** | Реальная проверка нового confirm на 390px viewport показала overflow: `.modal-content { width:95%; padding:15px }` считался content-box. | `.modal-content` переведён на `box-sizing: border-box`; повторная Playwright-проверка import-confirm показала modal width 370.5px при viewport 390px, без увеличения scrollWidth. | [modals.css](../css/modals.css), `test-results/import-confirm-modal.png` |
+| 4 | **P3 (offline/PWA drift)** | Новые импортируемые JS-модули могли быть забыты в precache. | `sw.js` precache пополнен `js/ui/importIssues.js` и `js/utils/fileName.js`; существующий precache guard прогнан. | [sw.js](../sw.js), [precache-coverage.test.js](../tests/unit/architecture/precache-coverage.test.js) |
+| 5 | **P3 (docs / architecture contract)** | Boundary import/export UI не был зафиксирован: будущий патч мог вернуть длинную сборку confirm-текста прямо в контроллер. | README/UserManual описывают компактную диагностику импорта; ARCHITECTURE фиксирует boundary; добавлен architecture-test против возврата inline preview logic в `FileController`. | [README.md](../README.md), [UserManual.md](UserManual.md), [ARCHITECTURE.md](ARCHITECTURE.md), [file-controller-import-ui-contract.test.js](../tests/unit/architecture/file-controller-import-ui-contract.test.js) |
+
+### Новые тесты (TDD / guard)
+
+- `fileName.test.js` — безопасное имя экспорта: reserved chars, control chars, 60-char cap, product/no-product filenames.
+- `importIssues.test.js` — VM подтверждения импорта: clean case, warning/details, cap 200 details, success-message.
+- `message.test.js` — structured confirm rendering, no HTML injection, reset title for legacy string confirms.
+- `fileController.test.js` — filename через sanitized product и structured confirm model для import issues.
+- `file-controller-import-ui-contract.test.js` — architecture guard: `FileController` не возвращается к `previewLines` / `issuePreview` / inline filename sanitizer.
+
+Всего unit-тесты: `1675 → 1691` (+16), suites `109 → 112` (+3).
+
+### Уроки и классы ошибок
+
+1. **Контроллер не должен владеть длинной UX-разметкой.** Если текст зависит от количества проблем и режима показа, это VM/UI boundary, а не сценарная логика.
+2. **Диагностика импорта должна быть компактной по умолчанию.** Краткое предупреждение отвечает на «можно ли продолжить», а подробный список нужен по запросу.
+3. **Мобильный visual smoke нужен даже для маленького CSS.** jsdom не поймал content-box overflow; реальный Chromium viewport 390px поймал сразу.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1691/1691 PASS, 112 suites, lines 96.26% | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm run verify:release-metrics -- --command="npm run test:e2e"` | RELEASE_NOTES ↔ full summary OK | **0** | n/a | — |
+| `npm run verify:release-metrics -- --command="npm run test:e2e:smoke"` | RELEASE_NOTES ↔ smoke summary OK | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`, webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` для full был выполнен до повторного smoke-run; затем smoke-run перезаписал summary artifact и был сверен отдельным verifier-запуском.
+- Visual check: import-confirm modal checked on mobile Chromium viewport 390×844; details collapsed by default, expandable list visible on click, modal width stays within viewport.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.44) — a11y selector guard + zero-effort contract note
 
 > Малый hardening-pass после внешнего аудита v8.30.43. Закрыт реальный P3:

@@ -33,7 +33,7 @@ index.html
        │    ├─ createTaskRowVM.js    — VM-builder для строки задачи (v8.14)
        │    ├─ taskList.js           — flat list рендер (3-block redesign в v8.22)
        │    └─ taskListGrouped.js    — quadrant-grouped рендер (v8.14)
-       └─ js/utils/*                 — утилиты (debounce, escapeHtml, lruCache, sanitize, icons)
+       └─ js/utils/*                 — утилиты (debounce, escapeHtml, fileName, lruCache, sanitize, icons)
   └─ sw.js                      — Service Worker (Cache-First, оффлайн)
   └─ manifest.json              — PWA-манифест (установка на устройство)
 ```
@@ -176,6 +176,23 @@ Unix `process.kill(-pgid)`. Работает по pid, без `exitCode !== null
 Pre-exit summary-watchdog — единственный реальный механизм. Подробности —
 [docs/RELEASE_PROCESS.md#e2e-runner](RELEASE_PROCESS.md) + тест
 [windows-post-exit-cleanup-lie.test.js](../tests/unit/architecture/windows-post-exit-cleanup-lie.test.js).
+
+### 2.7 Import/export UI boundary
+
+`FileController` отвечает за сценарий загрузки/сохранения, но не форматирует
+пользовательские представления напрямую:
+
+- имя JSON-экспорта собирает [fileName.js](../js/utils/fileName.js):
+  `buildSprintPlanFilename(productName, date)`;
+- модель подтверждения импорта и success-message собирает
+  [importIssues.js](../js/ui/importIssues.js);
+- `messageService.showConfirm()` умеет принимать строку для legacy-confirm или
+  структурированную модель (`title`, `body`, `notice`, `detailsItems`).
+
+Правило UX: длинный список проблем импорта не вставлять в основной текст
+confirm-модалки. В основном тексте остаётся короткое предупреждение, детали
+раскрываются через `<details>`. Guard:
+[file-controller-import-ui-contract.test.js](../tests/unit/architecture/file-controller-import-ui-contract.test.js).
 
 ## 3. State и Render Flow
 
@@ -524,6 +541,7 @@ js/
     createTaskRowVM.js             # ViewModel для строки задачи (v8.14, B5)
     criteriaList.js                # рендер списка критериев
     header.js                      # рендер шапки (счётчики задач)
+    importIssues.js                # VM подтверждения JSON-импорта + success-message
     matrix.js                      # рендер матрицы компетенций
     modalManager.js                # единый менеджер модальных окон
     teamCapacity.js                # Team Capacity Dashboard (v8.21, заменил roleList.js + capacityStrip.js)
@@ -539,6 +557,7 @@ js/
     date.js                        # работа с датами (addWorkingDays, countWorkingDays, isWorkingDay)
     debounce.js                    # debounce-обёртка
     escapeHtml.js                  # экранирование HTML (XSS)
+    fileName.js                    # безопасные имена JSON-экспорта
     lruCache.js                    # LRU-кэш
 tests/
   unit/                            # Jest unit тесты (актуальные счётчики — в docs/RELEASE_NOTES.md)
