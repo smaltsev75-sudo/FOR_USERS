@@ -221,6 +221,24 @@ confirm-модалки. В основном тексте остаётся кор
 раскрываются через `<details>`. Guard:
 [file-controller-import-ui-contract.test.js](../tests/unit/architecture/file-controller-import-ui-contract.test.js).
 
+### 2.8 TaskListHandler boundary (v8.30.48)
+
+`TaskListHandler` остаётся DOM/store-orchestrator'ом для строк задач, но больше
+не держит inline-расчёты изменения state. Сценарные операции вынесены в
+малые helper-модули рядом с контроллером:
+
+| Модуль | Ответственность |
+|---|---|
+| `taskEstimateMutations.js` | округление и clamp `est[roleId]` через `NumberFormatService` |
+| `criteriaScoreMutations.js` | strict score parse и weighted `criteriaEvaluations` update |
+| `taskExcludeMutations.js` | update ручного исключения/возврата задачи |
+| `undoDeleteService.js` | undo-восстановление single/delete-all без stale snapshot |
+| `taskOrderingActions.js` | normalize/sort/move списка задач через `fixTaskOrder` |
+
+Правило: новая логика изменения задач сначала получает pure/helper-тест, а
+`TaskListHandler` только читает DOM event, вызывает helper, пишет через Store и
+инвалидирует cache/snackbar.
+
 ## 3. State и Render Flow
 
 ```
@@ -399,7 +417,7 @@ npm run test:e2e             # полный E2E (4 Playwright projects)
 
 Все release gates обязательны (см. `docs/RELEASE_PROCESS.md`, чек-лист). Релиз с red gate — категорически нельзя; см. memory `feedback-release-with-red-tests-banned`.
 
-### Release automation (v8.30.47)
+### Release automation (v8.30.47 → v8.30.48)
 
 `npm run release:public -- --version <X.Y.Z> ...` строит полный план доставки
 PLANNER → `sprint-planner/FOR_USERS`. По умолчанию это **dry-run**: печатает
@@ -411,7 +429,18 @@ Script использует pure-plan слой [releasePublicPlan.js](../scripts
 Перед execute он проверяет `gh repo view --json viewerPermission` для PLANNER и
 FOR_USERS, синхронизирует установленную public-shape (папки `css/js/docs/icons/dev-tools`,
 root-файлы и root-документацию), затем выполняет отдельные commit/push и
-`gh release create`.
+`gh release create`. С v8.30.48:
+
+- флаг `--public-smoke` запускает [public-smoke.mjs](../scripts/public-smoke.mjs)
+  по уже синхронизированному public root до commit/push/release;
+- public worktree обязан быть clean до sync;
+- после sync изменённые пути public-проекта проверяются против установленной
+  public-shape, чтобы release-скрипт не утянул случайные `.github`, package
+  или локальные файлы;
+- architecture guard [release-public-execute-guard.test.js](../tests/unit/architecture/release-public-execute-guard.test.js)
+  следит, что sync/commit/push/release остаются за явным `--execute`, процесс
+  документирует `release:public --execute --public-smoke`, а latest release
+  notes не содержит placeholder'ов.
 
 ### Playwright projects (`playwright.config.js`)
 
@@ -550,6 +579,11 @@ js/
       taskFormController.js        # унифицированная create+edit форма (v8.27)
       taskDragController.js        # drag-and-drop
       taskFlowActions.js           # pure routing primary action / task-list buttons (v8.30.47)
+      taskEstimateMutations.js     # update est[roleId] через NFS (v8.30.48)
+      criteriaScoreMutations.js    # update criteriaEvaluations (v8.30.48)
+      taskExcludeMutations.js      # ручное исключение/возврат (v8.30.48)
+      taskOrderingActions.js       # normalize/sort/move списка задач (v8.30.48)
+      undoDeleteService.js         # undo single/delete-all без stale snapshot (v8.30.48)
       taskCacheService.js          # кэширование priority-score
       taskListHandler.js           # обработчики бизнес-логики (вкл. undo-delete)
       formHelpers.js               # валидация полей форм
@@ -635,7 +669,10 @@ tests/
 | `capacityStripController.js` | Drag-preview подсветка сегментов Team Capacity Dashboard |
 | `taskDragController.js` | Drag-and-drop переупорядочивание |
 | `taskFlowActions.js` | Pure helper для primary create/edit action, shortcut detection и task-list button routing |
-| `taskListHandler.js` | Обработчики бизнес-логики списка задач |
+| `taskEstimateMutations.js` / `criteriaScoreMutations.js` | Тестируемые update helpers для est и criteriaEvaluations |
+| `taskExcludeMutations.js` / `taskOrderingActions.js` | Тестируемые helpers ручного исключения, нормализации, sort/move |
+| `undoDeleteService.js` | Undo restore для single/delete-all без stale full snapshot |
+| `taskListHandler.js` | Тонкий DOM/store-orchestrator списка задач |
 | `criteriaFormController.js` | Модаль критериев |
 | `modalManager.js` | Единый менеджер модальных окон |
 | `themeController.js` | Переключение светлой/тёмной темы |

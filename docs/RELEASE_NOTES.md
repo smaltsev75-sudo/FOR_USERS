@@ -1,5 +1,62 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.48) — task-list split + public release hardening
+
+> Связный hardening-pass по двум зонам доставки: `TaskListHandler` разложен на
+> тестируемые операции изменения задач, а public release-chain получил
+> `--public-smoke`, execute-guard и защиту public worktree от случайных файлов.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (task-list controller bloat)** | `TaskListHandler` держал в одном классе DOM-event parsing, расчёт est, criteria score, exclude update, undo restore и sort/move. Любая правка поведения удаления или оценки требовала читать весь обработчик. | Расчёты вынесены в `taskEstimateMutations.js`, `criteriaScoreMutations.js`, `taskExcludeMutations.js`, `undoDeleteService.js`, `taskOrderingActions.js`. Handler остался DOM/store-orchestrator'ом. | [taskListHandler.js](../js/controllers/task/taskListHandler.js), [task/ helpers](../js/controllers/task/) |
+| 2 | **P2 (release execution safety)** | Release automation уже была dry-run-first, но не имела отдельного guard-теста против будущего переноса sync/commit/push до `--execute`. | Добавлен architecture guard: mutating release steps обязаны идти после `if (!plan.execute)`, docs/package должны фиксировать `release:public --execute --public-smoke`, latest notes не допускают placeholder'ов. | [release-public-execute-guard.test.js](../tests/unit/architecture/release-public-execute-guard.test.js) |
+| 3 | **P2 (public smoke gap)** | Public repo мог быть синхронизирован и опубликован без проверки реального user-facing root после copy. | Добавлен `scripts/public-smoke.mjs`: локальный static server + Playwright Pixel 5 проверяют `#appVersion`, `#taskList`, отсутствие mobile overflow, console/page errors и 4xx/5xx ответов. | [public-smoke.mjs](../scripts/public-smoke.mjs), [release-public.mjs](../scripts/release-public.mjs) |
+| 4 | **P2 (public worktree drift)** | Если в `sprint-planner` перед sync были локальные изменения или после sync появлялись файлы вне установленной public-shape, release-скрипт мог закоммитить лишнее. | Execute-chain требует clean public worktree до sync и проверяет `git status` после sync против allow-list из `buildPublicSyncEntries()`. | [release-public.mjs](../scripts/release-public.mjs), [releasePublicPlan.js](../scripts/releasePublicPlan.js) |
+| 5 | **P3 (offline/PWA drift)** | Новые task helper ESM-модули ломали бы offline startup, если их забыть в precache. | `sw.js` пополнен task helper-модулями, precache coverage guard прогнан. | [sw.js](../sw.js), [precache-coverage.test.js](../tests/unit/architecture/precache-coverage.test.js) |
+
+### Новые тесты (TDD / guard)
+
+- `taskEstimateMutations.test.js` — округление, clamp, garbage→0, excluded/missing task.
+- `criteriaScoreMutations.test.js` — weighted update, strict score parse, missing task/criterion.
+- `taskExcludeMutations.test.js` — ручное exclude/unexclude update.
+- `undoDeleteService.test.js` — single restore по индексу, delete-all merge, reused id, excluded order.
+- `taskOrderingActions.test.js` — priority sort, excluded-last invariant, up/down move.
+- `releasePublicPlan.test.js` расширен: `--public-smoke`, status-path parser и public sync allow-list.
+- `release-public-execute-guard.test.js` — guard против publish без `--execute`, docs/script contract, latest notes без placeholder'ов.
+
+Всего unit-тесты: `1706 → 1737` (+31), suites `115 → 121` (+6).
+
+### Уроки и классы ошибок
+
+1. **Controller split должен доходить до операций, а не только до соседних классов.** После выноса форм/drag/cache список задач всё ещё держал mutation rules inline; helper-тесты делают такие правила видимыми.
+2. **Release automation требует guard'ов на форму script'а, а не только на текущую удачную реализацию.** Dry-run-first легко сломать будущим переносом вызова выше `if (!plan.execute)`.
+3. **Public release должен проверять именно синхронизированный public root.** Unit/coverage/e2e на PLANNER не доказывают, что скопированный FOR_USERS root открывается без overflow и runtime errors.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1737/1737 PASS, 121 suites, lines 96.38% | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`,
+  webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` выполнен отдельно для smoke-summary и full-summary:
+  обе проверки подтвердили совпадение release notes с
+  `test-results/e2e-parallel-summary.json`.
+- Public smoke `v8.30.48`: `#appVersion`, `#taskList`, mobile overflow,
+  console/page errors и HTTP 4xx/5xx проверены на синхронизированном public root.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.47) — diagnostics split + task-flow helper + release automation
 
 > Одновременный refactor-pass по трём оставшимся зонам: honest-import

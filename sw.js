@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.47-automation-diagnostics';
+const CACHE_VERSION = 'sp-v8.30.48-tasklist-release-hardening';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -61,11 +61,16 @@ const ASSETS_TO_CACHE = [
     './js/controllers/selectionController.js',
     './js/controllers/tabController.js',
     './js/controllers/task/formHelpers.js',
+    './js/controllers/task/criteriaScoreMutations.js',
+    './js/controllers/task/taskEstimateMutations.js',
+    './js/controllers/task/taskExcludeMutations.js',
+    './js/controllers/task/taskOrderingActions.js',
     './js/controllers/task/taskCacheService.js',
     './js/controllers/task/taskDragController.js',
     './js/controllers/task/taskFlowActions.js',
     './js/controllers/task/taskFormController.js',
     './js/controllers/task/taskListHandler.js',
+    './js/controllers/task/undoDeleteService.js',
     './js/controllers/taskController.js',
     './js/controllers/themeController.js',
     // JS — domain

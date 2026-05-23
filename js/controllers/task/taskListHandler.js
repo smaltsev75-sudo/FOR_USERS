@@ -2,9 +2,12 @@
 // js/controllers/task/taskListHandler.js
 
 import { messageService } from '../../services/message.js';
-import { parseCriteriaScore } from '../../domain/criteria.js';
-import { fixTaskOrder } from '../../domain/task.js';
 import { showSnackbar } from '../../ui/snackbar.js';
+import { buildCriteriaEvaluationUpdate } from './criteriaScoreMutations.js';
+import { buildEstimateUpdate } from './taskEstimateMutations.js';
+import { buildToggleExcludeUpdate } from './taskExcludeMutations.js';
+import { moveTaskByDirection, normalizeTaskOrder, sortTasksByPriority } from './taskOrderingActions.js';
+import { restoreDeletedTask, restoreDeletedTasks } from './undoDeleteService.js';
 
 /**
  * TaskListHandler — обработчики бизнес-логики задач в списке.
@@ -44,14 +47,9 @@ export class TaskListHandler {
         const roleId = input.dataset.role;
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === taskId);
-        if (!task || task.excluded) return;
-        // v8.30.24: live cap уже применён через taskList render (input listener
-        // подключает nfs.handleInput). Здесь — округление в state до 2 знаков,
-        // чтобы priority/effort расчёты не работали с raw arithmetic-precision.
-        let value = this.nfs.parseNumber(input.value) || 0;
-        value = Math.max(0, this.nfs.roundToDecimals(value, 2));
-        const newEst = { ...task.est, [roleId]: value };
-        this.store.updateTask(taskId, { est: newEst });
+        const update = buildEstimateUpdate(task, roleId, input.value, this.nfs);
+        if (!update) return;
+        this.store.updateTask(taskId, update);
         this._cache.invalidate();
     }
 
@@ -67,17 +65,10 @@ export class TaskListHandler {
         const score = select.value;
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === taskId);
-        if (!task) return;
         const criterion = state.criteria.find(c => c.id === criterionId);
-        if (!criterion) return;
-
-        const evaluations = { ...task.criteriaEvaluations };
-        const parsedScore = parseCriteriaScore(score);
-        evaluations[criterionId] = {
-            score: parsedScore,
-            value: (parsedScore * criterion.weight) / 10
-        };
-        this.store.updateTask(taskId, { criteriaEvaluations: evaluations });
+        const update = buildCriteriaEvaluationUpdate(task, criterion, score);
+        if (!update) return;
+        this.store.updateTask(taskId, update);
         this._cache.invalidate();
     }
 
@@ -89,22 +80,17 @@ export class TaskListHandler {
     handleToggleExclude(taskId) {
         const state = this.store.getState();
         const task = state.tasks.find(t => t.id === taskId);
-        if (!task) return;
-        const newExcluded = task.excluded ? 0 : 1;
-        const updates = {
-            excluded: newExcluded,
-            exclusionReason: newExcluded ? 'Исключена вручную' : ''
-        };
+        const updates = buildToggleExcludeUpdate(task);
+        if (!updates) return;
         const applyExclusion = () => {
             this.store.updateTask(taskId, updates);
             this._cache.invalidate();
-            const fixedTasks = fixTaskOrder(this.store.getState().tasks);
-            this.store.setTasks(fixedTasks);
+            this.store.setTasks(normalizeTaskOrder(this.store.getState().tasks));
         };
         const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
         if (taskElement) {
             taskElement.style.transition = 'opacity 0.3s ease';
-            taskElement.style.opacity = newExcluded ? '0.5' : '1';
+            taskElement.style.opacity = updates.excluded ? '0.5' : '1';
             setTimeout(applyExclusion, 300);
         } else {
             applyExclusion();
@@ -177,13 +163,8 @@ export class TaskListHandler {
                 //    т.е. undo после 300ms) — insert back at original index. В противном
                 //    случае задача ещё в store, restore — no-op для данных, только cache.
                 const currentTasks = this.store.getState().tasks;
-                const stillPresent = currentTasks.some(t => t.id === taskId);
-                if (!stillPresent) {
-                    const insertAt = Math.min(originalIndex, currentTasks.length);
-                    const restored = [...currentTasks];
-                    restored.splice(insertAt, 0, deletedTask);
-                    this.store.setTasks(fixTaskOrder(restored));
-                }
+                const restored = restoreDeletedTask(currentTasks, deletedTask, originalIndex);
+                if (restored) this.store.setTasks(restored);
                 this._cache.invalidate();
             }
         });
@@ -213,13 +194,7 @@ export class TaskListHandler {
             showSnackbar(`Удалено ${deletedTasks.length} задач`, {
                 onUndo: () => {
                     const currentTasks = this.store.getState().tasks;
-                    const currentIds = new Set(currentTasks.map(t => t.id));
-                    // Удалённые задачи восстанавливаются ПЕРВЫМИ в их исходном
-                    // порядке, новые (созданные после delete) — следом.
-                    // Если id переиспользован — приоритет у current (новой).
-                    const restoredDeleted = deletedTasks.filter(t => !currentIds.has(t.id));
-                    const merged = [...restoredDeleted, ...currentTasks];
-                    this.store.setTasks(fixTaskOrder(merged));
+                    this.store.setTasks(restoreDeletedTasks(currentTasks, deletedTasks));
                     this._cache.invalidate();
                 }
             });
@@ -236,14 +211,12 @@ export class TaskListHandler {
             return;
         }
         const state = this.store.getState();
-        const criteria = state.criteria;
-        const sorted = [...state.tasks].sort((a, b) => {
-            const scoreA = this._cache.getCachedPriorityScore(a, criteria);
-            const scoreB = this._cache.getCachedPriorityScore(b, criteria);
-            return scoreB - scoreA;
-        });
-        const fixed = fixTaskOrder(sorted);
-        this.store.reorderTasks(fixed);
+        const sorted = sortTasksByPriority(
+            state.tasks,
+            state.criteria,
+            (task, criteria) => this._cache.getCachedPriorityScore(task, criteria)
+        );
+        this.store.reorderTasks(sorted);
     }
 
     /**
@@ -254,15 +227,9 @@ export class TaskListHandler {
      * @returns {boolean} true если порядок изменён
      */
     handleMoveTask(taskId, direction) {
-        const delta = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
-        if (delta === 0) return false;
-        const tasks = [...this.store.getState().tasks];
-        const index = tasks.findIndex(t => t.id === taskId);
-        const targetIndex = index + delta;
-        if (index === -1 || targetIndex < 0 || targetIndex >= tasks.length) return false;
-
-        [tasks[index], tasks[targetIndex]] = [tasks[targetIndex], tasks[index]];
-        this.store.reorderTasks(fixTaskOrder(tasks));
+        const moved = moveTaskByDirection(this.store.getState().tasks, taskId, direction);
+        if (!moved) return false;
+        this.store.reorderTasks(moved);
         this._cache.invalidate();
         return true;
     }
