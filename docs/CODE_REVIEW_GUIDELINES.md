@@ -106,7 +106,7 @@ export function y() { ... }
 - **Nested interactive controls (v8.30.0)** — `role="button"` / `tabindex="0"` на контейнере, внутри которого focusable `input` / `<button>`. Нарушает WCAG 4.1.2 (axe-core «serious»). Вариант фикса: вынести toggle в отдельную `<button>`, focusable элементы — как siblings. См. `criteriaList.js`/`criteriaController.js`.
 - **`requestIdleCallback` / `setTimeout` для прогрессивного рендера без generation-token (v8.30.0).** Закрытие держит ссылку на старый `state` — после нового рендера старый callback дозаливает stale-DOM в новый список. Контракт: module-level counter + abort-check в callback (см. `taskList.js`).
 - **`localStorage.setItem` / `sessionStorage.setItem` в try/catch без сигнала пользователю.** `QuotaExceededError`/`SecurityError` пользователь должен увидеть (snackbar + предложение скачать JSON). Контракт `{ok, error}` — см. `services/storage.js`.
-- **`Date.now()` как fallback id в синхронном `map()` (v8.30.0).** Несколько элементов попадают в одну ms → одинаковые id → коллизии в Store. Использовать `createIdAllocator()` (см. `state/persistence.js`).
+- **`Date.now()` как fallback id в синхронном `map()` (v8.30.0).** Несколько элементов попадают в одну ms → одинаковые id → коллизии в Store. Использовать `createIdAllocator()` (см. `state/persistence/primitiveNormalizers.js`).
 
 ### 3.3 Обработка ошибок
 

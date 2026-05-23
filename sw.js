@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.45-import-flow-refactor';
+const CACHE_VERSION = 'sp-v8.30.46-persistence-facade';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -91,6 +91,14 @@ const ASSETS_TO_CACHE = [
     './js/services/storage.js',
     // JS — state
     './js/state/persistence.js',
+    './js/state/persistence/constants.js',
+    './js/state/persistence/criteriaEvaluations.js',
+    './js/state/persistence/criteriaNormalizers.js',
+    './js/state/persistence/dependencies.js',
+    './js/state/persistence/importDiagnostics.js',
+    './js/state/persistence/primitiveNormalizers.js',
+    './js/state/persistence/stateNormalizers.js',
+    './js/state/persistence/taskNormalizers.js',
     './js/state/store.js',
     // JS — types
     './js/types/contracts.js',

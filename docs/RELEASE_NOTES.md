@@ -1,5 +1,56 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.46) — persistence facade split
+
+> Архитектурный рефакторинг persistence-слоя без смены публичного API:
+> `js/state/persistence.js` стал тонким фасадом для миграции, сериализации и
+> diagnostics, а нормализаторы разложены по ответственностям. Поведение JSON
+> import/export и storage-контракт сохранены существующей regression-сеткой.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (maintainability / blast radius)** | `persistence.js` совмещал facade, UI-state defaults, task/criteria нормализацию, dependency remediation и honest-import diagnostics в одном файле. Любая правка импорта заставляла читать весь монолит. | Фасад оставлен на 80 строках: `migratePersistedState`, `serializeStateForStorage`, re-export `analyzeImportIssues`. Внутри добавлены scoped submodules `stateNormalizers`, `taskNormalizers`, `criteriaNormalizers`, `importDiagnostics`, `primitiveNormalizers`, `dependencies`, `criteriaEvaluations`, `constants`. | [persistence.js](../js/state/persistence.js), [js/state/persistence/](../js/state/persistence/) |
+| 2 | **P2 (architecture drift)** | После будущих hotfix'ов нормализаторы могли незаметно вернуться в facade, снова смешав публичный API и детали импорта. | Добавлен architecture guard: facade обязан импортировать submodules и не должен содержать `normalizeTasks`, `normalizeCriteria`, `analyzeImportIssues`, `safePlainObject`, `normalizeTaskDependencies`. | [persistence-facade-contract.test.js](../tests/unit/architecture/persistence-facade-contract.test.js) |
+| 3 | **P3 (offline/PWA drift)** | Новые транзитивные ES-модули state-слоя ломали бы offline startup, если их забыть в precache. | Все новые `js/state/persistence/*.js` добавлены в `sw.js`; существующий precache-guard прогнан и оставлен как release gate. | [sw.js](../sw.js), [precache-coverage.test.js](../tests/unit/architecture/precache-coverage.test.js) |
+| 4 | **P3 (docs / review map)** | Документация и review-памятка указывали на старый монолит как место `DEFAULT_UI_STATE`, `safePlainObject`, allocator и persistence helpers. | README/ARCHITECTURE/CODE_REVIEW_GUIDELINES/CLAUDE обновлены под новый layout и responsibilities. | [README.md](../README.md), [ARCHITECTURE.md](ARCHITECTURE.md), [CODE_REVIEW_GUIDELINES.md](CODE_REVIEW_GUIDELINES.md), [CLAUDE.md](../CLAUDE.md) |
+
+### Новые тесты (TDD / guard)
+
+- `persistence-facade-contract.test.js` — архитектурный guard фасада и списка submodules.
+- Существующая persistence regression-сетка после разреза: 191 тест на migration/alignment/strict ids/nested shapes/jira/honest import.
+- Precache coverage guard проверяет, что все новые транзитивные ES-модули доступны offline.
+
+Всего unit-тесты: `1691 → 1693` (+2), suites `112 → 113` (+1).
+
+### Уроки и классы ошибок
+
+1. **Facade должен быть виден глазами caller'а.** Если файл экспортирует три публичные операции, детали strict-id, cycle DFS и diagnostics должны жить ниже, а не конкурировать с API.
+2. **Архитектурный guard дешевле повторного распутывания монолита.** После разреза нужен тест, который защищает форму boundary, иначе первый срочный fix вернёт всё в один файл.
+3. **Любой новый ES-module в PWA — это offline asset.** Даже чистый internal refactor обязан проходить через `sw.js` и `precache-coverage`.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1693/1693 PASS, 113 suites, lines 96.22% | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`,
+  webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` выполнен отдельно для smoke-summary и full-summary:
+  обе проверки подтвердили совпадение release notes с
+  `test-results/e2e-parallel-summary.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.45) — import flow refactor + compact diagnostics
 
 > Связный рефакторинг потока JSON import/export: `FileController` стал тоньше,

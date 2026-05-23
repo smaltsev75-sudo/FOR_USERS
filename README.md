@@ -151,7 +151,7 @@ PLANNER/
 │   ├── controllers/        ← оркестрация event ↔ store
 │   ├── domain/             ← чистая бизнес-логика (без DOM/Store)
 │   ├── services/           ← сервисы (storage, message, format)
-│   ├── state/              ← Store + persistence
+│   ├── state/              ← Store + persistence facade/submodules
 │   ├── ui/                 ← рендеринг компонентов
 │   └── utils/              ← вспомогательные модули
 │

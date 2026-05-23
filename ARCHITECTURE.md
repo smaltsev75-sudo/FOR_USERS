@@ -16,6 +16,7 @@
 index.html
   └─ js/app.js (orchestrator)
        ├─ js/state/store.js          — единое хранилище состояния (state.ui.density, viewMode, expandedQuadrants — v8.14)
+       ├─ js/state/persistence.js    — facade миграции/сериализации; детали в js/state/persistence/* (v8.30.46)
        ├─ js/controllers/*           — управление UI и сценариями
        │    ├─ task/                  — создание, редактирование, drag&drop, undo-delete
        │    ├─ criteria/              — управление критериями оценки
@@ -80,11 +81,34 @@ JSON. Тот же контракт применять для любых крит
 на `null`/`'string'`/`[]` default не срабатывает, downstream бросает
 TypeError или загрязняется numeric/char ключами через spread.
 
-Helper `safePlainObject(value)` в [persistence.js](../js/state/persistence.js):
+Helper `safePlainObject(value)` в
+[primitiveNormalizers.js](../js/state/persistence/primitiveNormalizers.js):
 plain object → passthrough; null/array/primitive → `{}`. Применяется к
 `normalizeConfig` / `normalizeRoles` / `normalizeTaskFilter` / `normalizeTaskSort`
 / `normalizeUi` / `normalizeNumberFormat` / `normalizeCriteriaEvaluations`
 / `normalizeTaskEst` + `criteria.scale` spread.
+
+#### v8.30.46: persistence facade split
+
+[persistence.js](../js/state/persistence.js) остаётся публичным API для
+`migratePersistedState()`, `serializeStateForStorage()` и
+`analyzeImportIssues()`, но больше не содержит всю нормализацию в одном файле.
+Внутренние границы:
+
+| Модуль | Ответственность |
+|---|---|
+| `constants.js` | persist-defaults и allow-lists UI-state |
+| `primitiveNormalizers.js` | `safePlainObject`, strict integer/number helpers, id allocator |
+| `stateNormalizers.js` | config, roles, numberFormat, taskFilter/taskSort, ui |
+| `criteriaNormalizers.js` | criteria + raw criterion id view |
+| `taskNormalizers.js` | task shape, jira guard, effort, cycle remediation |
+| `dependencies.js` | strict dependency ids + DFS cycle participants |
+| `criteriaEvaluations.js` | canonical evaluation keys + orphan filtering |
+| `importDiagnostics.js` | honest import diagnostics для FileController |
+
+Guard: [persistence-facade-contract.test.js](../tests/unit/architecture/persistence-facade-contract.test.js)
+запрещает возвращать `normalizeTasks`, `analyzeImportIssues`,
+`safePlainObject` и dependency-normalizers обратно в фасад.
 
 **Alignment invariant (v8.30.36):** для КАЖДОГО issue в `analyzeImportIssues`
 с формулировкой «отброшено / применён fallback», post-migration state физически
@@ -218,7 +242,7 @@ store.update*() → notify() → listeners → schedulePersist() + requestRender
 | `expandedQuadrants` | `Array<'q1'\|'q2'\|'q3'\|'q4'\|'excluded'>` | все 5 | v8.14 (C); ключ `'excluded'` добавлен в v8.29.1 | `toggleQuadrantExpanded()` / `setExpandedQuadrants()` |
 
 Невалидные значения (включая старые версии storage) автоматически нормализуются к default'ам. При добавлении нового UI-toggle:
-1. Добавить поле в `DEFAULT_UI_STATE` в `js/state/persistence.js`.
+1. Добавить поле в `DEFAULT_UI_STATE` в `js/state/persistence/constants.js`.
 2. Добавить нормализацию в `normalizeUi(ui)`.
 3. Добавить setter в `Store` (типа `setX`).
 4. Подключить controller, который слушает события и вызывает setter.
@@ -532,7 +556,8 @@ js/
     storage.js                     # localStorage-обёртка
   state/
     store.js                       # единое хранилище (Object.freeze)
-    persistence.js                 # миграции и сериализация
+    persistence.js                 # публичный facade миграции и сериализации
+    persistence/                   # нормализаторы, diagnostics и shared helpers
   types/
     contracts.js                   # типовые контракты (JSDoc)
   ui/
