@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.48-tasklist-release-hardening';
+const CACHE_VERSION = 'sp-v8.30.49-architecture-visual-hardening';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -34,6 +34,7 @@ const ASSETS_TO_CACHE = [
     './css/criteria.css',
     './css/selection-report.css',
     './css/task-card.css',
+    './css/density.css',
     './css/capacity-strip.css',
     './css/team-capacity.css',
     './css/toolbar.css',
@@ -43,6 +44,8 @@ const ASSETS_TO_CACHE = [
     './css/print.css',
     // JS — app entry
     './js/app.js',
+    './js/app/persistenceCoordinator.js',
+    './js/app/renderScheduler.js',
     // JS — vendor (offline-готовый marked + DOMPurify для справки)
     './js/vendor/marked.min.js',
     './js/vendor/purify.min.js',
@@ -83,6 +86,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/selection/analysis.js',
     './js/domain/selection/base.js',
     './js/domain/selection/config.js',
+    './js/domain/selection/comparisonDisplay.js',
     './js/domain/selection/hybrid.js',
     './js/domain/selection/index.js',
     './js/domain/selection/matrix.js',
@@ -129,6 +133,9 @@ const ASSETS_TO_CACHE = [
     './js/ui/selectionRecommendations.js',
     './js/ui/selectionReport.js',
     './js/ui/snackbar.js',
+    './js/ui/taskList/focus.js',
+    './js/ui/taskList/overloadIndicators.js',
+    './js/ui/taskList/viewState.js',
     './js/ui/taskList.js',
     './js/ui/utils.js',
     // JS — version (single source of truth, imported by ui/appVersionBadge.js)

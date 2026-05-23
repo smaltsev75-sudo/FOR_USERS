@@ -1,0 +1,129 @@
+/* ---------- density.css ---------- */
+/* Единая точка density-delta для списка задач.
+   Базовые компоненты остаются density-agnostic, режим выбирает #taskList. */
+
+#taskList {
+    --task-row-padding-y: 10px;
+    --task-row-padding-x: 14px;
+    --task-row-margin: 8px;
+    --task-row-gap: 12px;
+    --task-row-title-size: 1rem;
+    --task-row-section-gap: 10px;
+    --task-row-comment-display: block;
+}
+
+#taskList[data-density="compact"] {
+    --task-row-padding-y: 6px;
+    --task-row-padding-x: 10px;
+    --task-row-margin: 4px;
+    --task-row-gap: 8px;
+    --task-row-title-size: 0.9rem;
+    --task-row-section-gap: 6px;
+    --task-row-comment-display: none;
+}
+
+#taskList[data-density="comfortable"] {
+    --task-row-padding-y: 10px;
+    --task-row-padding-x: 14px;
+    --task-row-margin: 8px;
+    --task-row-gap: 12px;
+    --task-row-title-size: 1rem;
+    --task-row-section-gap: 10px;
+    --task-row-comment-display: block;
+}
+
+#taskList[data-density="compact"] .task-comment {
+    display: none !important;
+}
+
+#taskList[data-density="compact"] .est-role-label,
+#taskList[data-density="compact"] .est-box-bar,
+#taskList[data-density="compact"] .est-box-total-label,
+#taskList[data-density="compact"] .priority-score-label,
+#taskList[data-density="compact"] .priority-score-sublabel {
+    display: none;
+}
+
+#taskList[data-density="compact"] .est-input-container {
+    min-height: 22px;
+}
+
+#taskList[data-density="compact"] .est-input-container input {
+    font-size: 0.8rem;
+}
+
+#taskList[data-density="compact"] .task-title {
+    font-size: 0.9rem;
+}
+
+#taskList[data-density="compact"] .task-estimates,
+#taskList[data-density="compact"] .criteria-row {
+    padding-top: 4px;
+}
+
+#taskList[data-density="compact"] .priority-score-container {
+    padding: 4px 10px;
+    min-width: 70px;
+}
+
+#taskList[data-density="compact"] .priority-score-value {
+    font-size: 1.05rem;
+}
+
+#taskList[data-density="compact"] .est-box-total {
+    padding: 4px 10px;
+    min-width: 80px;
+}
+
+#taskList[data-density="compact"] .task-effort-value {
+    font-size: 0.85rem;
+}
+
+#taskList[data-density="compact"] .criteria-row {
+    margin-top: 4px;
+    padding-top: 4px;
+    display: none;
+}
+
+#taskList[data-density="compact"] .criteria-eval-item {
+    padding: 3px 6px;
+    min-width: 110px;
+    min-height: 24px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+#taskList[data-density="compact"] .criteria-eval-bar {
+    display: none;
+}
+
+#taskList[data-density="compact"] .criteria-eval-contribution {
+    display: none;
+}
+
+#taskList[data-density="compact"] .criteria-eval-stepper {
+    padding: 0;
+}
+
+#taskList[data-density="compact"] .criteria-eval-step {
+    width: 20px;
+    height: 20px;
+    font-size: 0.85rem;
+}
+
+#taskList[data-density="compact"] .criteria-eval-score {
+    font-size: 0.78rem;
+    padding: 1px 3px;
+}
+
+#taskList[data-density="compact"] .criteria-score-input {
+    height: 20px;
+    min-width: 28px;
+}
+
+#taskList[data-density="compact"] .criteria-score-dropdown {
+    height: 20px;
+    width: 18px;
+    min-width: 18px;
+}

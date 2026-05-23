@@ -28,6 +28,8 @@ import { acquire as acquireInstanceLock } from './services/instanceLock.js';
 import { renderBlockedScreen } from './ui/blockedScreen.js';
 import { APP_VERSION } from './version.js';
 import { APP_CONFIG } from './utils/appConfig.js';
+import { PersistenceCoordinator } from './app/persistenceCoordinator.js';
+import { RenderScheduler } from './app/renderScheduler.js';
 
 export class App {
     /**
@@ -35,11 +37,6 @@ export class App {
      * Инициализирует store, контроллеры и единый цикл render/persist.
      */
     constructor() {
-        this.renderQueued = false;
-        this.persistTimeout = null;
-        this.persistDelayMs = 200;
-        this.requestRender = this.requestRender.bind(this);
-        this.schedulePersist = this.schedulePersist.bind(this);
         this.nfs = new NumberFormatService();
 
         const savedState = storageService.load();
@@ -66,6 +63,18 @@ export class App {
         this.keyboardController = new KeyboardController(this.taskController, this.fileController);
         this.themeController = new ThemeController();
         this.densityController = new DensityController(this.store);
+        this.renderScheduler = new RenderScheduler(() => this.render());
+        this.persistenceCoordinator = new PersistenceCoordinator({
+            store: this.store,
+            criteriaManager: this.criteriaManager,
+            nfs: this.nfs,
+            storage: storageService,
+            serializeState: serializeStateForStorage,
+            showSnackbar
+        });
+        this.requestRender = this.renderScheduler.requestRender;
+        this.schedulePersist = this.persistenceCoordinator.schedulePersist;
+        this.saveToLS = this.persistenceCoordinator.saveNow.bind(this.persistenceCoordinator);
 
         this.taskController.setPriorityScoreCalculator((task) => {
             return calculatePriorityScore(this.criteriaManager.getCriteria(), task.criteriaEvaluations);
@@ -108,23 +117,10 @@ export class App {
             this.requestRender();
         });
         window.addEventListener('beforeunload', () => {
-            if (this.persistTimeout) {
-                clearTimeout(this.persistTimeout);
-                this.persistTimeout = null;
-            }
-            this.saveToLS();
+            this.persistenceCoordinator.flush();
         });
         this.keyboardController.init();
         this.requestRender();
-    }
-
-    requestRender() {
-        if (this.renderQueued) return;
-        this.renderQueued = true;
-        requestAnimationFrame(() => {
-            this.renderQueued = false;
-            this.render();
-        });
     }
 
     render() {
@@ -132,57 +128,6 @@ export class App {
             nfs: this.nfs,
             taskController: this.taskController
         });
-    }
-
-    schedulePersist() {
-        if (this.persistTimeout) {
-            clearTimeout(this.persistTimeout);
-        }
-        this.persistTimeout = setTimeout(() => {
-            this.persistTimeout = null;
-            this.saveToLS();
-        }, this.persistDelayMs);
-    }
-
-    saveToLS() {
-        const state = this.store.getState();
-        const data = serializeStateForStorage(
-            state,
-            this.criteriaManager.getCriteria(),
-            this.nfs.decimalSeparator
-        );
-        const stateResult = storageService.save(data);
-        // v8.30.2: nfs.saveSettings раньше делал localStorage.setItem БЕЗ
-        // try/catch — при quota/security error прерывал autosave даже после
-        // fix v8.30.0 (там я починил только storageService.save, забыв
-        // соседнюю persist-точку). Теперь обе возвращают {ok,error}, любой
-        // fail триггерит snackbar.
-        const nfsResult = this.nfs.saveSettings();
-        const failed = (stateResult && !stateResult.ok)
-            ? stateResult
-            : (nfsResult && !nfsResult.ok ? nfsResult : null);
-        if (failed) this._notifyPersistFailure(failed.error);
-    }
-
-    /**
-     * v8.30.0: показать snackbar при провале localStorage.setItem. Раньше
-     * QuotaExceededError / SecurityError проглатывались — пользователь терял
-     * рабочий день после F5. Throttle 30 сек: не спамим при повторных fail'ах.
-     * @param {string} errorName
-     * @private
-     */
-    _notifyPersistFailure(errorName) {
-        const now = Date.now();
-        if (this._lastPersistFailureNotify && now - this._lastPersistFailureNotify < 30000) return;
-        this._lastPersistFailureNotify = now;
-        const isQuota = /quota/i.test(String(errorName));
-        const message = isQuota
-            ? 'Не удалось сохранить: переполнено хранилище браузера. Скачайте JSON через «Сохранить» в правом верхнем углу.'
-            : `Не удалось сохранить данные в браузере (${errorName}). Скачайте JSON через «Сохранить».`;
-        // showSnackbar безопасно вызывать вне DOM — guard на document.
-        if (typeof document !== 'undefined' && document.body) {
-            showSnackbar(message, { duration: 8000 });
-        }
     }
 
 }

@@ -5,7 +5,11 @@ import { calculateTaskTotal } from '../domain/task.js';
 import { calculatePriorityScore, parseCriteriaScore } from '../domain/criteria.js';
 import { createTaskRowVM, getPriorityLevel, getPriorityLabel } from './createTaskRowVM.js';
 import { icon } from '../utils/icons.js';
-import { formatUiPercent } from '../utils/percent.js';
+import { filterTasks, resolveDensity } from './taskList/viewState.js';
+import { captureCriteriaScoreFocus, restoreCriteriaScoreFocus } from './taskList/focus.js';
+import { updateOverloadIndicators } from './taskList/overloadIndicators.js';
+
+export { filterTasks, resolveDensity, updateOverloadIndicators };
 
 const ROLE_ICON_MAP = {
     uiux: 'rolePalette',
@@ -45,29 +49,12 @@ let renderGeneration = 0;
 /** @internal Тестовый хук — текущее поколение рендера. */
 export function _getRenderGeneration() { return renderGeneration; }
 
-const VALID_DENSITIES = ['compact', 'comfortable'];
-
 function buildCriteriaScoreOptions(selectedScore) {
     let options = '';
     for (let score = 0; score <= 10; score++) {
         options += `<option value="${score}"${score === selectedScore ? ' selected' : ''}>${score}</option>`;
     }
     return options;
-}
-
-export function filterTasks(tasks, taskFilter) {
-    let filtered = [...tasks];
-    const searchTerm = (taskFilter?.search || '').toLowerCase().trim();
-    if (searchTerm) {
-        filtered = filtered.filter(task =>
-            task.title.toLowerCase().includes(searchTerm)
-        );
-    }
-    const typeFilter = taskFilter?.type || '';
-    if (typeFilter) {
-        filtered = filtered.filter(task => task.type === typeFilter);
-    }
-    return filtered;
 }
 
 function highlightNewTask(state, taskListEl) {
@@ -112,11 +99,6 @@ function highlightNewTask(state, taskListEl) {
     doHighlight();
 }
 
-export function resolveDensity(uiState) {
-    const value = uiState && uiState.density;
-    return VALID_DENSITIES.includes(value) ? value : 'comfortable';
-}
-
 export function renderTaskList(state, nfs, taskController = null) {
     const taskListEl = document.getElementById('taskList');
     if (!taskListEl) return;
@@ -136,17 +118,7 @@ export function renderTaskList(state, nfs, taskController = null) {
 
     // v8.30.39: запоминаем focused criteria score input/stepper (если был
     // внутри #taskList), чтобы вернуть фокус после replaceChildren.
-    let focusedCriteriaScoreKey = null;
-    const active = document.activeElement;
-    if (active && taskListEl.contains(active)) {
-        const input = active.closest?.('.criteria-score-input');
-        const stepper = active.closest?.('.criteria-eval-stepper');
-        const taskId = input?.dataset.id || stepper?.dataset.id;
-        const criterionId = input?.dataset.criterionId || stepper?.dataset.criterionId;
-        if (taskId && criterionId) {
-            focusedCriteriaScoreKey = `${taskId}::${criterionId}`;
-        }
-    }
+    const focusedCriteriaScoreKey = captureCriteriaScoreFocus(taskListEl);
 
     taskListEl.replaceChildren();
 
@@ -231,28 +203,6 @@ export function renderTaskList(state, nfs, taskController = null) {
     updateOverloadIndicators(state, nfs);
     pulseChangedPriorityScores(taskListEl, previousScores);
     restoreCriteriaScoreFocus(taskListEl, focusedCriteriaScoreKey);
-}
-
-// v8.30.31: экспорт updateOverloadIndicators — renderGroupedTasks теперь тоже
-// его вызывает, чтобы overload-теги были видны в Quadrants view.
-export { updateOverloadIndicators };
-
-/**
- * v8.30.39: восстанавливает фокус на editable criteria score input после
- * re-render. Без этого подряд Enter/ArrowUp/ArrowDown теряют фокус после
- * первого изменения (replaceChildren сносит focused-узел).
- */
-function restoreCriteriaScoreFocus(taskListEl, key) {
-    if (!key) return;
-    const [taskId, criterionId] = key.split('::');
-    const escapeSelectorValue = globalThis.CSS?.escape || ((value) => String(value).replace(/["\\\]]/g, '\\$&'));
-    const stepper = taskListEl.querySelector(
-        `.criteria-eval-stepper[data-id="${escapeSelectorValue(taskId)}"][data-criterion-id="${escapeSelectorValue(criterionId)}"]`
-    );
-    const input = stepper?.querySelector('.criteria-score-input');
-    if (input && typeof input.focus === 'function') {
-        input.focus({ preventScroll: true });
-    }
 }
 
 /**
@@ -561,51 +511,3 @@ export function createTaskElement(
     return el;
 }
 
-function updateOverloadIndicators(state, nfs) {
-    const config = state.config;
-    const roles = state.roles;
-    const tasks = state.tasks;
-
-    const availMap = {};
-    roles.forEach(r => availMap[r.id] = calculateAvailability(r, config).useful);
-
-    // Precompute cumulative effort per role in O(n) — keyed by task id
-    const cumByRole = {}; // { roleId: Map<taskId, cumulativeSum> }
-    roles.forEach(role => {
-        const cumMap = new Map();
-        let running = 0;
-        for (const t of tasks) {
-            if (t.excluded) continue;
-            running += (t.est[role.id] || 0);
-            cumMap.set(t.id, running);
-        }
-        cumByRole[role.id] = cumMap;
-    });
-
-    tasks.forEach(task => {
-        const taskEl = document.querySelector(`.task-item[data-id="${task.id}"]`);
-        if (!taskEl) return;
-        if (task.excluded) {
-            roles.forEach(role => {
-                const container = taskEl.querySelector(`.overload-placeholder[data-role="${role.id}"]`);
-                if (container) container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
-            });
-            return;
-        }
-        roles.forEach(role => {
-            const container = taskEl.querySelector(`.overload-placeholder[data-role="${role.id}"]`);
-            if (!container) return;
-            const cumulativeTotal = cumByRole[role.id].get(task.id);
-            if (cumulativeTotal === undefined) return;
-            const cap = availMap[role.id];
-            const diff = cumulativeTotal - cap;
-            const pctOverload = cap > 0 ? (diff / cap * 100) : 0;
-            if (cap > 0 && diff > 0 && pctOverload > config.alert) {
-                const pct = (cumulativeTotal / cap * 100) - 100;
-                container.innerHTML = `<div class="overload-tag" title="Перегрузка: +${nfs.formatNumber(diff)} ч (+${formatUiPercent(pctOverload)}%)">+${nfs.formatNumber(diff)} <span class="overload-percent">+${formatUiPercent(pct)}%</span></div>`;
-            } else {
-                container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
-            }
-        });
-    });
-}

@@ -19,7 +19,7 @@ import {
     buildComparisonDisplayData,
     computeComparisonBestValues,
     pickRecommendedAlgorithm
-} from '../controllers/selection/selectionHelpers.js';
+} from '../domain/selection/comparisonDisplay.js';
 import { ALGORITHM_KEYS } from '../domain/selection/config.js';
 import { showModal } from './modalManager.js';
 import { icon } from '../utils/icons.js';

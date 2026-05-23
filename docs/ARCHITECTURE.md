@@ -9,6 +9,8 @@
 - Единственная точка входа: `index.html` → `js/app.js`.
 - Все модули подключаются через ES imports от `app.js`.
 - Для тестов: `window.__PLANNER_DISABLE_AUTOBOOT__` отключает автозапуск.
+- Навигационный индекс модулей генерируется командой `npm run docs:modules`
+  в [docs/MODULE_MAP.md](MODULE_MAP.md). Табличные строки не редактировать руками.
 
 ## 2. Слои приложения
 
@@ -49,6 +51,26 @@ index.html
 | `ui/` | ✅ | через параметры (не импортирует Store) | ❌ |
 | `utils/` | ❌ | ❌ | ❌ |
 
+Guard: [layer-boundaries.test.js](../tests/unit/architecture/layer-boundaries.test.js)
+статически проверяет ключевые зависимости: `domain/` не импортирует
+`controllers/services/state/ui`, `state/` не импортирует `controllers/services/ui`,
+а `ui/` не импортирует `controllers/state/app`. Это превращает таблицу выше из
+договорённости в release gate.
+
+### App coordinators (v8.30.49)
+
+`App` остаётся bootstrap/orchestrator'ом: создание Store, контроллеров и wiring.
+Runtime-ответственности вынесены в маленькие координаторы:
+
+| Модуль | Ответственность | Guard/test |
+|---|---|---|
+| [renderScheduler.js](../js/app/renderScheduler.js) | `requestAnimationFrame` batching и queue-state | [renderScheduler.test.js](../tests/unit/app/renderScheduler.test.js) |
+| [persistenceCoordinator.js](../js/app/persistenceCoordinator.js) | debounce persist, beforeunload flush, storage/nfs failure snackbar throttle | [persistenceCoordinator.test.js](../tests/unit/app/persistenceCoordinator.test.js) |
+
+[meta-helper-grep-discipline.test.js](../tests/unit/architecture/meta-helper-grep-discipline.test.js)
+дополнительно следит, что `app.js` не возвращает `persistTimeout`,
+`renderQueued`, `_notifyPersistFailure`, direct `setTimeout` или Storage writes.
+
 ### 2.1 Progressive rendering и generation token (v8.30.0)
 
 `renderTaskList()` рендерит первые 20 задач синхронно, остальные — через
@@ -57,6 +79,21 @@ module-level `renderGeneration`. Pending idle-callback'и старого рен�
 сверяют `myGeneration` со счётчиком и абортятся, если их рендер устарел —
 иначе stale-карточки дозалились бы в уже очищенный новый DOM при быстрой
 смене state. Тестовый хук: `_getRenderGeneration()`.
+
+#### Task list facade split (v8.30.49)
+
+[taskList.js](../js/ui/taskList.js) сохраняет публичный контракт для
+`renderTaskList`, `createTaskElement`, `filterTasks`, `resolveDensity` и
+`updateOverloadIndicators`, но часть логики вынесена в подпапку:
+
+| Модуль | Ответственность |
+|---|---|
+| [viewState.js](../js/ui/taskList/viewState.js) | search/type filter + density fallback |
+| [focus.js](../js/ui/taskList/focus.js) | capture/restore focus для editable criteria score после `replaceChildren` |
+| [overloadIndicators.js](../js/ui/taskList/overloadIndicators.js) | cumulative role overload tags после каждого batch |
+
+Guard: [task-list-facade-contract.test.js](../tests/unit/architecture/task-list-facade-contract.test.js)
+запрещает возвращать эти helper'ы обратно в фасад.
 
 ### 2.2 Storage contract (v8.30.0)
 
@@ -367,7 +404,8 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14) |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
 | `selection-report.css` | Отчёт автоотбора: featured-баннер рекомендации, 3 алгоритм-карточки, метрик-бары, легаси `.comparison-table` (v8.28) |
-| `task-card.css` | Карточка задачи: density tokens (`--task-row-*`), `.task-type-badge` (иконка + полное название типа), `.task-type-indicator` (скрытый, backward-compat e2e), hover-only actions, sticky-headers для quadrants (v8.14) |
+| `task-card.css` | Карточка задачи: `.task-type-badge` (иконка + полное название типа), `.task-type-indicator` (скрытый, backward-compat e2e), hover-only actions, sticky-headers для quadrants (v8.14) |
+| `density.css` | Единая точка density-delta для `#taskList[data-density]`: `--task-row-*`, compact visibility и compact criteria stepper |
 | `team-capacity.css` | Team Capacity Dashboard (v8.21): header с gauge, сетка карточек ролей с inputs FTE%/Отпуск внутри, levels success/warning/danger, preview overlay при drag, single-iteration overload pulse |
 | `capacity-strip.css` | Legacy 5-сегментная Capacity Strip (v8.14): сохранён как dual-class hooks `cap-segment*` для backward-compat e2e/unit тестов; live UI рендерит `js/ui/teamCapacity.js` |
 | `print.css` | Печать |
@@ -383,6 +421,13 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 - FOUC предотвращается inline-скриптом в `<head>`.
 - Все цвета соответствуют **WCAG 2 AA** (контраст ≥ 4.5:1).
 - CSS-переменная `--accent-text` обеспечивает контраст текста на accent-фоне в обеих темах.
+- `base.css` объявляет порядок будущих cascade layers:
+  `reset, tokens, layout, components, utilities, a11y, overrides`. Полный перенос
+  существующих файлов в `@layer` откладывать до отдельного visual regression pass:
+  unlayered rules сейчас имеют больший cascade priority, чем layered normal rules.
+- [density-css-boundary.test.js](../tests/unit/architecture/density-css-boundary.test.js)
+  фиксирует, что task density deltas живут в `density.css`, грузятся после
+  `task-card.css` и попадают в PWA precache.
 
 ## 6. Безопасность
 
@@ -402,6 +447,7 @@ npm run test:coverage        # unit + coverage (release gate)
 npm run test:smoke           # быстрая проверка unit-подмножества
 npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
+npm run docs:modules         # обновить docs/MODULE_MAP.md
 ```
 
 ### Тестовые суиты (v8.30.31)
@@ -452,6 +498,24 @@ root-файлы и root-документацию), затем выполняет
 | `mobile-chromium` | Pixel 5 (393×851), Chromium | `mobile.spec.js` | mobile responsive invariants |
 | `webkit` | Desktop Safari 1280×720 | `webkit.spec.js` | engine-specific smoke (sticky, focus-trap) |
 | `mobile-webkit` | iPhone 13 (390×844), WebKit | `mobile.spec.js` | iOS Safari + mobile-webkit specific |
+
+`visual.spec.js` (v8.30.49) запускается в desktop `chromium` project и хранит
+baseline-снимки для light planning shell, compact task list и dark create-modal.
+Состояния сидируются через `localStorage`, version/timestamp скрыты CSS-маской,
+transitions/animations выключены. Обновлять snapshots только после осознанного
+UI-изменения: `npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots`.
+
+### Coverage thresholds (v8.30.49)
+
+`jest.config.cjs` использует не только global gate, но и per-layer thresholds:
+`domain/` 95% statements/functions/lines, `state/` 95% statements/lines,
+`controllers/` 85%, `ui/` 85% statements/lines и 70% branches. Цель — не дать
+новым доменным/миграционным модулям провалить покрытие за счёт UI-среднего.
+
+Property-based persistence checks через `fast-check` живут в
+[persistence.properties.test.js](../tests/unit/state/persistence.properties.test.js):
+`migratePersistedState` должен быть total function для arbitrary JSON-ish input,
+а цикл `migrate → serialize → migrate` стабилен для нормализованных state slices.
 
 **Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
 
