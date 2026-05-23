@@ -84,6 +84,24 @@ npm run bump -- 9.0.0
 
 6. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
 
+## Public release automation (v8.30.47)
+
+Для стандартной доставки PLANNER → `sprint-planner/FOR_USERS` есть dry-run-first
+скрипт:
+
+```bash
+npm run release:public -- --version 8.30.47 \
+  --title "v8.30.47 — short title" \
+  --planner-commit "v8.30.47: short title" \
+  --public-commit "v8.30.47 sync short title" \
+  --notes "release notes text"
+```
+
+Без `--execute` он только печатает план: permissions, sync entries, commit/push
+и `gh release create`. С `--execute` выполняет полный chain. Перед execute всё
+равно обязательны gates выше: script не заменяет lint/coverage/e2e/audit, он
+автоматизирует только механическую доставку и GitHub-публикацию.
+
 ## CI safety net (v8.30.42)
 
 `.github/workflows/ci.yml` запускается на `push`, `pull_request` в `main` и

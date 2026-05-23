@@ -104,11 +104,14 @@ plain object → passthrough; null/array/primitive → `{}`. Применяет�
 | `taskNormalizers.js` | task shape, jira guard, effort, cycle remediation |
 | `dependencies.js` | strict dependency ids + DFS cycle participants |
 | `criteriaEvaluations.js` | canonical evaluation keys + orphan filtering |
-| `importDiagnostics.js` | honest import diagnostics для FileController |
+| `importDiagnostics.js` | orchestrator honest import diagnostics для FileController |
+| `diagnostics/*` | scoped diagnostics для config/roles/criteria/tasks + shared collectors |
 
 Guard: [persistence-facade-contract.test.js](../tests/unit/architecture/persistence-facade-contract.test.js)
 запрещает возвращать `normalizeTasks`, `analyzeImportIssues`,
-`safePlainObject` и dependency-normalizers обратно в фасад.
+`safePlainObject` и dependency-normalizers обратно в фасад. С v8.30.47 тот же
+guard проверяет, что `importDiagnostics.js` не тянет обратно парсеры/ROLES и
+остаётся orchestrator над `diagnostics/*`.
 
 **Alignment invariant (v8.30.36):** для КАЖДОГО issue в `analyzeImportIssues`
 с формулировкой «отброшено / применён fallback», post-migration state физически
@@ -396,6 +399,20 @@ npm run test:e2e             # полный E2E (4 Playwright projects)
 
 Все release gates обязательны (см. `docs/RELEASE_PROCESS.md`, чек-лист). Релиз с red gate — категорически нельзя; см. memory `feedback-release-with-red-tests-banned`.
 
+### Release automation (v8.30.47)
+
+`npm run release:public -- --version <X.Y.Z> ...` строит полный план доставки
+PLANNER → `sprint-planner/FOR_USERS`. По умолчанию это **dry-run**: печатает
+permissions, sync entries и команды commit/push/release. Опасные действия
+выполняются только с `--execute`.
+
+Script использует pure-plan слой [releasePublicPlan.js](../scripts/releasePublicPlan.js),
+покрытый [releasePublicPlan.test.js](../tests/unit/scripts/releasePublicPlan.test.js).
+Перед execute он проверяет `gh repo view --json viewerPermission` для PLANNER и
+FOR_USERS, синхронизирует установленную public-shape (папки `css/js/docs/icons/dev-tools`,
+root-файлы и root-документацию), затем выполняет отдельные commit/push и
+`gh release create`.
+
 ### Playwright projects (`playwright.config.js`)
 
 4 проекта запускаются параллельно (`fullyParallel: true`):
@@ -532,6 +549,7 @@ js/
     task/
       taskFormController.js        # унифицированная create+edit форма (v8.27)
       taskDragController.js        # drag-and-drop
+      taskFlowActions.js           # pure routing primary action / task-list buttons (v8.30.47)
       taskCacheService.js          # кэширование priority-score
       taskListHandler.js           # обработчики бизнес-логики (вкл. undo-delete)
       formHelpers.js               # валидация полей форм
@@ -558,6 +576,7 @@ js/
     store.js                       # единое хранилище (Object.freeze)
     persistence.js                 # публичный facade миграции и сериализации
     persistence/                   # нормализаторы, diagnostics и shared helpers
+      diagnostics/                 # honest-import diagnostics по surfaces (v8.30.47)
   types/
     contracts.js                   # типовые контракты (JSDoc)
   ui/
@@ -615,6 +634,7 @@ tests/
 | `densityController.js` | Density toggle (Compact/Comfortable, v8.14, упрощён в v8.27.1) |
 | `capacityStripController.js` | Drag-preview подсветка сегментов Team Capacity Dashboard |
 | `taskDragController.js` | Drag-and-drop переупорядочивание |
+| `taskFlowActions.js` | Pure helper для primary create/edit action, shortcut detection и task-list button routing |
 | `taskListHandler.js` | Обработчики бизнес-логики списка задач |
 | `criteriaFormController.js` | Модаль критериев |
 | `modalManager.js` | Единый менеджер модальных окон |

@@ -1,5 +1,58 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.47) — diagnostics split + task-flow helper + release automation
+
+> Одновременный refactor-pass по трём оставшимся зонам: honest-import
+> diagnostics разрезан по доменным поверхностям, task create/edit primary action
+> вынесен в pure helper, а delivery-chain получил dry-run-first automation для
+> PLANNER → `sprint-planner/FOR_USERS`.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (diagnostics monolith)** | После v8.30.46 `importDiagnostics.js` всё ещё держал config/roles/criteria/tasks/dependencies/cycle logic в одном файле. Любая правка honest-import требовала читать весь diagnostics монолит. | `importDiagnostics.js` оставлен orchestrator'ом; проверки вынесены в `diagnostics/configDiagnostics.js`, `roleDiagnostics.js`, `criteriaDiagnostics.js`, `taskDiagnostics.js`, `shared.js`. | [importDiagnostics.js](../js/state/persistence/importDiagnostics.js), [diagnostics/](../js/state/persistence/diagnostics/) |
+| 2 | **P2 (task-flow duplication)** | Primary create/edit action был продублирован в click-handler, Ctrl+Enter и Ctrl+S; task-list button routing жил inline в `TaskController`. | Добавлен `taskFlowActions.js`: `submitTaskFormAction`, `isPrimaryTaskFormShortcut`, `readTaskListButtonAction`, `isInteractiveTaskTarget`. `TaskController` остался orchestration-layer. | [taskFlowActions.js](../js/controllers/task/taskFlowActions.js), [taskController.js](../js/controllers/taskController.js) |
+| 3 | **P2 (delivery manual chain)** | PLANNER release-chain оставался ручной: permissions, public sync, commit/push/release повторялись в каждом релизе и были легко ошибаемы. | Добавлен `npm run release:public`: dry-run по умолчанию, `--execute` для реального sync/commit/push/release. Pure plan покрыт unit-тестами. | [release-public.mjs](../scripts/release-public.mjs), [releasePublicPlan.js](../scripts/releasePublicPlan.js), [releasePublicPlan.test.js](../tests/unit/scripts/releasePublicPlan.test.js) |
+| 4 | **P3 (offline/PWA drift)** | Новые транзитивные ESM-модули diagnostics/task-flow могли быть забыты в precache. | `sw.js` пополнен `taskFlowActions.js` и `persistence/diagnostics/*`; precache coverage guard прогнан. | [sw.js](../sw.js), [precache-coverage.test.js](../tests/unit/architecture/precache-coverage.test.js) |
+| 5 | **P3 (docs / process memory)** | Архитектура и release process не описывали diagnostics split и новый release automation. | Обновлены ARCHITECTURE, RELEASE_PROCESS и CLAUDE; глобальная память будет дополнена тем же правилом. | [ARCHITECTURE.md](ARCHITECTURE.md), [RELEASE_PROCESS.md](RELEASE_PROCESS.md), [CLAUDE.md](../CLAUDE.md) |
+
+### Новые тесты (TDD / guard)
+
+- `taskFlowActions.test.js` — create/edit primary action, failed create without delayed close, Ctrl/Meta shortcuts, task-list button routing.
+- `releasePublicPlan.test.js` — semver normalization, established public sync shape, CLI args parsing, expected permission/commit/push/release command plan.
+- `persistence-facade-contract.test.js` расширен: `importDiagnostics.js` не должен импортировать парсеры/ROLES и обязан оставаться orchestrator над `diagnostics/*`.
+- Existing persistence regression: honest import / nested shapes / alignment / strict ids — без изменения поведения.
+
+Всего unit-тесты: `1693 → 1706` (+13), suites `113 → 115` (+2).
+
+### Уроки и классы ошибок
+
+1. **Второй уровень фасада тоже нуждается в guard.** Разрез `persistence.js` был полезен, но `importDiagnostics.js` сразу стал новым локальным монолитом.
+2. **Повтор primary action в UI-events лучше выносить раньше.** Click, Ctrl+Enter и Ctrl+S должны сходиться в один helper, иначе bugfix в одном пути не попадает в соседний.
+3. **Release automation должна быть dry-run-first.** Скрипт, который умеет commit/push/release, обязан печатать план без побочных эффектов и требовать явный `--execute`.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --runInBand` | 1706/1706 PASS, 115 suites, lines 96.34% | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 237/237 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, без override.
+- Full e2e summary artifact: chromium `197/197`, mobile-chromium `18/18`,
+  webkit `4/4`, mobile-webkit `18/18`; все `childExit=0`, все `override=false`.
+- `verify:release-metrics` выполнен отдельно для smoke-summary и full-summary:
+  обе проверки подтвердили совпадение release notes с
+  `test-results/e2e-parallel-summary.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.46) — persistence facade split
 
 > Архитектурный рефакторинг persistence-слоя без смены публичного API:

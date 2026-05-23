@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.46-persistence-facade';
+const CACHE_VERSION = 'sp-v8.30.47-automation-diagnostics';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -63,6 +63,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/task/formHelpers.js',
     './js/controllers/task/taskCacheService.js',
     './js/controllers/task/taskDragController.js',
+    './js/controllers/task/taskFlowActions.js',
     './js/controllers/task/taskFormController.js',
     './js/controllers/task/taskListHandler.js',
     './js/controllers/taskController.js',
@@ -94,6 +95,11 @@ const ASSETS_TO_CACHE = [
     './js/state/persistence/constants.js',
     './js/state/persistence/criteriaEvaluations.js',
     './js/state/persistence/criteriaNormalizers.js',
+    './js/state/persistence/diagnostics/configDiagnostics.js',
+    './js/state/persistence/diagnostics/criteriaDiagnostics.js',
+    './js/state/persistence/diagnostics/roleDiagnostics.js',
+    './js/state/persistence/diagnostics/shared.js',
+    './js/state/persistence/diagnostics/taskDiagnostics.js',
     './js/state/persistence/dependencies.js',
     './js/state/persistence/importDiagnostics.js',
     './js/state/persistence/primitiveNormalizers.js',

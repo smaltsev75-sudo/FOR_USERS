@@ -6,6 +6,12 @@ import { TaskCacheService } from './task/taskCacheService.js';
 import { TaskFormController } from './task/taskFormController.js';
 import { TaskDragController } from './task/taskDragController.js';
 import { TaskListHandler } from './task/taskListHandler.js';
+import {
+    isInteractiveTaskTarget,
+    isPrimaryTaskFormShortcut,
+    readTaskListButtonAction,
+    submitTaskFormAction
+} from './task/taskFlowActions.js';
 
 /**
  * TaskController — главный контроллер управления задачами.
@@ -79,11 +85,7 @@ export class TaskController {
         const saveCreateBtn = document.getElementById('saveCreateBtn');
         if (saveCreateBtn) {
             saveCreateBtn.addEventListener('click', () => {
-                if (this._form.editId !== null) {
-                    this._form.handleSaveEdit();
-                } else if (this._form.handleAddTask()) {
-                    setTimeout(() => this._form.closeCreateModal(), 1200);
-                }
+                submitTaskFormAction(this._form);
             });
         }
 
@@ -135,7 +137,7 @@ export class TaskController {
             taskList.addEventListener('click', (e) => {
                 const taskItem = e.target.closest('.task-item');
                 if (!taskItem) return;
-                if (e.target.closest('button, a, select, input, textarea')) return;
+                if (isInteractiveTaskTarget(e.target)) return;
                 this.selectTask(Number(taskItem.dataset.id));
             });
 
@@ -144,7 +146,7 @@ export class TaskController {
                 if (!taskItem) return;
                 // Не вызываем selectTask при фокусе на интерактивных элементах,
                 // чтобы scrollIntoView не сдвигал кнопку из-под курсора
-                if (e.target.closest('button, a, select, input, textarea')) return;
+                if (isInteractiveTaskTarget(e.target)) return;
                 this.selectTask(Number(taskItem.dataset.id));
             });
 
@@ -216,10 +218,9 @@ export class TaskController {
             });
 
             taskList.addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
-                if (!btn) return;
-                const action = btn.dataset.action;
-                const id = +btn.dataset.id;
+                const buttonAction = readTaskListButtonAction(e.target);
+                if (!buttonAction) return;
+                const { action, id } = buttonAction;
                 if (action === 'edit') this._form.openEditModal(id);
                 else if (action === 'moveUp') this.handleMoveTask(id, 'up');
                 else if (action === 'moveDown') this.handleMoveTask(id, 'down');
@@ -249,21 +250,10 @@ export class TaskController {
         const taskFormModal = document.getElementById('createTaskModal');
         if (taskFormModal) {
             taskFormModal.addEventListener('keydown', (e) => {
-                // Ctrl+Enter — primary action в любом режиме (create или edit)
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                // Ctrl+Enter / Ctrl+S — primary action в любом режиме (create или edit)
+                if (isPrimaryTaskFormShortcut(e)) {
                     e.preventDefault();
-                    if (this._form.editId !== null) this._form.handleSaveEdit();
-                    else if (this._form.handleAddTask()) {
-                        setTimeout(() => this._form.closeCreateModal(), 1200);
-                    }
-                }
-                // Ctrl+S — то же самое для edit-mode (привычная save-комбинация)
-                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault();
-                    if (this._form.editId !== null) this._form.handleSaveEdit();
-                    else if (this._form.handleAddTask()) {
-                        setTimeout(() => this._form.closeCreateModal(), 1200);
-                    }
+                    submitTaskFormAction(this._form);
                 }
             });
         }
