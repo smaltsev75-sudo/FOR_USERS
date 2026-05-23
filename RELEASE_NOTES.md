@@ -1,6 +1,6 @@
 # Release Notes
 
-## Версия: май 2026 (обновление 8.30.44) — import flow refactor + compact diagnostics
+## Версия: май 2026 (обновление 8.30.45) — import flow refactor + compact diagnostics
 
 > Связный рефакторинг потока JSON import/export: `FileController` стал тоньше,
 > имя экспортируемого файла и VM подтверждения импорта вынесены в отдельные
