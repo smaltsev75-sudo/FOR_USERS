@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.51-drift-layer-guards';
+const CACHE_VERSION = 'sp-v8.30.52-controller-manual-print-refactor';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -51,6 +51,7 @@ const ASSETS_TO_CACHE = [
     './js/vendor/purify.min.js',
     // JS — controllers
     './js/controllers/capacityStripController.js',
+    './js/controllers/config/configFormAdapter.js',
     './js/controllers/configController.js',
     './js/controllers/densityController.js',
     './js/controllers/viewModeController.js',
@@ -72,6 +73,8 @@ const ASSETS_TO_CACHE = [
     './js/controllers/task/taskDragController.js',
     './js/controllers/task/taskFlowActions.js',
     './js/controllers/task/taskFormController.js',
+    './js/controllers/task/taskForm/taskFormDomAdapter.js',
+    './js/controllers/task/taskForm/taskFormDraft.js',
     './js/controllers/task/taskListHandler.js',
     './js/controllers/task/undoDeleteService.js',
     './js/controllers/taskController.js',
@@ -82,6 +85,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/criteriaManager.js',
     './js/domain/role.js',
     './js/domain/roleFieldContract.js',
+    './js/domain/sprintSchedule.js',
     './js/domain/strictInteger.js',
     './js/domain/selection/analysis.js',
     './js/domain/selection/base.js',

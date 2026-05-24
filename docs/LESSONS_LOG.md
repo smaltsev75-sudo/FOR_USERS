@@ -2,6 +2,18 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.52 (controller splits + manual generator + print debt)
+
+- **Большой controller-split должен выносить бизнесовый mapping, а не просто строки.** `TaskFormController` был рискован не размером, а смешением DOM, `task.est`/form estimates и create/edit patch. Чистый `taskFormDraft.js` теперь доказывает create→`estimates`, edit→`est` и weighted score без jsdom. Codified by: `tests/unit/controllers/task/taskFormDraft.test.js`.
+
+- **Config dates/holidays — доменная логика, не blur-handler.** `days/startDate/endDate/holidays` теперь считаются в `domain/sprintSchedule.js`; controller только валидирует ввод и применяет patch. Это снижает риск тихого расхождения live input и blur behavior. Codified by: `tests/unit/domain/sprintSchedule.test.js`.
+
+- **UserManual guard лучше работает вместе с generator check.** Guard ловит drift, но source-of-truth должен жить отдельно. `docs/manual-contract.json` генерирует hotkeys/density/view blocks; `docs:manual-check` падает, если блоки правили руками или забыли обновить после изменения UI copy. Codified by: `scripts/generate-manual-contract.mjs`, `tests/unit/architecture/user-manual-drift.test.js`.
+
+- **Print `!important` budget можно снижать только с реальным print/visual pass.** v8.30.52 снял типографические/spacing `!important` в `print.css` (`179 → 96`) без изменения display/background/border overrides. Обязательная проверка: `print-verify.spec.js` + visual `print A4 task card`. Codified by: `tests/unit/architecture/css-cascade-contract.test.js`, `tests/e2e/print-verify.spec.js`, `tests/e2e/visual.spec.js`.
+
+- **Параллельность не должна сталкивать два Playwright webServer на один порт.** Jest/lint/audit/docs безопасно распараллеливать; прямые `playwright test ...` команды с config.webServer на `8123` запускать последовательно или через общий runner, иначе второй процесс падает `EADDRINUSE`. Codified by: `CLAUDE.md`, `planner-delivery` skill.
+
 ## Ловушки v8.30.51 (manual drift guards + CSS cascade pilot)
 
 - **UserManual drift надо ловить как product contract, а не ручным grep после аудита.** Свежий пример: UI уже называл density-кнопку «Стандартный режим», а справка всё ещё писала Comfortable. Guard `user-manual-drift.test.js` фиксирует текущие UI labels, role glossary и hotkeys, включая `Ctrl+Enter`. Codified by: `tests/unit/architecture/user-manual-drift.test.js`, `npm run docs:manual-check`.

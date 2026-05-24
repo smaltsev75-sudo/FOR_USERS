@@ -1,5 +1,64 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.52) — controller splits + manual generator + print debt cut
+
+> Один связный рефакторинг без смены runtime-функций: вынесены реальные
+> ответственности из form/config controllers, UserManual получил generated
+> contract blocks, print CSS debt уменьшен проверяемо, а e2e получил общий
+> workflow helper вместо локальной копипасты.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (task form mapping risk)** | `TaskFormController` смешивал DOM, create/edit session и критичный mapping `task.est` ↔ form fields. | Добавлены `taskFormDomAdapter.js` и чистый `taskFormDraft.js`; controller остался фасадом, а create patch/edit patch покрыты unit-тестами без jsdom. | [taskFormController.js](../js/controllers/task/taskFormController.js), [taskFormDraft.js](../js/controllers/task/taskForm/taskFormDraft.js), [taskFormDraft.test.js](../tests/unit/controllers/task/taskFormDraft.test.js) |
+| 2 | **P2 (config business logic in blur handlers)** | `days/startDate/endDate/holidays` пересчитывались прямо в DOM handlers. | Доменная логика вынесена в `domain/sprintSchedule.js`, DOM sync — в `configFormAdapter.js`; controller только валидирует ввод и применяет patch. | [sprintSchedule.js](../js/domain/sprintSchedule.js), [configFormAdapter.js](../js/controllers/config/configFormAdapter.js), [sprintSchedule.test.js](../tests/unit/domain/sprintSchedule.test.js) |
+| 3 | **P2 (manual drift still hand-authored)** | `docs:manual-check` ловил drift, но hotkeys/density/view tables всё ещё редактировались руками. | Добавлен `docs/manual-contract.json` и `scripts/generate-manual-contract.mjs`; `docs:manual-check` теперь сначала проверяет generated-блоки. | [manual-contract.json](manual-contract.json), [generate-manual-contract.mjs](../scripts/generate-manual-contract.mjs), [UserManual.md](UserManual.md) |
+| 4 | **P2 (print override debt)** | `print.css` держал 179 `!important`, включая типографику и отступы, где `media=print` + last import уже достаточно. | Снят non-layout `!important` budget: total `252 → 169`, print `179 → 96`; display/background/border overrides оставлены. Проверено print e2e + visual baseline. | [print.css](../css/print.css), [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js), [visual.spec.js](../tests/e2e/visual.spec.js) |
+| 5 | **P3 (e2e helper drift)** | `planner.spec.js` держал локальный `createTask` и reset flow, которые будут копироваться при новых сценариях. | Добавлен `tests/e2e/support/plannerApp.js`; `planner.spec.js` использует общий DSL для reset/createTask/switchTab/config. | [plannerApp.js](../tests/e2e/support/plannerApp.js), [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js) |
+| 6 | **P2 (offline drift after split)** | Новые ESM modules после split'а ломали бы offline/PWA startup без precache. | Все новые modules добавлены в `sw.js`; `precache-coverage.test.js` подтвердил транзитивное покрытие. | [sw.js](../sw.js), [precache-coverage.test.js](../tests/unit/architecture/precache-coverage.test.js) |
+
+### Новые тесты / guard
+
+- `taskFormDraft.test.js` — 5 проверок чистого create/edit form mapping.
+- `sprintSchedule.test.js` — 7 проверок working-days/date/holidays patch logic.
+- `e2e-support-dsl.test.js` — 2 architecture checks для shared Playwright workflow DSL.
+- `user-manual-drift.test.js` расширен до generated manual contract labels/hotkeys.
+- `css-cascade-contract.test.js` budget обновлён на `169/96`.
+
+Всего unit-тесты: `1804 → 1823` (+19), suites `132 → 135` (+3).
+Full e2e: без изменения количества, `247/247`.
+
+### Уроки и классы ошибок
+
+1. **Controller split должен выносить mapping/decision, а не просто строки.** `taskFormDraft` и `sprintSchedule` теперь проверяются как чистая логика.
+2. **Manual guard лучше дополнять generator check.** Generated-блоки нельзя тихо править руками и расходиться с source-of-truth.
+3. **CSS debt можно уменьшать только с визуальной страховкой.** `!important` budget снижен после `print-verify` и `print A4` screenshot baseline.
+4. **Параллелить Playwright direct specs нельзя на одном `8123`.** Jest/lint/audit/docs параллелятся; Playwright spec commands идут последовательно или через общий runner.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1823/1823 PASS, 135 suites, lines 96.69%, 14.8s | **0** | n/a | — |
+| `npm run docs:manual-check` | 24/24 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 247/247 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  27.0s.
+- Full e2e: wrapper exit 0, child exits clean; chromium 207/207 (108.6s),
+  mobile-chromium 18/18 (27.1s), webkit 4/4 (22.3s), mobile-webkit 18/18
+  (35.2s).
+- Дополнительно для print CSS debt: `print-verify.spec.js` 4/4 PASS и
+  visual baseline `print A4 task card` PASS после снятия `!important`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.51) — UserManual drift guards + CSS cascade pilot
 
 > Combined follow-up к аудиту v8.30.50: дрейф встроенной справки переведён из

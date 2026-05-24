@@ -60,7 +60,7 @@ npm run bump -- 9.0.0
    |---|---|---|---|
    | a | `npm run lint` | 0 | ESLint clean (no stray edits) |
    | b | `npm run test:coverage -- --maxWorkers=50%` | 0 | unit тесты + coverage threshold |
-   | c | `npm run docs:manual-check` | 0 | UserManual не дрейфует от UI labels / auto-selection behavior |
+   | c | `npm run docs:manual-check` | 0 | generated UserManual blocks актуальны, справка не дрейфует от UI labels / auto-selection behavior |
    | d | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
    | e | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
    | f | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |

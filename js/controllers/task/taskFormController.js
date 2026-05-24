@@ -8,16 +8,14 @@ import {
     isJiraUrlUnique
 } from '../../domain/validation.js';
 import { createTask } from '../../domain/task.js';
-import { parseCriteriaScore } from '../../domain/criteria.js';
-import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
-import {
-    calculateCreateFormTotal,
-    collectCriteriaEvaluations,
-    readCreateTaskEstimates
-} from './formHelpers.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
-import { ROLES } from '../../utils/constants.js';
-import { escapeHtml } from '../../utils/escapeHtml.js';
+import { TaskFormDomAdapter } from './taskForm/taskFormDomAdapter.js';
+import {
+    calculateDraftPriorityScore,
+    taskFormDraftToCreateTaskInput,
+    taskFormDraftToTaskPatch,
+    taskToTaskFormDraft
+} from './taskForm/taskFormDraft.js';
 
 /**
  * Handles create/edit modal logic for tasks.
@@ -38,6 +36,7 @@ export class TaskFormController {
         this._onTaskCreated = onTaskCreated;
         this._onTaskEdited = onTaskEdited;
         this._invalidateCaches = invalidateCaches;
+        this.form = new TaskFormDomAdapter(nfs);
     }
 
     // ── Create modal ──────────────────────────────────────────────────────────
@@ -52,10 +51,7 @@ export class TaskFormController {
         this._wirePresetChips(modal);
         this._setModalMode(modal, 'create');
         showModal(modal);
-        const firstInput = modal.querySelector('input:not([type="hidden"]), select');
-        if (firstInput) {
-            firstInput.focus();
-        }
+        this.form.focusFirstInput();
     }
 
     /**
@@ -65,25 +61,8 @@ export class TaskFormController {
      * в textContent. Это держит копирайтинг рядом с разметкой.
      * @private
      */
-    _setModalMode(modal, mode) {
-        const title = modal.querySelector('#createTaskModalTitle');
-        const saveBtn = modal.querySelector('#saveCreateBtn');
-        const attr = mode === 'edit' ? 'data-edit-text' : 'data-create-text';
-        if (title && title.getAttribute(attr)) {
-            title.textContent = title.getAttribute(attr);
-        }
-        if (saveBtn && saveBtn.getAttribute(attr)) {
-            saveBtn.textContent = saveBtn.getAttribute(attr);
-            // Обновляем title/aria-label под текущий режим
-            if (mode === 'edit') {
-                saveBtn.setAttribute('title', 'Сохранить — Ctrl+S');
-                saveBtn.setAttribute('aria-label', 'Сохранить (горячая клавиша Ctrl+S)');
-            } else {
-                saveBtn.setAttribute('title', 'Создать задачу — Ctrl+Enter');
-                saveBtn.setAttribute('aria-label', 'Создать задачу (горячая клавиша Ctrl+Enter)');
-            }
-        }
-        modal.dataset.mode = mode;
+    _setModalMode(_modal, mode) {
+        this.form.setModalMode(mode);
     }
 
     /**
@@ -93,37 +72,12 @@ export class TaskFormController {
      * сохранился (его читают и тесты, и handleAddTask).
      * @private
      */
-    _wireSegmentedType(modal) {
-        const seg = modal.querySelector('#newTypeSegmented');
-        if (!seg || seg.dataset.wired === '1') return;
-        seg.dataset.wired = '1';
-        seg.addEventListener('click', (e) => {
-            const btn = e.target.closest('.cf-seg-btn[data-type]');
-            if (!btn || !seg.contains(btn)) return;
-            this._setTypeSegment(seg, btn.dataset.type);
-        });
-        // Клавиатурная навигация: ←/→ перемещают активную кнопку.
-        seg.addEventListener('keydown', (e) => {
-            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-            const buttons = Array.from(seg.querySelectorAll('.cf-seg-btn[data-type]'));
-            const current = buttons.findIndex(b => b.getAttribute('aria-checked') === 'true');
-            const dir = e.key === 'ArrowRight' ? 1 : -1;
-            const next = (current + dir + buttons.length) % buttons.length;
-            this._setTypeSegment(seg, buttons[next].dataset.type);
-            buttons[next].focus();
-            e.preventDefault();
-        });
+    _wireSegmentedType(_modal) {
+        this.form.wireSegmentedType();
     }
 
-    _setTypeSegment(seg, type) {
-        const buttons = seg.querySelectorAll('.cf-seg-btn[data-type]');
-        buttons.forEach(b => {
-            const active = b.dataset.type === type;
-            b.setAttribute('aria-checked', active ? 'true' : 'false');
-            b.dataset.active = active ? 'true' : 'false';
-        });
-        const hidden = document.getElementById('newType');
-        if (hidden) hidden.value = type;
+    _setTypeSegment(_seg, type) {
+        this.form.setTypeSegment(type);
     }
 
     /**
@@ -132,22 +86,8 @@ export class TaskFormController {
      * event, чтобы updateCreateFormTotal пересчитал Effort.
      * @private
      */
-    _wirePresetChips(modal) {
-        const roots = modal.querySelectorAll('.cf-role__presets[data-target]');
-        roots.forEach(root => {
-            if (root.dataset.wired === '1') return;
-            root.dataset.wired = '1';
-            root.addEventListener('click', (e) => {
-                const chip = e.target.closest('.cf-preset[data-value]');
-                if (!chip || !root.contains(chip)) return;
-                const targetId = root.dataset.target;
-                const input = document.getElementById(targetId);
-                if (!input) return;
-                input.value = chip.dataset.value;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.focus();
-            });
-        });
+    _wirePresetChips(_modal) {
+        this.form.wirePresetChips();
     }
 
     closeCreateModal() {
@@ -156,107 +96,24 @@ export class TaskFormController {
     }
 
     populateCreateCriteriaSelects() {
-        const container = document.getElementById('createCriteriaContainer');
-        if (!container) return;
-        const criteria = this.store.getState().criteria;
-        if (!criteria || criteria.length === 0) {
-            // v8.30.2: inline-styles → .create-criteria-empty
-            container.innerHTML = '<div class="create-criteria-empty">Нет критериев оценки</div>';
-            return;
-        }
-
-        const n = criteria.length;
-        let labelsHtml = '';
-        let selectsHtml = '';
-
-        // v8.30.2: inline-styles в labels/selects/grid → CSS-классы.
-        // Grid columns задаются через CSS-property --n (динамическое значение,
-        // оправдывает inline-style — единственный element с runtime value).
-        // v8.30.3: P1 XSS fix — было `replace(/"/g, '&quot;')` для name (только кавычки)
-        // и raw `${c.abbreviation}` в innerHTML. Malicious импорт критерия с
-        // abbreviation='<img src=x onerror=...>' исполнял скрипт. Теперь escapeHtml
-        // для обоих, плюс id/weight нормализованы как числа в persistence.
-        criteria.forEach(c => {
-            const safeName = escapeHtml(c.name);
-            const safeAbbr = escapeHtml(c.abbreviation);
-            const safeId = parseStrictIntegerInRange(c.id, 1, Infinity) ?? 0;
-            const safeWeight = parseStrictIntegerInRange(c.weight, 0, 100) ?? 0;
-            labelsHtml += `
-                <div class="create-criteria-label" title="${safeName}">
-                    <span class="create-criteria-weight-badge">${safeWeight}%</span>
-                    ${safeAbbr}
-                </div>
-            `;
-            selectsHtml += `
-                <div>
-                    <select id="criteria_${safeId}" class="criteria-score-select" data-criterion-id="${safeId}" aria-label="${safeName} оценка">
-                        ${Array.from({ length: 11 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
-                    </select>
-                </div>
-            `;
-        });
-
-        container.innerHTML = `
-            <div class="create-criteria-grid create-criteria-grid--labels" style="--n: ${n};">
-                ${labelsHtml}
-            </div>
-            <div class="create-criteria-grid create-criteria-grid--selects" style="--n: ${n};">
-                ${selectsHtml}
-            </div>
-        `;
+        this.form.populateCriteriaSelects(this.store.getState().criteria || []);
     }
 
     updateCreateFormPriorityScore() {
         const criteria = this.store.getState().criteria;
         if (!criteria || criteria.length === 0) return;
-        let totalScore = 0;
-        const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-        criteria.forEach(c => {
-            const select = document.getElementById(`criteria_${c.id}`);
-            if (select) {
-                const score = parseCriteriaScore(select.value);
-                totalScore += score * c.weight;
-            }
-        });
-        const priorityScore = totalWeight > 0 ? totalScore / totalWeight : 0;
-        const el = document.getElementById('createPriorityScoreHeader');
-        if (el) {
-            el.textContent = `Priority Score: ${this.nfs.formatNumber(priorityScore)}`;
-        }
+        const draft = this.form.readDraft(criteria);
+        this.form.updatePriorityHeader(calculateDraftPriorityScore(criteria, draft.criteriaEvaluations));
     }
 
     updateCreateFormTotal() {
-        const total = calculateCreateFormTotal(this.nfs);
-        const headerEl = document.getElementById('createEffortHeader');
-        if (headerEl) {
-            headerEl.textContent = `Effort: ${this.nfs.formatNumber(total)}`;
-        }
+        this.form.updateTotalHeader();
     }
 
     clearAddForm() {
-        const ids = ['newTitle', 'newJira', 'newComment', ...ROLES.map(r => `h_${r.id}`)];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.value = '';
-                el.classList.remove('error');
-                el.removeAttribute('aria-invalid');
-            }
-        });
-        const typeEl = document.getElementById('newType');
-        if (typeEl) typeEl.value = 'us';
-        // Sync visible segmented control with the reset hidden input value.
-        const seg = document.getElementById('newTypeSegmented');
-        if (seg) this._setTypeSegment(seg, 'us');
-
-        const criteria = this.store.getState().criteria;
-        criteria.forEach(c => {
-            const select = document.getElementById(`criteria_${c.id}`);
-            if (select) select.value = '0';
-        });
+        this.form.clear(this.store.getState().criteria || []);
         this.updateCreateFormPriorityScore();
         this.updateCreateFormTotal();
-        this.updateCommentCounter(0, 255);
     }
 
     handleAddTask() {
@@ -266,14 +123,11 @@ export class TaskFormController {
         const jira = this._validateJiraField('create');
         if (!jira) return false;
 
-        const typeEl = document.getElementById('newType');
-        const commentEl = document.getElementById('newComment');
-        const type = typeEl ? typeEl.value : 'us';
-        const comment = commentEl ? commentEl.value.trim() : '';
-        const estimates = readCreateTaskEstimates(this.nfs);
+        const draft = this.form.readDraft(this.store.getState().criteria);
+        const input = taskFormDraftToCreateTaskInput({ ...draft, title, jira });
 
-        const newTask = createTask({ title, jira, type, comment, estimates });
-        newTask.criteriaEvaluations = collectCriteriaEvaluations(this.store.getState().criteria);
+        const newTask = createTask(input);
+        newTask.criteriaEvaluations = draft.criteriaEvaluations;
 
         this.store.addTask(newTask);
         this.store.updateState({ lastAddedTaskId: newTask.id });
@@ -388,45 +242,8 @@ export class TaskFormController {
         this._wireSegmentedType(modal);
         this._wirePresetChips(modal);
 
-        // Populate create-form fields from the task — reusing every input
-        // means there's no field-by-field divergence to maintain.
-        const titleEl = document.getElementById('newTitle');
-        const jiraEl = document.getElementById('newJira');
-        const typeEl = document.getElementById('newType');
-        const commentEl = document.getElementById('newComment');
-        if (titleEl) titleEl.value = task.title || '';
-        if (jiraEl) jiraEl.value = task.jira || '';
-        if (typeEl) typeEl.value = task.type || 'us';
-
-        const seg = document.getElementById('newTypeSegmented');
-        if (seg) this._setTypeSegment(seg, task.type || 'us');
-
-        if (commentEl) commentEl.value = task.comment || '';
-        this.updateCommentCounter((task.comment || '').length, 255);
-
-        // Hours estimates → h_* inputs.
-        // Domain хранит трудозатраты в task.est (см. js/domain/task.js:50).
-        // Раньше читалось task.estimates — несоответствие появилось при v8.27
-        // unified form refactor; поля оставались пусты при редактировании.
-        const estimates = task.est || {};
-        ROLES.forEach(role => {
-            const input = document.getElementById(`h_${role.id}`);
-            if (input) {
-                const v = estimates[role.id];
-                input.value = (v !== null && v !== undefined && v !== 0) ? this.nfs.formatNumber(v) : '';
-            }
-        });
-
-        // Criteria evaluations → criteria_${id} selects
         const criteria = state.criteria || [];
-        const evals = task.criteriaEvaluations || {};
-        criteria.forEach(c => {
-            const select = document.getElementById(`criteria_${c.id}`);
-            if (select) {
-                const score = evals[c.id]?.score;
-                select.value = String(Number.isFinite(score) ? score : 0);
-            }
-        });
+        this.form.writeDraft(taskToTaskFormDraft(task, criteria), criteria);
 
         // Refresh derived headers (Priority Score / Effort) from new values
         this.updateCreateFormPriorityScore();
@@ -435,6 +252,7 @@ export class TaskFormController {
         this._setModalMode(modal, 'edit');
         showModal(modal);
         setTimeout(() => {
+            const titleEl = document.getElementById('newTitle');
             if (titleEl) titleEl.focus();
         }, 50);
     }
@@ -450,21 +268,7 @@ export class TaskFormController {
      * @param {number} max - максимум (255)
      */
     updateCommentCounter(used, max) {
-        const counterText = document.getElementById('newCommentCounter')
-            || document.getElementById('editCommentCounter');
-        const bar = document.getElementById('newCommentCounterBar')
-            || document.getElementById('editCommentCounterBar');
-        const remaining = Math.max(0, max - used);
-        const pct = Math.min(100, Math.max(0, (used / max) * 100));
-        if (counterText) counterText.textContent = `Осталось: ${remaining}`;
-        if (bar) {
-            bar.style.setProperty('--fill', `${pct.toFixed(1)}%`);
-            // Цвет: зелёный <70% → жёлтый 70-90% → красный >90%
-            let color = 'var(--success)';
-            if (pct >= 90) color = 'var(--danger)';
-            else if (pct >= 70) color = 'var(--warning)';
-            bar.style.setProperty('--color', color);
-        }
+        this.form.updateCommentCounter(used, max);
     }
 
     closeEditModal() {
@@ -490,28 +294,20 @@ export class TaskFormController {
         const jira = this._validateJiraField('edit', this.editId);
         if (!jira) return;
 
-        const typeEl = document.getElementById('newType');
-        const commentEl = document.getElementById('newComment');
-        const type = typeEl ? typeEl.value : 'us';
-        const comment = commentEl ? commentEl.value.trim() : '';
-        const estimates = readCreateTaskEstimates(this.nfs);
-        const criteriaEvaluations = collectCriteriaEvaluations(
-            this.store.getState().criteria
-        );
+        const draft = this.form.readDraft(this.store.getState().criteria);
+        const patch = taskFormDraftToTaskPatch({ ...draft, title, jira });
 
         // v8.30.6 P1 fix: доменное поле task.estimates → task.est.
         // До v8.30.6 здесь писалось `estimates` (название локальной переменной),
         // а normalizeTasks/createTask читают `task.est` → изменения часов через
         // edit-modal терялись после следующего persist'а. Контракт см. js/domain/task.js.
-        this.store.updateTask(this.editId, {
-            title, jira, type, comment, est: estimates, criteriaEvaluations
-        });
+        this.store.updateTask(this.editId, patch);
         this._invalidateCaches();
         const editedId = this.editId;
         this.closeEditModal();
 
         if (this._onTaskEdited) {
-            this._onTaskEdited(editedId, { title, jira, type, comment, est: estimates, criteriaEvaluations });
+            this._onTaskEdited(editedId, patch);
         }
     }
 }

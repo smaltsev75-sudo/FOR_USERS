@@ -120,6 +120,34 @@ Guard: [task-list-facade-contract.test.js](../tests/unit/architecture/task-list-
 Guard: [selection-report-facade-contract.test.js](../tests/unit/architecture/selection-report-facade-contract.test.js)
 фиксирует фасадную форму и запрещает возвращать section builders в корневой файл.
 
+#### Task form split (v8.30.52)
+
+[taskFormController.js](../js/controllers/task/taskFormController.js) остаётся
+публичным контроллером create/edit modal, но больше не смешивает DOM-ввод,
+маппинг task↔form и доменные поля:
+
+| Модуль | Ответственность |
+|---|---|
+| [taskFormDomAdapter.js](../js/controllers/task/taskForm/taskFormDomAdapter.js) | чтение/запись unified create/edit DOM, segmented type, preset chips, criteria selects, derived headers |
+| [taskFormDraft.js](../js/controllers/task/taskForm/taskFormDraft.js) | чистый form draft: `task.est` → role inputs, create input, edit patch (`est`), weighted priority score |
+
+Контракт закрыт unit-тестами [taskFormController.test.js](../tests/unit/controllers/task/taskFormController.test.js),
+[taskFormDraft.test.js](../tests/unit/controllers/task/taskFormDraft.test.js) и XSS guard'ом
+[taskFormController.xss.test.js](../tests/unit/controllers/taskFormController.xss.test.js).
+
+#### Sprint config split (v8.30.52)
+
+[configController.js](../js/controllers/configController.js) остаётся controller
+фасадом для DOM events и store updates, но календарные правила и form-sync вынесены:
+
+| Модуль | Ответственность |
+|---|---|
+| [sprintSchedule.js](../js/domain/sprintSchedule.js) | чистые расчёты `days/startDate/endDate/holidays`, working-days minus holidays |
+| [configFormAdapter.js](../js/controllers/config/configFormAdapter.js) | DOM listeners и синхронизация inputs без доступа к Store |
+
+Контракт закрыт [configController.test.js](../tests/unit/controllers/configController.test.js)
+и [sprintSchedule.test.js](../tests/unit/domain/sprintSchedule.test.js).
+
 ### 2.2 Storage contract (v8.30.0)
 
 `storageService.save(data) → { ok: true } | { ok: false, error: string }`.
@@ -454,8 +482,9 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
   явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
-  `!important` не может расти без осознанного review (`252` всего, `179` в
-  `print.css`). Уменьшать бюджет можно отдельными CSS-патчами после visual pass.
+  `!important` не может расти без осознанного review (`169` всего, `96` в
+  `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
+  после `print-verify.spec.js` и visual baseline `print A4 task card`.
 - [density-css-boundary.test.js](../tests/unit/architecture/density-css-boundary.test.js)
   фиксирует, что task density deltas живут в `density.css`, грузятся после
   `task-card.css` и попадают в PWA precache.
@@ -476,18 +505,18 @@ npm install                  # установка зависимостей (од
 npm test                     # unit-тесты (Jest + jsdom)
 npm run test:coverage -- --maxWorkers=50%  # unit + coverage (parallel release gate)
 npm run test:smoke           # быстрая проверка unit-подмножества
-npm run docs:manual-check    # быстрый guard от дрейфа встроенной справки
+npm run docs:manual-check    # generated manual contract + guard от дрейфа справки
 npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
 npm run docs:modules         # обновить docs/MODULE_MAP.md
 ```
 
-### Тестовые суиты (v8.30.31)
+### Тестовые суиты (v8.30.52)
 
 | Тип | Фреймворк | Команда | Release gate |
 |-----|-----------|---------|--------------|
 | Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --maxWorkers=50%` | **yes** (coverage exit 0) |
-| Docs drift | Jest architecture guards | `npm run docs:manual-check` | **yes** при изменении UI-copy/UserManual |
+| Docs drift | generator check + Jest architecture guards | `npm run docs:manual-check` | **yes** при изменении UI-copy/UserManual |
 | Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
 | E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
 | E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
@@ -541,6 +570,11 @@ report, mobile burger menu и print A4 task card. Состояния сидир�
 `npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots`.
 После update обязательно открыть новые PNG глазами: зелёный snapshot с пустым
 или нерепрезентативным seed не защищает UI.
+
+E2E user workflow helpers живут в [tests/e2e/support/plannerApp.js](../tests/e2e/support/plannerApp.js).
+`planner.spec.js` не должен заново объявлять локальные workflow helpers для
+создания задач, сброса состояния, переключения вкладок или изменения sprint
+config. Guard: [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js).
 
 ### Coverage thresholds (v8.30.49)
 
