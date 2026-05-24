@@ -194,7 +194,7 @@ filter). Source of truth — `scripts/e2eTaxonomy.js`, guard —
 ### Webserver
 
 `playwright.config.js → webServer`: `npx http-server . -p 8123 --silent --no-cache`.
-**Порт 8123** зафиксирован — `start-server.bat`, `start-server.sh`, playwright.config.js, e2e-runner, README используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. `reuseExistingServer: !process.env.CI`.
+**Порт 8123** зафиксирован — `start-server.bat`, `start-server.sh`, playwright.config.js, e2e-runner, README используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. В обычном CI Playwright не переиспользует чужой сервер, но `e2e-parallel.mjs` поднимает verified Sprint Planner server сам; когда `e2e-runner.mjs` находит именно этот server на 8123, он передаёт `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`, и `playwright.config.js` включает `reuseExistingServer` даже при `CI=true`.
 
 ### e2e-runner (v8.30.50: pure decideExitCode + all-ok watchdog + честные лимиты process-tree)
 

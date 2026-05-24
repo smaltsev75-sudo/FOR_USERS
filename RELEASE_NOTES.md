@@ -1,5 +1,60 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.58) — CI WebKit smoke reuse and clearer recovery copy
+
+> Убрана причина красных GitHub Actions Mobile WebKit smoke, а в справке и UI
+> разведены два разных скачивания: текущий JSON плана и копия до миграции.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (CI smoke false failure)** | `e2e-parallel.mjs` поднимал verified Sprint Planner server на 8123, но в GitHub Actions `playwright.config.js` имел `reuseExistingServer: false` из-за `CI=true`. Playwright пытался поднять второй webServer и падал `port already used` до запуска тестов. | `e2e-runner.mjs` теперь передаёт `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`, когда сам проверил Sprint Planner signature на 8123; `playwright.config.js` уважает этот флаг даже в CI. | [e2e-runner.mjs](../scripts/e2e-runner.mjs), [playwright.config.js](../playwright.config.js) |
+| 2 | **P3 (backup export ambiguity)** | Кнопки «Сохранить JSON» и «Скачать backup» выглядели как дубль одной функции, хотя скачивали разные состояния. | Recovery action переименован в «Скачать копию до миграции», а UserManual получил отдельное сравнение: что скачивается и когда использовать. | [index.html](../index.html), [recoveryController.js](../js/controllers/recoveryController.js), [UserManual.md](UserManual.md) |
+
+### Новые тесты / guard
+
+- `e2e-runner-must-not-pollute-node-options.test.js` расширен guard'ом на `PLAYWRIGHT_REUSE_EXISTING_SERVER`.
+- Локально воспроизведён GitHub-режим: `CI=true npm run test:e2e:smoke` → `18/18 PASS`, child exit 0.
+- `docs:manual-check` подтверждает, что UserManual не разошёлся с UI-copy.
+
+Всего unit-тесты: `1895 → 1896` (+1), suites `154 → 154`.
+Full e2e: `250 → 250`, включая 10 visual baselines и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Runner-owned server в CI должен быть явным контрактом.** Если orchestration уже поднял проверенный server, Playwright config не должен повторно стартовать `webServer` только потому, что `CI=true`.
+2. **Recovery export нельзя называть как обычный экспорт.** Пользователь должен сразу видеть: обычный JSON — текущее состояние, копия до миграции — safety-снимок для разбора проблем после обновления.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1896/1896 PASS, 154 suites, lines 96.29%, branches 86.92%, 16.63s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `93/93` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `93/93` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2, CI=true reproduction, 25.3s | **0** | **0** | no |
+| `npm run test:e2e` | 250/250 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `93/93` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.58.json` | `docs/release-metrics-history.json` updated for 8.30.58 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.58 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  `CI=true` local reproduction, 25.3s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 210/210 (111.7s),
+  mobile-chromium 18/18 (28.2s), webkit 4/4 (22.6s), mobile-webkit 18/18
+  (36.2s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.58.json`.
+- Release metrics dashboard: `docs/release-metrics-dashboard.md`, latest delta:
+  CSS `93 → 93`, lines `96.29% → 96.29%`, branches `86.92% → 86.92%`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.57) — Storage Health, large backlog perf and feedback package
 
 > Recovery Center стал Project Doctor для локального хранилища, импорт и

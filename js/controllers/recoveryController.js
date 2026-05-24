@@ -143,7 +143,7 @@ export class RecoveryController {
             title: 'Восстановить резервную копию?',
             body: 'Текущие данные будут заменены содержимым backup.',
             preview: comparison.preview,
-            footer: 'Перед восстановлением можно скачать backup отдельным JSON-файлом.'
+            footer: 'Перед восстановлением можно скачать найденную копию до миграции отдельным JSON-файлом.'
         }), () => this.restoreBackup());
     }
 
@@ -196,7 +196,7 @@ export class RecoveryController {
             return;
         }
         storageService.saveFile(backup.state, buildRecoveryBackupFilename());
-        showSnackbar('Backup скачан JSON-файлом.', { duration: 4000 });
+        showSnackbar('Копия до миграции скачана JSON-файлом.', { duration: 4000 });
     }
 }
 

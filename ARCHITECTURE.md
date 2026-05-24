@@ -754,7 +754,7 @@ Perf taxonomy не заменяет профилирование. Это regress
 diagnostics JSON. Подробная операционная памятка — в
 [docs/USER_FEEDBACK_PACKAGE.md](USER_FEEDBACK_PACKAGE.md).
 
-**Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
+**Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. Когда `e2e-parallel.mjs` уже держит verified Sprint Planner server на 8123, `e2e-runner.mjs` передаёт `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`; это включает `reuseExistingServer` даже в GitHub Actions с `CI=true`.
 
 ### e2e-runner (`scripts/e2e-runner.mjs`)
 
@@ -763,7 +763,7 @@ diagnostics JSON. Подробная операционная памятка —
 - Spawn'ит Playwright с `--reporter=list,json`. Ground truth для обычного exit-кода — per-process JSON-файл (`test-results/e2e-runner-results-${process.pid}.json`, `stats.unexpected`), не stdout-парсинг.
 - Stdout-monitor — секундарный watchdog, force-kill child tree после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
 - Windows `mobile-webkit` имеет дополнительный узкий all-ok watchdog: если list reporter уже напечатал все ожидаемые `ok N` строки, failures не было, а child не завершился за 3s, runner делает tree-kill до внутреннего 300s Playwright timeout. Этот путь всегда пишет `[OVERRIDE]` и `child exit=1`, чтобы release notes не называли его clean child exit.
-- **Port 8123 own-server detection (v8.30.33+):** если порт занят, runner делает HTTP GET на `/index.html` и ищет `<title>Sprint Planner` сигнатуру. Свой сервер — info, продолжаем (webServer.reuseExistingServer подхватит). Чужой listener — **fail fast** с явной ошибкой и инструкцией (taskkill/kill). Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
+- **Port 8123 own-server detection (v8.30.33+):** если порт занят, runner делает HTTP GET на `/index.html` и ищет `<title>Sprint Planner` сигнатуру. Свой сервер — info, продолжаем и ставим `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`, чтобы Playwright не пытался поднять второй `webServer` в CI. Чужой listener — **fail fast** с явной ошибкой и инструкцией (taskkill/kill). Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
 - **Process-tree cleanup (v8.30.33+):** Playwright spawn'ит worker'ов, worker'ы — браузеры. Простой `child.kill()` оставлял grandchildren orphan. Теперь:
   - **Windows:** `taskkill /F /T /PID <pid>` (T = tree).
   - **Unix:** `spawn(..., {detached:true})` → новая process group; `process.kill(-pid, signal)` кладёт всю группу.

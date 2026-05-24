@@ -2,6 +2,12 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.58 (CI webServer reuse, recovery copy wording)
+
+- **CI `reuseExistingServer` нельзя оставлять только на `!process.env.CI`, если e2e orchestration уже поднял свой verified server.** `e2e-parallel.mjs` держит 8123, `e2e-runner.mjs` видит Sprint Planner signature, но GitHub Actions всё равно падал `port already used`, потому что Playwright config в CI запрещал reuse. Runner-owned server теперь передаётся явным `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`. Codified by: `e2e-runner-must-not-pollute-node-options.test.js`, `CI=true npm run test:e2e:smoke`.
+
+- **Recovery backup должен быть назван по пользовательскому смыслу, не по внутреннему ключу.** «Скачать backup» рядом с «Сохранить JSON» выглядит как дубль. Правильное разделение: «Сохранить JSON» = текущий план; «Скачать копию до миграции» = safety-снимок из `sprintPlannerData.backup` для проблем после обновления. Codified by: `docs/UserManual.md`, `docs:manual-check`.
+
 ## Ловушки v8.30.57 (storage health, large backlog perf, feedback package)
 
 - **Project Doctor должен быть redacted по умолчанию.** Проверка localStorage полезна только если показывает схему, parse status, issue count, counts и backup metadata без названий продукта/задач. Общий preview вынесен в `statePreview.js`, Storage Health берёт из него только агрегаты. Codified by: `storageHealth.test.js`, `statePreview.test.js`, e2e `Recovery Center`.
