@@ -60,10 +60,11 @@ npm run bump -- 9.0.0
    |---|---|---|---|
    | a | `npm run lint` | 0 | ESLint clean (no stray edits) |
    | b | `npm run test:coverage -- --maxWorkers=50%` | 0 | unit тесты + coverage threshold |
-   | c | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
-   | d | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
-   | e | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
-   | f | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
+   | c | `npm run docs:manual-check` | 0 | UserManual не дрейфует от UI labels / auto-selection behavior |
+   | d | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
+   | e | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
+   | f | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
+   | g | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
 
 5. **После e2e запуска сверить RELEASE_NOTES с summary artifact:**
 

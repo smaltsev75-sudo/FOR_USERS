@@ -1,5 +1,57 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.51) — UserManual drift guards + CSS cascade pilot
+
+> Combined follow-up к аудиту v8.30.50: дрейф встроенной справки переведён из
+> ручного grep в отдельный guard, а CSS cascade-долг получил безопасный первый
+> контракт без рискованного оборачивания existing unlayered файлов в `@layer`.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (UserManual drift)** | Справка часто догоняла UI вручную и уже снова расходилась: UI называл density-кнопку «Стандартный режим», а UserManual писал Comfortable. | Добавлен `user-manual-drift.test.js`: проверяет текущие UI labels, role glossary, hotkeys, density/view labels и версию footer. Справка обновлена под реальные labels и `Ctrl+Enter`. | [user-manual-drift.test.js](../tests/unit/architecture/user-manual-drift.test.js), [UserManual.md](UserManual.md) |
+| 2 | **P2 (manual check discoverability)** | Проверки UserManual были рассыпаны внутри общего unit suite. | Добавлена отдельная команда `npm run docs:manual-check`; release process и CI запускают её явно. | [package.json](../package.json), [RELEASE_PROCESS.md](RELEASE_PROCESS.md), [ci.yml](../.github/workflows/ci.yml) |
+| 3 | **P2 (CSS cascade debt)** | `print.css` и overrides держатся на import-order и `!important`; частичный `@layer` migration поверх unlayered CSS опасен. | Добавлен `css-cascade-contract.test.js`: layer manifest только в `base.css`, строгий stylesheet order, `print.css` last + `media=print`, бюджет `!important` не растёт (`252` total, `179` print). | [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js), [base.css](../css/base.css), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| 4 | **P3 (memory ROI)** | Уже codified lessons продолжали жить как одинаково активные war-stories. | `LESSONS_LOG.md`, `CLAUDE.md`, global AGENTS и `planner-delivery` skill помечают новые уроки через codified-by / commands. | [LESSONS_LOG.md](LESSONS_LOG.md), [CLAUDE.md](../CLAUDE.md) |
+
+### Новые тесты / guard
+
+- `user-manual-drift.test.js` — 21 проверка UserManual ↔ UI-copy/hotkeys/glossary.
+- `css-cascade-contract.test.js` — 3 проверки cascade manifest/import order/important budget.
+- `ci-workflow-gates.test.js` и `release-notes-final-gates.test.js` обновлены под `docs:manual-check`.
+
+Всего unit-тесты: `1779 → 1804` (+25), suites `130 → 132` (+2).
+Full e2e: без изменения количества, `247/247`.
+
+### Уроки и классы ошибок
+
+1. **UserManual — product contract.** Если UI label меняется, справка должна падать в тестах, а не ждать следующего внешнего аудита.
+2. **CSS layer migration должен начинаться с guard'ов, а не с частичного runtime-переноса.** `@layer` поверх unlayered базы меняет приоритеты; без visual pass это рискованный refactor.
+3. **Budget test лучше, чем ещё один комментарий.** Пока `!important` не уменьшен, хотя бы запретить рост `252/179` без явного review.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1804/1804 PASS, 132 suites, lines 96.61%, 14.6s | **0** | n/a | — |
+| `npm run docs:manual-check` | 22/22 PASS, 2 suites | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **1** on mobile-webkit | **yes** |
+| `npm run test:e2e` | 247/247 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 1 с
+  `[OVERRIDE]` по pre-summary all-ok watchdog; это НЕ clean child exit, но
+  ожидание 300s worker shutdown было срезано до 27.6s.
+- Full e2e: wrapper exit 0, child exits clean; chromium 207/207 (106.3s),
+  mobile-chromium 18/18 (26.1s), webkit 4/4 (21.1s), mobile-webkit 18/18
+  (33.9s).
+
+---
+
 ## Версия: май 2026 (обновление 8.30.50) — UI facade forcing v2 + meta guards + e2e acceleration
 
 > Продолжение forcing-function цикла: крупные UI-рендереры `taskList` и

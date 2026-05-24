@@ -2,15 +2,21 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.51 (manual drift guards + CSS cascade pilot)
+
+- **UserManual drift надо ловить как product contract, а не ручным grep после аудита.** Свежий пример: UI уже называл density-кнопку «Стандартный режим», а справка всё ещё писала Comfortable. Guard `user-manual-drift.test.js` фиксирует текущие UI labels, role glossary и hotkeys, включая `Ctrl+Enter`. Codified by: `tests/unit/architecture/user-manual-drift.test.js`, `npm run docs:manual-check`.
+
+- **CSS `@layer` нельзя мигрировать частями поверх unlayered CSS.** Unlayered normal rules имеют больший cascade priority, поэтому частичное оборачивание `print.css` или `a11y.css` может сломать overrides. Безопасный первый шаг: manifest в `base.css`, explicit link-order guard, `print.css` last + `media="print"`, budget на рост `!important`. Codified by: `tests/unit/architecture/css-cascade-contract.test.js`.
+
 ## Ловушки v8.30.50 (UI facade forcing v2, meta guards, visual baseline expansion)
 
-- **Visual baseline с нерепрезентативным seed — почти то же, что отсутствие baseline.** Первый overload seed для selection report давал `0 задач` во всех алгоритмах: screenshot был зелёный, но не защищал реальный сценарий выбора. Для visual regression seed должен показывать прикладное состояние: перегруз есть, но хотя бы один осмысленный вариант отбора остаётся доступен.
+- **Visual baseline с нерепрезентативным seed — почти то же, что отсутствие baseline.** Первый overload seed для selection report давал `0 задач` во всех алгоритмах: screenshot был зелёный, но не защищал реальный сценарий выбора. Для visual regression seed должен показывать прикладное состояние: перегруз есть, но хотя бы один осмысленный вариант отбора остаётся доступен. Codified by: `tests/e2e/visual.spec.js`.
 
-- **`[hidden]` лучше `style.display = 'none'` для optional DOM slots.** В task card JIRA/comment slots можно скрывать семантически через `hidden`; это уменьшает inline-style surface и упрощает architecture guard. Старые unit-тесты нужно проверять на `element.hidden`, не на `style.display`.
+- **`[hidden]` лучше `style.display = 'none'` для optional DOM slots.** В task card JIRA/comment slots можно скрывать семантически через `hidden`; это уменьшает inline-style surface и упрощает architecture guard. Старые unit-тесты нужно проверять на `element.hidden`, не на `style.display`. Codified by: `tests/unit/ui/taskList.test.js`, `tests/unit/architecture/meta-helper-grep-discipline.test.js`.
 
-- **Regex guard должен быть достаточно узким, чтобы не наказывать правильный код.** Проверка inline handler'ов сначала поймала переменную `onReload`. Правильный grep для CSP-инварианта — искать именно HTML attribute pattern (`<[^>]*\\son[a-z]+=...`), а не любые JS identifiers, начинающиеся с `on`.
+- **Regex guard должен быть достаточно узким, чтобы не наказывать правильный код.** Проверка inline handler'ов сначала поймала переменную `onReload`. Правильный grep для CSP-инварианта — искать именно HTML attribute pattern (`<[^>]*\\son[a-z]+=...`), а не любые JS identifiers, начинающиеся с `on`. Codified by: `tests/unit/architecture/meta-helper-grep-discipline.test.js`.
 
-- **Facade split без contract-test быстро деградирует.** Как только крупный UI-файл превращён в фасад, рядом нужен architecture test, который запрещает вернуть section builders/render helpers в корень. Иначе следующий удобный фикс опять начнёт наращивать фасад.
+- **Facade split без contract-test быстро деградирует.** Как только крупный UI-файл превращён в фасад, рядом нужен architecture test, который запрещает вернуть section builders/render helpers в корень. Иначе следующий удобный фикс опять начнёт наращивать фасад. Codified by: `task-list-facade-contract.test.js`, `selection-report-facade-contract.test.js`.
 
 - **Playwright final summary может быть слишком поздним для WebKit shutdown race.** В full e2e `mobile-webkit` прошёл все 18 тестов, но затем ждал 300s worker stop timeout до summary. Для Windows `mobile-webkit` runner должен считать `Running N tests` + все `ok 1..N` строки и только после полного all-ok evidence делать pre-summary tree-kill с явным `[OVERRIDE]`. Нельзя превращать это в общий stdout-pass heuristic для всех browser projects.
 

@@ -450,6 +450,12 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   `reset, tokens, layout, components, utilities, a11y, overrides`. Полный перенос
   существующих файлов в `@layer` откладывать до отдельного visual regression pass:
   unlayered rules сейчас имеют больший cascade priority, чем layered normal rules.
+- [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js)
+  закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
+  manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
+  явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
+  `!important` не может расти без осознанного review (`252` всего, `179` в
+  `print.css`). Уменьшать бюджет можно отдельными CSS-патчами после visual pass.
 - [density-css-boundary.test.js](../tests/unit/architecture/density-css-boundary.test.js)
   фиксирует, что task density deltas живут в `density.css`, грузятся после
   `task-card.css` и попадают в PWA precache.
@@ -468,8 +474,9 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 ```bash
 npm install                  # установка зависимостей (один раз)
 npm test                     # unit-тесты (Jest + jsdom)
-npm run test:coverage        # unit + coverage (release gate)
+npm run test:coverage -- --maxWorkers=50%  # unit + coverage (parallel release gate)
 npm run test:smoke           # быстрая проверка unit-подмножества
+npm run docs:manual-check    # быстрый guard от дрейфа встроенной справки
 npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
 npm run docs:modules         # обновить docs/MODULE_MAP.md
@@ -480,6 +487,7 @@ npm run docs:modules         # обновить docs/MODULE_MAP.md
 | Тип | Фреймворк | Команда | Release gate |
 |-----|-----------|---------|--------------|
 | Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --maxWorkers=50%` | **yes** (coverage exit 0) |
+| Docs drift | Jest architecture guards | `npm run docs:manual-check` | **yes** при изменении UI-copy/UserManual |
 | Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
 | E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
 | E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
