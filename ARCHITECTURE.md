@@ -120,8 +120,8 @@ module-level `renderGeneration`. Pending idle-callback'и старого рен�
 |---|---|
 | [viewState.js](../js/ui/taskList/viewState.js) | search/type filter + density fallback |
 | [focus.js](../js/ui/taskList/focus.js) | capture/restore focus для editable criteria score после `replaceChildren` |
-| [overloadIndicators.js](../js/ui/taskList/overloadIndicators.js) | cumulative role overload tags после каждого batch |
-| [render.js](../js/ui/taskList/render.js) | progressive rendering, generation-token, highlight/pulse orchestration |
+| [overloadIndicators.js](../js/ui/taskList/overloadIndicators.js) | cumulative role overload model + batch-only DOM updates для large backlog |
+| [render.js](../js/ui/taskList/render.js) | progressive rendering, generation-token, batch overload updates, highlight/pulse orchestration |
 | [taskCard.js](../js/ui/taskList/taskCard.js) | DOM shell карточки, безопасные title/comment slots |
 | [criteriaSection.js](../js/ui/taskList/criteriaSection.js) | criteria score controls + Priority Score block |
 | [estimatesSection.js](../js/ui/taskList/estimatesSection.js) | role effort chips + total effort |
@@ -347,16 +347,21 @@ diagnostics должны проходить redaction review и unit-тесты
 [diagnostics.test.js](../tests/unit/services/diagnostics.test.js), чтобы support
 bundle оставался полезным для разбора проблем, но не утекал содержимым backlog.
 
-#### Recovery Center (v8.30.56)
+#### Recovery Center / Storage Health (v8.30.56 → v8.30.57)
 
 `RecoveryController` даёт пользовательский доступ к pre-migration backup
 `sprintPlannerData.backup`, который bootstrap создаёт до разрушительной миграции.
+С v8.30.57 это же окно показывает Storage Health: состояние текущего
+`localStorage['sprintPlannerData']`, future-schema guard, число fallback issues
+и recoverable backup без product/task titles.
 Runtime-границы:
 
 | Модуль | Ответственность |
 |---|---|
-| [recovery.js](../js/services/recovery.js) | безопасно читает backup metadata/data, строит redacted summary/comparison, делегирует durable save |
-| [recoveryController.js](../js/controllers/recoveryController.js) | открывает модалку, показывает сравнение «сейчас → backup», скачивает backup, подтверждает восстановление |
+| [statePreview.js](../js/services/statePreview.js) | общий preview для JSON import и recovery: future schema, import issues, migrated summary, count deltas |
+| [storageHealth.js](../js/services/storageHealth.js) | redacted Project Doctor для текущего localStorage и backup metadata |
+| [recovery.js](../js/services/recovery.js) | безопасно читает backup metadata/data, строит redacted summary/comparison через общий preview, делегирует durable save |
+| [recoveryController.js](../js/controllers/recoveryController.js) | открывает модалку, показывает Storage Health и сравнение «сейчас → backup», скачивает backup, подтверждает восстановление |
 | [stateImportApplier.js](../js/controllers/stateImportApplier.js) | общий apply-path для `FileController` и `RecoveryController`: migrate → number format → criteria → task criteria alignment → Store |
 
 Recovery UI не выводит product/task titles. Он показывает только counts,
@@ -367,6 +372,8 @@ future-storage guard (`backup.version > APP_CONFIG.STORAGE_VERSION`), затем
 показывает ошибку.
 
 Guard/test: [recovery.test.js](../tests/unit/services/recovery.test.js),
+[storageHealth.test.js](../tests/unit/services/storageHealth.test.js),
+[statePreview.test.js](../tests/unit/services/statePreview.test.js),
 [recoveryController.test.js](../tests/unit/controllers/recoveryController.test.js)
 и e2e-сценарий `Recovery Center` в [planner.spec.js](../tests/e2e/planner.spec.js).
 
@@ -541,11 +548,13 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
   явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
-  `!important` не может расти без осознанного review (`128` всего, `96` в
+  `!important` не может расти без осознанного review (`93` всего, `61` в
   `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
   после `print-verify.spec.js` и visual baseline `print A4 task card`; v8.30.55
   убрал дублированный overload-блок из `task-card.css` и заменил modal-form
-  overrides в `create-task-modal.css` на нормальную специфичность.
+  overrides в `create-task-modal.css` на нормальную специфичность; v8.30.57
+  убрал дублирующие print `black/white !important`, которые уже покрывает
+  глобальное print-правило.
 - `npm run css:important-report` генерирует
   [docs/css-important-report.md](css-important-report.md) из реального CSS и
   [docs/css-important-budgets.json](css-important-budgets.json). В release
@@ -715,12 +724,17 @@ release metrics: guard запрещает рост budget, а report показ�
 | `npm run test:e2e:visual` | Chromium visual baselines |
 | `npm run test:e2e:a11y` | axe-core/focus accessibility specs |
 | `npm run test:e2e:mobile` | mobile-webkit smoke через parallel runner |
+| `npm run test:e2e:perf` | Chromium large-backlog gate: 300 задач, render + search filter |
 
 Source of truth — [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), runner —
 [e2e-taxonomy.mjs](../scripts/e2e-taxonomy.mjs). Guard:
 [e2e-taxonomy-contract.test.js](../tests/unit/architecture/e2e-taxonomy-contract.test.js)
 проверяет, что package scripts не дрейфуют от taxonomy definitions и не
 подменяют full e2e gate.
+
+Perf taxonomy не заменяет профилирование. Это regression gate на уже найденный
+класс деградации: overload-индикаторы не должны пересчитывать весь список после
+каждого progressive-render batch.
 
 ### Diagnostics issue template (v8.30.56)
 
@@ -730,6 +744,15 @@ Source of truth — [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), runner —
 только агрегированные поля (`app`, `runtime`, `storage`, `currentState`,
 `persistedState`, `serviceWorker`, `caches`) и не проходит по произвольным raw
 полям bundle, чтобы случайный пользовательский текст не попал в issue.
+
+### User feedback package (v8.30.57)
+
+`npm run feedback:template` печатает Markdown-шаблон для реальной обратной
+связи пользователей. Скрипт [userFeedbackPackage.js](../scripts/userFeedbackPackage.js)
+не читает project JSON и не принимает произвольные данные: он просит описать
+сценарий, ожидаемый/фактический результат, тему/viewport и приложить redacted
+diagnostics JSON. Подробная операционная памятка — в
+[docs/USER_FEEDBACK_PACKAGE.md](USER_FEEDBACK_PACKAGE.md).
 
 **Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
 

@@ -286,7 +286,8 @@
 
 /* ----- Recovery Center ----- */
 .recovery-empty,
-.recovery-summary {
+.recovery-summary,
+.recovery-health {
    display: flex;
    flex-direction: column;
    gap: 12px;
@@ -302,6 +303,31 @@
    margin: 0;
    color: var(--text-muted-strong);
    line-height: 1.5;
+}
+
+.recovery-health {
+   padding-bottom: 14px;
+   border-bottom: 1px solid var(--border);
+}
+
+.recovery-health__details {
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   background: var(--bg-main);
+}
+
+.recovery-health__details summary {
+   cursor: pointer;
+   padding: 9px 11px;
+   color: var(--accent);
+   font-weight: 700;
+}
+
+.recovery-health__messages {
+   margin: 0;
+   padding: 0 14px 12px 28px;
+   color: var(--text-muted-strong);
+   line-height: 1.45;
 }
 
 .recovery-meta-row {

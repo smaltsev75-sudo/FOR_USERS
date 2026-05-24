@@ -1,5 +1,77 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.57) — Storage Health, large backlog perf and feedback package
+
+> Recovery Center стал Project Doctor для локального хранилища, импорт и
+> восстановление получили общий preview будущего состояния, large backlog
+> получил отдельный perf-gate и ускоренный batch-update overload-индикаторов,
+> а feedback loop теперь просит redacted diagnostics вместо полного JSON.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (storage health invisible)** | Пользователь мог иметь повреждённый/current/future localStorage или recoverable backup, но видел только backup-сравнение без общей картины состояния данных. | Добавлен Storage Health в Recovery Center: parse status, схема, итоговые counts после миграции, issue count и backup metadata без product/task текста. | [storageHealth.js](../js/services/storageHealth.js), [recoveryController.js](../js/controllers/recoveryController.js) |
+| 2 | **P2 (import/recovery preview drift)** | Импорт JSON и восстановление backup считали preview разными путями, что могло дать разные счётчики/fallback-и перед заменой данных. | Добавлен общий `statePreview.js`; `FileController` и `recovery.js` используют один migrated preview, а confirm UI берёт общие модели. | [statePreview.js](../js/services/statePreview.js), [fileController.js](../js/controllers/fileController.js), [recovery.js](../js/services/recovery.js), [importIssues.js](../js/ui/importIssues.js) |
+| 3 | **P2 (large backlog slow path)** | На 600 задачах progressive render замедлялся из-за повторного пересчёта overload-индикаторов по всему списку после каждого idle-batch. Первый perf-run за 18 секунд дорисовал только ~260 карточек. | Overload-индикаторы строят cumulative model один раз и обновляют DOM только для только что отрисованного batch. Release gate закреплён на стабильных 300 задачах, чтобы ловить O(n²) регресс в full e2e без resource-race. | [overloadIndicators.js](../js/ui/taskList/overloadIndicators.js), [render.js](../js/ui/taskList/render.js), [performance.spec.js](../tests/e2e/performance.spec.js) |
+| 4 | **P3 (perf feedback not addressable)** | Были focused e2e buckets, но не было отдельного стабильного сценария для проверки большого backlog без полного suite. | Добавлена e2e taxonomy `perf` и npm-скрипт `test:e2e:perf`, привязанные к общему `scripts/e2eTaxonomy.js`. | [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), [package.json](../package.json), [e2eTaxonomy.test.js](../tests/unit/scripts/e2eTaxonomy.test.js) |
+| 5 | **P3 (real user feedback loop missing)** | Diagnostics уже был redacted, но не было простого шаблона, который просит сценарий, impact, theme/viewport и запрещает полный sprint JSON в публичном issue. | Добавлен `npm run feedback:template` и операционная памятка `docs/USER_FEEDBACK_PACKAGE.md`. | [userFeedbackPackage.js](../scripts/userFeedbackPackage.js), [USER_FEEDBACK_PACKAGE.md](USER_FEEDBACK_PACKAGE.md) |
+| 6 | **P3 (print CSS important debt)** | После прошлой фазы в `print.css` оставались дублирующие `black/white !important`, которые уже гарантировались глобальным print-правилом. | Сняты безопасные redundant importance overrides; budget tightened `107 → 93`, `print.css 75 → 61`. | [print.css](../css/print.css), [css-important-budgets.json](css-important-budgets.json), [css-important-report.md](css-important-report.md) |
+
+### Новые тесты / guard
+
+- `statePreview.test.js` — общий migrated preview, future schema skip и redaction.
+- `storageHealth.test.js` — empty/invalid/future/current+backup/warning статусы без утечки task/product текста.
+- `performance.spec.js` — Chromium gate на 300 задач: render + search filter.
+- `userFeedbackPackage.test.js` — feedback template требует diagnostics и не просит полный project JSON.
+- `taskListSubmodules.test.js` — overload batch-update через shared model.
+- `e2eTaxonomy.test.js` / `e2e-taxonomy-contract.test.js` — новый bucket `perf`.
+
+Всего unit-тесты: `1879 → 1895` (+16), suites `151 → 154` (+3).
+Full e2e: `249 → 250`, включая 10 visual baselines и новый large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Project Doctor должен быть redacted.** Пользователь получает состояние данных, но не содержимое backlog.
+2. **Preview замены данных — общий контракт.** Import и Recovery должны показывать один и тот же post-migration ground truth.
+3. **Perf gate полезен, когда он заставляет исправить причину.** Timeout на 600 задач выявил O(n²) batch-пересчёт, а release-safe gate закрепляет 300 задач, чтобы не смешивать perf-сигнал с full-suite contention.
+4. **Feedback loop не должен просить чувствительный JSON.** Достаточно сценария, impact и redacted diagnostics.
+5. **CSS debt можно дальше снижать малыми фазами.** Дублирующие print `black/white !important` безопасно снимаются под visual/print guards.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1895/1895 PASS, 154 suites, lines 96.29%, branches 86.92%, 16.45s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `93/93` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `93/93` | **0** | n/a | — |
+| `npm run test:e2e:perf` | 1/1 PASS, Chromium 300-task render + filter, 5.0s | **0** | **0** | no |
+| `npm run test:e2e:critical` | 21/21 PASS, chromium focused path | **0** | **0** | no |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2, 28.6s | **0** | **1** | yes |
+| `npm run test:e2e` | 250/250 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `93/93` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.57.json` | `docs/release-metrics-history.json` updated for 8.30.57 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.57 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Performance taxonomy: Chromium `1/1 PASS`, 300-task render + filter, 5.0s.
+- Critical taxonomy: Chromium `21/21 PASS`, wrapper exit 0, child exit 0,
+  override no.
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 1, override yes
+  (post-summary WebKit worker shutdown race after all ok lines), 28.6s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 210/210 (111.0s),
+  mobile-chromium 18/18 (27.7s), webkit 4/4 (22.5s), mobile-webkit 18/18
+  (35.9s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.57.json`.
+- Release metrics dashboard: `docs/release-metrics-dashboard.md`, latest delta:
+  CSS `107 → 93`, lines `96.48% → 96.29%`, branches `87.13% → 86.92%`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.56) — Recovery Center, e2e taxonomy and release metrics dashboard
 
 > Backup до миграции стал пользовательской функцией восстановления, e2e получил

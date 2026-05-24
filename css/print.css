@@ -107,7 +107,7 @@
     .availability-info input,
     .availability-info select {
         border: 1px solid #ccc !important;
-        background: white !important;
+        background: white;
         padding: 3px 5px;
         font-size: 10pt;
         width: 100%;
@@ -203,7 +203,7 @@
         border: 1px solid #000;
         margin-bottom: 12px;
         padding: 10px;
-        background: white !important;
+        background: white;
     }
 
     /* Строка 1: номер, тип, название */
@@ -273,7 +273,7 @@
         padding: 0;
         background: transparent !important;
         border: none !important;
-        color: black !important;
+        color: black;
         font-weight: normal;
     }
 
@@ -283,11 +283,11 @@
         padding: 0;
         background: transparent !important;
         border: none !important;
-        color: black !important;
+        color: black;
     }
 
     .est-box-total .task-effort-value {
-        color: black !important;
+        color: black;
         font-weight: normal;
     }
 
@@ -358,7 +358,7 @@
         min-height: 0;
         min-width: 0;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         white-space: nowrap;
         line-height: 1.4;
     }
@@ -367,7 +367,7 @@
         display: inline !important;
         font-size: 9pt;
         font-weight: normal;
-        color: black !important;
+        color: black;
         text-transform: none;
         letter-spacing: 0;
         max-width: none;
@@ -399,7 +399,7 @@
         padding: 0;
         border: none !important;
         background: transparent !important;
-        color: black !important;
+        color: black;
         font-weight: bold;
         font-size: 9pt;
         text-align: left;
@@ -408,7 +408,7 @@
     .est-box-suffix {
         display: inline !important;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         margin-left: 2px;
     }
 
@@ -430,7 +430,7 @@
     .est-box-total .task-effort-value,
     .est-box-total-label {
         display: inline !important;
-        color: black !important;
+        color: black;
         font-weight: bold;
     }
 
@@ -453,7 +453,7 @@
         border: none !important;
         background: transparent !important;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         white-space: nowrap;
         min-height: 0;
         min-width: 0;
@@ -464,7 +464,7 @@
         display: inline !important;
         font-weight: bold;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         min-width: 0;
     }
 
@@ -490,7 +490,7 @@
         display: inline !important;
         font-weight: bold;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         padding: 0;
         background: transparent !important;
         border: none !important;
@@ -544,7 +544,7 @@
     .priority-score-label,
     .priority-score-value {
         display: inline !important;
-        color: black !important;
+        color: black;
     }
 
     /* Компактный контейнер задачи */

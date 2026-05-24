@@ -14,17 +14,20 @@ function normalizeIssues(issues) {
  * Creates a structured confirm model for messageService.showConfirm().
  * The model is intentionally data-only: messageService owns DOM rendering.
  *
- * @param {Array<*>} issues
+ * @param {Array<*>|Object} previewOrIssues
  * @returns {Object}
  */
-export function createImportConfirmModel(issues) {
-    const normalizedIssues = normalizeIssues(issues);
+export function createImportConfirmModel(previewOrIssues) {
+    const preview = Array.isArray(previewOrIssues) ? null : previewOrIssues;
+    const normalizedIssues = normalizeIssues(preview?.issues || previewOrIssues);
     const issueCount = normalizedIssues.length;
+    const footer = buildPreviewFooter(preview);
 
     if (issueCount === 0) {
         return {
             title: 'Загрузить данные?',
-            body: 'Текущие данные будут потеряны.'
+            body: 'Текущие данные будут потеряны.',
+            ...(footer ? { footer } : {})
         };
     }
 
@@ -33,6 +36,7 @@ export function createImportConfirmModel(issues) {
         body: 'Текущие данные будут потеряны.',
         notice: `Файл содержит ${issueCount} проблем(ы). Некорректные значения будут заменены fallback'ами.`,
         noticeVariant: 'warning',
+        ...(footer ? { footer } : {}),
         detailsSummary: `Показать детали (${issueCount})`,
         detailsItems: normalizedIssues.slice(0, DEFAULT_IMPORT_ISSUE_LIMIT),
         detailsOverflow: Math.max(0, issueCount - DEFAULT_IMPORT_ISSUE_LIMIT)
@@ -65,4 +69,30 @@ export function formatImportSuccessMessage({
     }
 
     return `Данные успешно загружены! Загружено ${migratedTaskCount} задач${droppedNote}`;
+}
+
+export function createStateReplaceConfirmModel({
+    title = 'Заменить данные?',
+    body = 'Текущие данные будут заменены.',
+    preview,
+    noticeVariant = 'warning',
+    footer = ''
+} = {}) {
+    const counts = preview?.migratedSummary?.counts;
+    const notice = counts
+        ? `После замены: ${counts.tasks} задач, ${counts.criteria} критериев.`
+        : '';
+
+    return {
+        title,
+        body,
+        ...(notice ? { notice, noticeVariant } : {}),
+        ...(footer ? { footer } : {})
+    };
+}
+
+function buildPreviewFooter(preview) {
+    const counts = preview?.migratedSummary?.counts;
+    if (!counts) return '';
+    return `После загрузки: ${counts.tasks} задач, ${counts.criteria} критериев.`;
 }

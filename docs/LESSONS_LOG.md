@@ -2,6 +2,16 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.57 (storage health, large backlog perf, feedback package)
+
+- **Project Doctor должен быть redacted по умолчанию.** Проверка localStorage полезна только если показывает схему, parse status, issue count, counts и backup metadata без названий продукта/задач. Общий preview вынесен в `statePreview.js`, Storage Health берёт из него только агрегаты. Codified by: `storageHealth.test.js`, `statePreview.test.js`, e2e `Recovery Center`.
+
+- **Preview замены данных должен быть общим для import и recovery.** Иначе импорт покажет одни итоговые счётчики/fallback-и, а восстановление backup — другие. `statePreview.js` стал shared сервисом для `FileController` и `recovery.js`, а confirm-модели переиспользуют один UI helper. Codified by: `fileController.test.js`, `recovery.test.js`, `importIssues.test.js`.
+
+- **Large backlog perf надо защищать от O(n²) batch-регрессий.** Первый запуск 600-task probe показал только ~260 карточек за 18 секунд: overload-индикаторы пересчитывали весь список после каждого idle-batch. Решение: один cumulative model и DOM-update только для rendered batch. Release-safe gate закреплён на 300 задачах, чтобы не превращать full e2e в resource-race. Codified by: `performance.spec.js`, `taskListSubmodules.test.js`.
+
+- **User feedback loop должен просить сценарий и redacted diagnostics, а не полный project JSON.** `feedback:template` фиксирует, что пользователь описывает вкладку/тему/viewport/impact, а diagnostics прикладывает отдельным redacted JSON. Codified by: `userFeedbackPackage.test.js`, `docs/USER_FEEDBACK_PACKAGE.md`.
+
 ## Ловушки v8.30.56 (recovery, e2e taxonomy, diagnostics issue template)
 
 - **Nested modal confirmation надо проверять реальным e2e-click, не только unit auto-confirm.** Recovery Center сначала открывал `confirmModal`, оставляя `recoveryModal` сверху в DOM/z-index. Unit с mocked `showConfirm()` проходил, а Playwright честно не мог нажать «Да»: overlay перехватывал pointer events. Решение: закрывать Recovery-модалку до `messageService.showConfirm()`. Codified by: `tests/e2e/planner.spec.js` → `Recovery Center`.

@@ -1,9 +1,10 @@
 // js/controllers/fileController.js
 import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
-import { serializeStateForStorage, analyzeImportIssues } from '../state/persistence.js';
+import { serializeStateForStorage } from '../state/persistence.js';
 import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
 import { createImportConfirmModel, formatImportSuccessMessage } from '../ui/importIssues.js';
+import { buildStatePreview } from '../services/statePreview.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 import { buildSprintPlanFilename } from '../utils/fileName.js';
 import {
@@ -148,8 +149,13 @@ export class FileController {
             // v8.30.33: honest import — собираем list невалидных полей ДО
             // подтверждения, показываем пользователю явный отчёт. Success
             // message больше не маскирует потерю данных fallback-ом.
-            const { issues } = analyzeImportIssues(data);
-            const confirmModel = createImportConfirmModel(issues);
+            const preview = buildStatePreview(data, {
+                currentState: this.store.getState(),
+                criteria: this.criteriaManager.getCriteria(),
+                decimalSeparator: this.nfs.decimalSeparator
+            });
+            const { issues } = preview;
+            const confirmModel = createImportConfirmModel(preview);
 
             messageService.showConfirm(
                 confirmModel,

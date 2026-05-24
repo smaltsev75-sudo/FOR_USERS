@@ -1,5 +1,6 @@
 import { summarizeState } from './diagnostics.js';
 import { BACKUP_STORAGE_KEY, storageService } from './storage.js';
+import { buildStatePreview } from './statePreview.js';
 
 export function buildRecoveryBackupFilename(now = new Date()) {
     const stamp = now.toISOString().slice(0, 10);
@@ -50,8 +51,11 @@ export function readRecoveryBackup({ storage = globalThis.localStorage } = {}) {
 }
 
 export function buildRecoveryComparison({ currentState, backupState, criteria, decimalSeparator }) {
-    const current = summarizeState(currentState, { criteria, decimalSeparator });
-    const backup = summarizeState(backupState);
+    const preview = buildStatePreview(backupState, { currentState, criteria, decimalSeparator });
+    const current = preview.currentSummary || summarizeState(currentState, { criteria, decimalSeparator });
+    const backup = preview.migratedSummary?.present
+        ? preview.migratedSummary
+        : summarizeState(backupState);
     return {
         current,
         backup,
@@ -61,7 +65,8 @@ export function buildRecoveryComparison({ currentState, backupState, criteria, d
             excludedTasks: count(backup, 'excludedTasks') - count(current, 'excludedTasks'),
             criteria: count(backup, 'criteria') - count(current, 'criteria'),
             roles: count(backup, 'roles') - count(current, 'roles')
-        }
+        },
+        preview
     };
 }
 

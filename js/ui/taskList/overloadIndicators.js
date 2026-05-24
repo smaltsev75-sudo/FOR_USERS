@@ -3,7 +3,7 @@
 import { calculateAvailability } from '../../domain/role.js';
 import { formatUiPercent } from '../../utils/percent.js';
 
-export function updateOverloadIndicators(state, nfs) {
+export function createOverloadIndicatorModel(state, nfs) {
     const config = state.config;
     const roles = state.roles;
     const tasks = state.tasks;
@@ -24,8 +24,33 @@ export function updateOverloadIndicators(state, nfs) {
         cumByRole[role.id] = cumMap;
     });
 
+    return {
+        config,
+        roles,
+        tasks,
+        tasksById: new Map(tasks.map(task => [String(task.id), task])),
+        availMap,
+        cumByRole,
+        nfs
+    };
+}
+
+export function updateOverloadIndicators(state, nfs, {
+    model = null,
+    root = document,
+    taskIds = null
+} = {}) {
+    const indicatorModel = model || createOverloadIndicatorModel(state, nfs);
+    const tasks = Array.isArray(taskIds)
+        ? taskIds.map(id => indicatorModel.tasksById.get(String(id))).filter(Boolean)
+        : indicatorModel.tasks;
+    applyOverloadIndicators(indicatorModel, tasks, root);
+}
+
+function applyOverloadIndicators(model, tasks, root) {
+    const { roles, config, availMap, cumByRole, nfs } = model;
     tasks.forEach(task => {
-        const taskEl = document.querySelector(`.task-item[data-id="${task.id}"]`);
+        const taskEl = root.querySelector(`.task-item[data-id="${task.id}"]`);
         if (!taskEl) return;
         if (task.excluded) {
             roles.forEach(role => {

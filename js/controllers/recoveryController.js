@@ -2,12 +2,14 @@ import { getCommand } from '../config/commands.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
+import { inspectStorageHealth } from '../services/storageHealth.js';
 import {
     buildRecoveryBackupFilename,
     buildRecoveryComparison,
     readRecoveryBackup,
     saveRecoveredState
 } from '../services/recovery.js';
+import { createStateReplaceConfirmModel } from '../ui/importIssues.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
 import { showSnackbar } from '../ui/snackbar.js';
 import {
@@ -26,6 +28,7 @@ export class RecoveryController {
         this.restoreBtn = null;
         this.downloadBtn = null;
         this.backup = null;
+        this.health = null;
     }
 
     init() {
@@ -46,6 +49,11 @@ export class RecoveryController {
 
     open() {
         this.backup = readRecoveryBackup();
+        this.health = inspectStorageHealth({
+            currentState: this.store.getState(),
+            criteria: this.criteriaManager.getCriteria(),
+            decimalSeparator: this.nfs.decimalSeparator
+        });
         this.render();
         showModal(this.modal);
     }
@@ -62,6 +70,10 @@ export class RecoveryController {
         const canRecover = Boolean(backup?.recoverable);
         if (this.restoreBtn) this.restoreBtn.disabled = !canRecover;
         if (this.downloadBtn) this.downloadBtn.disabled = !canRecover;
+
+        if (this.health) {
+            this.contentEl.append(healthBlock(this.health));
+        }
 
         if (!backup?.present) {
             this.contentEl.append(
@@ -127,13 +139,12 @@ export class RecoveryController {
         });
 
         this.close();
-        messageService.showConfirm({
+        messageService.showConfirm(createStateReplaceConfirmModel({
             title: 'Восстановить резервную копию?',
             body: 'Текущие данные будут заменены содержимым backup.',
-            notice: `После восстановления: ${comparison.backup.counts.tasks} задач, ${comparison.backup.counts.criteria} критериев.`,
-            noticeVariant: 'warning',
+            preview: comparison.preview,
             footer: 'Перед восстановлением можно скачать backup отдельным JSON-файлом.'
-        }, () => this.restoreBackup());
+        }), () => this.restoreBackup());
     }
 
     restoreBackup() {
@@ -231,6 +242,70 @@ function comparisonGrid(comparison) {
         metric('Критерии', comparison.current.counts.criteria, comparison.backup.counts.criteria, comparison.deltas.criteria)
     );
     return grid;
+}
+
+function healthBlock(health) {
+    const status = healthStatusText(health.status);
+    const currentCounts = health.current?.counts;
+    const backup = health.backup || {};
+    const details = document.createElement('details');
+    details.className = 'recovery-health__details';
+
+    const summary = document.createElement('summary');
+    summary.textContent = 'Показать технические детали';
+    details.append(summary);
+
+    const list = document.createElement('ul');
+    list.className = 'recovery-health__messages';
+    const messages = Array.isArray(health.messages) && health.messages.length > 0
+        ? health.messages
+        : ['Подробные статусы не сформированы.'];
+    for (const message of messages) {
+        const item = document.createElement('li');
+        item.textContent = message;
+        list.append(item);
+    }
+    details.append(list);
+
+    return block('recovery-health', [
+        title('Состояние локальных данных'),
+        metaRow('Текущее сохранение', status),
+        metaRow('Схема', schemaText(health.current)),
+        metaRow('Данные после миграции', countsText(currentCounts)),
+        metaRow('Локальный backup', backupText(backup)),
+        details
+    ]);
+}
+
+function healthStatusText(status) {
+    const labels = {
+        ok: 'читается',
+        empty: 'не создано',
+        warning: 'требует внимания',
+        error: 'повреждено',
+        blocked: 'нужна новая версия приложения'
+    };
+    return labels[status] || 'неизвестно';
+}
+
+function schemaText(current) {
+    if (!current?.present) return `поддерживается ${current?.supportedVersion ?? APP_CONFIG.STORAGE_VERSION}`;
+    const source = current.sourceVersion === null || current.sourceVersion === undefined
+        ? 'не определена'
+        : String(current.sourceVersion);
+    return `${source} / поддерживается ${current.supportedVersion}`;
+}
+
+function countsText(counts) {
+    if (!counts) return 'нет данных';
+    return `${counts.tasks} задач, ${counts.criteria} критериев, ${counts.roles} ролей`;
+}
+
+function backupText(backup) {
+    if (!backup.present) return 'не найден';
+    if (!backup.recoverable) return `есть, статус ${backup.status}`;
+    const created = formatTimestamp(backup.createdAt);
+    return `готов к восстановлению, создан ${created}`;
 }
 
 function metric(label, current, backup, delta) {

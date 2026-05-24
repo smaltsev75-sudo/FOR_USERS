@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.56-recovery-metrics-taxonomy';
+const CACHE_VERSION = 'sp-v8.30.57-storage-health-perf-feedback';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -107,7 +107,9 @@ const ASSETS_TO_CACHE = [
     './js/services/message.js',
     './js/services/numberFormat.js',
     './js/services/recovery.js',
+    './js/services/statePreview.js',
     './js/services/storage.js',
+    './js/services/storageHealth.js',
     // JS — state
     './js/state/persistence.js',
     './js/state/persistence/constants.js',

@@ -180,7 +180,8 @@ Ubuntu не должен падать из-за честно задокумен�
 Для быстрых локальных проверок есть taxonomy scripts. Они не заменяют full gate:
 `npm run test:e2e:critical` (startup/diagnostics/Recovery/create/persistence),
 `npm run test:e2e:visual`, `npm run test:e2e:a11y`,
-`npm run test:e2e:mobile`. Source of truth — `scripts/e2eTaxonomy.js`, guard —
+`npm run test:e2e:mobile`, `npm run test:e2e:perf` (300-task backlog render +
+filter). Source of truth — `scripts/e2eTaxonomy.js`, guard —
 `tests/unit/architecture/e2e-taxonomy-contract.test.js`.
 
 | project | viewport / engine | testMatch | testIgnore |

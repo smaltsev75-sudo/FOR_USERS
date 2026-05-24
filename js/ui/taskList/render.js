@@ -4,7 +4,7 @@ import { calculateTaskTotal } from '../../domain/task.js';
 import { captureCriteriaScoreFocus, restoreCriteriaScoreFocus } from './focus.js';
 import { createTaskElement } from './taskCard.js';
 import { filterTasks, resolveDensity } from './viewState.js';
-import { updateOverloadIndicators } from './overloadIndicators.js';
+import { createOverloadIndicatorModel, updateOverloadIndicators } from './overloadIndicators.js';
 
 let lastHandledAddedTaskId = null;
 
@@ -116,6 +116,7 @@ export function renderTaskList(state, nfs, taskController = null) {
     const config = state.config;
     const availMap = {};
     roles.forEach(r => availMap[r.id] = calculateAvailability(r, config).useful);
+    const overloadModel = createOverloadIndicatorModel(state, nfs);
 
     const BATCH_SIZE = 20;
 
@@ -134,6 +135,11 @@ export function renderTaskList(state, nfs, taskController = null) {
     const fragment = document.createDocumentFragment();
     firstBatch.forEach((task, index) => fragment.appendChild(renderTask(task, index)));
     taskListEl.appendChild(fragment);
+    updateOverloadIndicators(state, nfs, {
+        model: overloadModel,
+        root: taskListEl,
+        taskIds: firstBatch.map(task => task.id)
+    });
 
     // v8.30.31: updateOverloadIndicators вызывается после каждого batch'а,
     // иначе late-rendered задачи остаются без overload-тегов.
@@ -143,12 +149,19 @@ export function renderTaskList(state, nfs, taskController = null) {
         const renderNextBatch = (deadline) => {
             if (myGeneration !== renderGeneration) return;
             const batchFragment = document.createDocumentFragment();
+            const renderedIds = [];
             while (i < remaining.length && (typeof deadline === 'undefined' || deadline.timeRemaining() > 5)) {
-                batchFragment.appendChild(renderTask(remaining[i], BATCH_SIZE + i));
+                const task = remaining[i];
+                batchFragment.appendChild(renderTask(task, BATCH_SIZE + i));
+                renderedIds.push(task.id);
                 i++;
             }
             taskListEl.appendChild(batchFragment);
-            updateOverloadIndicators(state, nfs);
+            updateOverloadIndicators(state, nfs, {
+                model: overloadModel,
+                root: taskListEl,
+                taskIds: renderedIds
+            });
             if (i < remaining.length) {
                 (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(renderNextBatch);
             }
@@ -164,7 +177,6 @@ export function renderTaskList(state, nfs, taskController = null) {
     }
 
     highlightNewTask(state, taskListEl);
-    updateOverloadIndicators(state, nfs);
     pulseChangedPriorityScores(taskListEl, previousScores);
     restoreCriteriaScoreFocus(taskListEl, focusedCriteriaScoreKey);
 }
