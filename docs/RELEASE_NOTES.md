@@ -1,5 +1,76 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.56) — Recovery Center, e2e taxonomy and release metrics dashboard
+
+> Backup до миграции стал пользовательской функцией восстановления, e2e получил
+> быстрые focused buckets без подмены full gate, diagnostics JSON теперь можно
+> превращать в Markdown issue template, release metrics получили dashboard, а
+> print CSS `!important` budget снижен с сохранением visual/print baseline.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (backup exists but not recoverable by user)** | Bootstrap делал `sprintPlannerData.backup` до миграции, но пользователь не видел backup и не мог восстановить его без ручного localStorage-доступа. | Добавлен Центр восстановления: кнопка «Резерв», redacted comparison «сейчас → backup», download backup JSON, restore через подтверждение. | [recoveryController.js](../js/controllers/recoveryController.js), [recovery.js](../js/services/recovery.js), [index.html](../index.html) |
+| 2 | **P2 (import/recovery path drift)** | Восстановление backup могло получить отдельный state-apply path и разойтись с импортом JSON по criteria alignment / number format / rollback. | Общий `stateImportApplier.js` используется и `FileController`, и `RecoveryController`: migrate → number format → criteria → task evaluations alignment → Store. | [stateImportApplier.js](../js/controllers/stateImportApplier.js), [fileController.js](../js/controllers/fileController.js) |
+| 3 | **P2 (nested modal actionability)** | Recovery открывал confirm поверх себя, но recovery overlay оставался выше и перехватывал клики; unit auto-confirm этого не видел. | Перед `messageService.showConfirm()` Recovery-модалка закрывается; e2e проверяет реальный click restore → confirm → persisted state. | [recoveryController.js](../js/controllers/recoveryController.js), [planner.spec.js](../tests/e2e/planner.spec.js) |
+| 4 | **P3 (slow local e2e feedback)** | Был только full e2e или smoke; разработчик не мог быстро прогнать «критичный пользовательский путь» без полного suite. | Добавлена e2e taxonomy: `critical`, `visual`, `a11y`, `mobile` через единый `scripts/e2eTaxonomy.js` и guard package scripts. | [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), [e2e-taxonomy.mjs](../scripts/e2e-taxonomy.mjs), [e2e-taxonomy-contract.test.js](../tests/unit/architecture/e2e-taxonomy-contract.test.js) |
+| 5 | **P3 (support workflow friction)** | Diagnostics JSON был redacted, но из него вручную приходилось собирать issue: environment/storage/state/SW/caches. | Добавлен `npm run diagnostics:issue-template`, который рендерит Markdown issue только из allowlisted агрегатов diagnostics bundle. | [diagnosticsIssueTemplate.js](../scripts/diagnosticsIssueTemplate.js), [render-diagnostics-issue-template.mjs](../scripts/render-diagnostics-issue-template.mjs) |
+| 6 | **P3 (metrics trend not human-readable)** | `release-metrics-history.json` хранил тренд, но человеку всё равно нужно было читать JSON. | Добавлен `release:metrics-dashboard` и tracked `docs/release-metrics-dashboard.md` с latest delta и таблицей релизов. | [releaseMetricsDashboard.js](../scripts/releaseMetricsDashboard.js), [release-metrics-dashboard.md](release-metrics-dashboard.md) |
+| 7 | **P3 (print CSS important debt)** | Основной остаток `!important` долга был в `print.css`; часть declarations была уже redundant из-за print stylesheet order. | Без `@layer` rewrite сняты безопасные redundant importance overrides; budget tightened `128 → 107`, `print.css 96 → 75`. | [print.css](../css/print.css), [css-important-budgets.json](css-important-budgets.json), [css-important-report.md](css-important-report.md) |
+
+### Новые тесты / guard
+
+- `recovery.test.js` — backup metadata/data parsing, redacted summary, comparison deltas, save boundary.
+- `recoveryController.test.js` — empty state, restore через shared migration/apply path и durable localStorage save.
+- `planner.spec.js` расширен e2e-сценарием Recovery Center.
+- `diagnosticsIssueTemplate.test.js` — issue template рендерит агрегаты и не проходит по raw fields.
+- `releaseMetricsDashboard.test.js` — latest delta + release history Markdown.
+- `e2eTaxonomy.test.js` и `e2e-taxonomy-contract.test.js` — taxonomy source of truth и package script guard.
+
+Всего unit-тесты: `1859 → 1879` (+20), suites `145 → 151` (+6).
+Full e2e: `248 → 249`, включая 10 visual baselines.
+
+### Уроки и классы ошибок
+
+1. **Backup без UI — это половина recovery.** Если bootstrap сохраняет pre-migration backup, пользователь должен видеть, что найдено, и иметь безопасный restore path.
+2. **Импорт и восстановление должны делить apply-path.** Иначе alignment-инварианты быстро расходятся между двумя похожими сценариями.
+3. **Nested modal bugs ловятся только real-user click.** Mocked confirm полезен для unit, но actionability проверяет Playwright.
+4. **E2E taxonomy — ускоритель, не релизный суррогат.** Focused buckets помогают локально, но final release gate остаётся full e2e.
+5. **Diagnostics лучше превращать в issue через allowlist.** Неизвестные поля bundle нельзя blindly переносить в Markdown.
+6. **CSS debt можно снижать малыми безопасными фазами.** Сначала убрать redundancy, которую уже защищают stylesheet order, specificity и visual/print tests.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1879/1879 PASS, 151 suites, lines 96.48%, branches 87.13%, 16.9s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `107/107` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `107/107` | **0** | n/a | — |
+| `npm run test:e2e:critical` | 21/21 PASS, chromium focused path | **0** | **0** | no |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 249/249 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `107/107` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.56.json` | `docs/release-metrics-history.json` updated for 8.30.56 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.56 | **0** | n/a | — |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated --long` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Critical taxonomy: chromium `21/21 PASS`, wrapper exit 0, child exit 0, override no.
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  26.0s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 209/209 (109.8s),
+  mobile-chromium 18/18 (28.1s), webkit 4/4 (22.8s), mobile-webkit 18/18
+  (36.9s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.56.json`.
+- Release metrics dashboard: `docs/release-metrics-dashboard.md`, latest delta:
+  CSS `128 → 107`, lines `96.72% → 96.48%`, branches `87.19% → 87.13%`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.55) — command registry, diagnostics e2e and CSS debt cut
 
 > Команды приложения получили единый registry для UI/hotkeys/UserManual,

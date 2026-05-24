@@ -28,6 +28,7 @@ Sprint Planner помогает Product Owner формировать бэкло�
 - **Отмена удаления** — при удалении задачи появляется кнопка «Отменить» (5 секунд).
 - **Импорт/экспорт** — сохранение и загрузка данных в JSON. При загрузке приложение заранее показывает компактную диагностику невалидных полей; подробный список раскрывается в подтверждении импорта.
 - **Диагностический пакет** — кнопка «Диагностика» (`Ctrl+Alt+D`) скачивает JSON для разбора проблем: версия, browser/storage/service worker/cache и агрегаты состояния без текстов задач, JIRA URL, комментариев и названия продукта; после скачивания появляется короткое уведомление.
+- **Центр восстановления** — кнопка «Резерв» показывает локальный pre-migration backup, сравнивает его с текущим состоянием по количествам задач/критериев и позволяет скачать или восстановить backup через тот же миграционный путь, что и импорт JSON.
 - **Автосохранение** — все изменения сохраняются в localStorage.
 - **Горячие клавиши** — Ctrl+Alt+N (новая задача), Ctrl+Alt+S (сохранить), Ctrl+Alt+O (загрузить), Ctrl+Alt+F (поиск), Ctrl+Alt+P (печать), Ctrl+Alt+D (диагностика), Delete (удалить задачу), Esc (закрыть окно). Полный список с macOS-эквивалентами — в [`docs/UserManual.md`](docs/UserManual.md).
 - **Светлая (песочная) и тёмная тема** — светлая тема выполнена в тёплых песочных тонах (без чисто-белого), все пары контраста соответствуют WCAG 2.1 AA ≥ 4.5:1.
@@ -183,6 +184,7 @@ PLANNER/
 | [docs/MODULE_MAP.md](docs/MODULE_MAP.md) | Автогенерируемая карта JS-модулей |
 | [docs/css-important-report.md](docs/css-important-report.md) | Автогенерируемый отчёт по оставшимся CSS `!important` overrides |
 | [docs/release-metrics-history.json](docs/release-metrics-history.json) | Tracked история coverage/e2e/CSS метрик релизов |
+| [docs/release-metrics-dashboard.md](docs/release-metrics-dashboard.md) | Автогенерируемая таблица трендов coverage/e2e/CSS по релизам |
 | [docs/LESSONS_LOG.md](docs/LESSONS_LOG.md) | Архив накопленных инженерных уроков |
 | [docs/CODE_REVIEW_GUIDELINES.md](docs/CODE_REVIEW_GUIDELINES.md) | Стандарты кода + pre-commit чек-лист |
 | [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md) | История изменений |

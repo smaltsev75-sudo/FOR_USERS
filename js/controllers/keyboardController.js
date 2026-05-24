@@ -88,6 +88,7 @@ export class KeyboardController {
                 'messageModal',
                 'confirmModal',
                 'recommendationsModal',
+                'recoveryModal',
                 'helpModal',
                 'createTaskModal'
             ];

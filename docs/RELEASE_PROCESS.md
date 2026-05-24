@@ -72,6 +72,7 @@ npm run bump -- 9.0.0
    ```bash
    npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json
    npm run release:metrics-history -- --metrics test-results/release-metrics-v<X.Y.Z>.json
+   npm run release:metrics-dashboard
    ```
 
    Команда читает `coverage/coverage-summary.json`,
@@ -81,6 +82,8 @@ npm run bump -- 9.0.0
    `release:metrics-history` обновляет tracked
    `docs/release-metrics-history.json`, чтобы coverage/e2e/CSS тренд не
    приходилось восстанавливать из старых release notes.
+   `release:metrics-dashboard` обновляет tracked Markdown-таблицу
+   `docs/release-metrics-dashboard.md` с latest delta и историей релизов.
    Для черновика секции можно затем выполнить:
 
    ```bash
@@ -173,6 +176,12 @@ Ubuntu не должен падать из-за честно задокумен�
 4 проекта; gate `e2e:smoke` запускает только mobile-webkit как fastest indicator
 большинства реальных проблем (worker-shutdown race, mobile overflow, sticky).
 `e2e` запускает все.
+
+Для быстрых локальных проверок есть taxonomy scripts. Они не заменяют full gate:
+`npm run test:e2e:critical` (startup/diagnostics/Recovery/create/persistence),
+`npm run test:e2e:visual`, `npm run test:e2e:a11y`,
+`npm run test:e2e:mobile`. Source of truth — `scripts/e2eTaxonomy.js`, guard —
+`tests/unit/architecture/e2e-taxonomy-contract.test.js`.
 
 | project | viewport / engine | testMatch | testIgnore |
 |---|---|---|---|

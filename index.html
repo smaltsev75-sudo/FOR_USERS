@@ -22,31 +22,31 @@
             document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
-    <link rel="stylesheet" href="css/base.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/layout.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/forms.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/modals.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/components.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/animations.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/progress.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/help.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/responsive.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/density.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.55">
-    <link rel="stylesheet" href="css/print.css?v=v8.30.55" media="print">
-    <link rel="manifest" href="manifest.json?v=8.30.55">
+    <link rel="stylesheet" href="css/base.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/layout.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/forms.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/modals.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/components.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/animations.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/progress.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/help.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/responsive.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/density.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.56">
+    <link rel="stylesheet" href="css/print.css?v=v8.30.56" media="print">
+    <link rel="manifest" href="manifest.json?v=8.30.56">
     <meta name="theme-color" content="#00d9ff">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -89,6 +89,11 @@
                     title="Скачать диагностический пакет без текстов задач (Ctrl+Alt+D)">
                     <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
                     Диагностика
+                </button>
+                <button class="export-btn recovery-btn" id="recoveryCenterBtn"
+                    title="Открыть центр восстановления из локальной резервной копии">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/><path d="m9 16 2 2 4-4"/></svg>
+                    Резерв
                 </button>
                 <button class="export-btn help-btn" id="helpBtn" title="Открыть справку">
                     <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -709,6 +714,25 @@
         </div>
     </div>
 
+    <!-- Центр восстановления из pre-migration backup -->
+    <div class="modal-overlay" id="recoveryModal" role="dialog" aria-modal="true" aria-labelledby="recoveryModalTitle">
+        <div class="modal-content modal-content--medium modal-content--column modal-content--padless">
+            <div class="modal-header modal-header--padded">
+                <h3 id="recoveryModalTitle" class="modal-title modal-title--icon">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/><path d="m9 16 2 2 4-4"/></svg>
+                    Центр восстановления
+                </h3>
+                <button id="closeRecoveryModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
+            </div>
+            <div id="recoveryContent" class="modal-body modal-body--padded"></div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="downloadRecoveryBackupBtn" class="export-btn" title="Скачать найденный backup JSON-файлом">Скачать backup</button>
+                <button id="restoreRecoveryBackupBtn" class="export-btn export-btn--accent" title="Восстановить данные из backup">Восстановить</button>
+                <button id="closeRecoveryBtn" class="export-btn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно справки -->
     <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
         <div class="modal-content modal-content--narrow modal-content--column modal-content--padless">
@@ -733,7 +757,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.30.55"></script>
+    <script type="module" src="js/app.js?v=v8.30.56"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

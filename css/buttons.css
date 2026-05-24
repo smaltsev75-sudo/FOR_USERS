@@ -69,3 +69,8 @@
    color: var(--accent);
    border-color: var(--accent);
 }
+
+.recovery-btn:hover {
+   color: var(--warning);
+   border-color: var(--warning);
+}

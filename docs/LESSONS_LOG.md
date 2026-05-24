@@ -2,6 +2,18 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.56 (recovery, e2e taxonomy, diagnostics issue template)
+
+- **Nested modal confirmation надо проверять реальным e2e-click, не только unit auto-confirm.** Recovery Center сначала открывал `confirmModal`, оставляя `recoveryModal` сверху в DOM/z-index. Unit с mocked `showConfirm()` проходил, а Playwright честно не мог нажать «Да»: overlay перехватывал pointer events. Решение: закрывать Recovery-модалку до `messageService.showConfirm()`. Codified by: `tests/e2e/planner.spec.js` → `Recovery Center`.
+
+- **Восстановление backup не должно иметь отдельный state-apply path.** Если импорт JSON и recovery по-разному мигрируют criteria/tasks/number format, одна из веток начнёт терять alignment. Общий helper `stateImportApplier.js` стал shared path: migrate → number format → criteria → task criteria alignment → Store. Codified by: `recoveryController.test.js` и existing `fileController.test.js`.
+
+- **Diagnostics issue template должен читать только агрегаты, а не весь bundle.** Даже redacted JSON может со временем получить новое поле. Шаблон issue рендерит allowlisted sections (`app/runtime/storage/currentState/persistedState/SW/cache`) и не проходит по неизвестным raw keys. Codified by: `diagnosticsIssueTemplate.test.js`.
+
+- **E2E taxonomy ускоряет локальный цикл, но не заменяет full gate.** `test:e2e:critical|visual|a11y|mobile` должны жить в одном source of truth (`scripts/e2eTaxonomy.js`) и охраняться guard'ом, иначе package scripts сами станут новым drift-срезом. Codified by: `e2e-taxonomy-contract.test.js`.
+
+- **Print CSS debt можно снижать безопасно, если оставить semantic overrides и снять только redundant importance.** v8.30.56 снял `!important` там, где print stylesheet order и specificity достаточно сильны (`display`/layout для print-only и toolbar/grid/task rows), не заходя в `@layer` rewrite. Budget `128 → 107`. Codified by: `css-cascade-contract.test.js` и `css:important-report`.
+
 ## Ловушки v8.30.55 (command registry, diagnostics e2e, CSS debt trend)
 
 - **Hotkeys нельзя держать одновременно в контроллере, HTML title и UserManual.** До v8.30.55 таблица горячих клавиш была в `manual-contract.json`, а runtime-логика — в `KeyboardController`. Это создавало drift-риск: UI мог поменяться, а справка остаться старой. Решение: `js/config/commands.js` как source of truth, `KeyboardController` ищет command через `findCommandByHotkey()`, UserManual берёт `getManualHotkeys()`, а `command-registry-contract.test.js` запрещает вернуть ручной дубль.

@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.55-command-registry-diagnostics';
+const CACHE_VERSION = 'sp-v8.30.56-recovery-metrics-taxonomy';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -61,6 +61,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/fileController.js',
     './js/controllers/helpController.js',
     './js/controllers/keyboardController.js',
+    './js/controllers/recoveryController.js',
     './js/controllers/roleController.js',
     './js/controllers/selection/selectionHelpers.js',
     './js/controllers/selectionController.js',
@@ -79,6 +80,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/task/taskListHandler.js',
     './js/controllers/task/undoDeleteService.js',
     './js/controllers/taskController.js',
+    './js/controllers/stateImportApplier.js',
     './js/controllers/themeController.js',
     // JS — domain
     './js/domain/config.js',
@@ -104,6 +106,7 @@ const ASSETS_TO_CACHE = [
     './js/services/instanceLock.js',
     './js/services/message.js',
     './js/services/numberFormat.js',
+    './js/services/recovery.js',
     './js/services/storage.js',
     // JS — state
     './js/state/persistence.js',

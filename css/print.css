@@ -50,7 +50,7 @@
        скрыт через base.css (`display: none`), в print показываем как обычный
        inline-текст в строке заголовка. */
     .print-only-timestamp {
-        display: inline !important;
+        display: inline;
         margin-left: 6px;
         font-weight: normal;
         font-size: 0.9em;
@@ -61,10 +61,10 @@
        в print.css. Inline убран (правило `display: none` теперь в base.css),
        показ — здесь, на печати. */
     .print-only-effort {
-        display: inline !important;
+        display: inline;
         margin-left: 8px;
         font-size: 0.85em;
-        color: #333 !important;
+        color: #333;
     }
 
     /* ---------- Общие настройки ---------- */
@@ -83,7 +83,7 @@
 
     /* ---------- ПАНЕЛЬ ПАРАМЕТРОВ СПРИНТА ---------- */
     .availability-info {
-        display: grid !important;
+        display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         margin-bottom: 20px;
@@ -93,7 +93,7 @@
     }
 
     .availability-info > div {
-        display: flex !important;
+        display: flex;
         align-items: center;
         gap: 5px;
     }
@@ -116,10 +116,10 @@
 
     /* ---------- БЛОК ИНФОРМАЦИИ О ЗАДАЧАХ (В ОДНУ СТРОКУ, С ИЗМЕНЁННЫМ ПОРЯДКОМ) ---------- */
     .toolbar__status-group {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
         width: 100%;
         margin-bottom: 20px;
         padding: 8px 10px;
@@ -132,7 +132,7 @@
     #excludedTasksHeader {
         order: 2;
         font-size: 12pt;
-        color: black !important;
+        color: black;
         white-space: nowrap;
         margin-left: auto;
     }
@@ -140,13 +140,13 @@
     #includedTasksHeader {
         order: 1;
         font-size: 12pt;
-        color: black !important;
+        color: black;
         white-space: nowrap;
     }
 
     /* ---------- ДВЕ ТАБЛИЦЫ НА ОДНОМ ЛИСТЕ ---------- */
     .dash-grid {
-        display: grid !important;
+        display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 15px;
         margin-bottom: 20px;
@@ -208,7 +208,7 @@
 
     /* Строка 1: номер, тип, название */
     .task-row {
-        display: flex !important;
+        display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 8px;
@@ -217,7 +217,7 @@
     .task-order-number {
         min-width: 24px;
         height: 24px;
-        display: flex !important;
+        display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
@@ -243,8 +243,8 @@
 
     /* Строка 2: URL (слева, с отступом) */
     .task-jira-link {
-        display: block !important;
-        color: black !important;
+        display: block;
+        color: black;
         text-decoration: underline;
         font-size: 9pt;
         margin-left: 72px;
@@ -260,8 +260,8 @@
 
     /* Строка 3: Priority Score и Effort в одной строке, прижаты к правому краю */
     .task-metrics-row {
-        display: flex !important;
-        justify-content: flex-end !important;
+        display: flex;
+        justify-content: flex-end;
         gap: 20px;
         margin-top: 5px;
         font-size: 10pt;
@@ -306,10 +306,10 @@
 
     .task-estimates-label,
     .criteria-section-label {
-        display: inline !important;
+        display: inline;
         font-weight: bold;
         font-size: 9pt;
-        color: black !important;
+        color: black;
         text-transform: none;
         letter-spacing: 0;
         margin-right: 4px;
@@ -322,7 +322,7 @@
     }
 
     .task-estimates {
-        display: block !important;
+        display: block;
         padding-top: 4px;
         margin-top: 4px;
         border-top: 1px dashed #999 !important;

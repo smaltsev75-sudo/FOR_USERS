@@ -11,6 +11,7 @@ import { TaskController } from './controllers/taskController.js';
 import { CriteriaController } from './controllers/criteriaController.js';
 import { SelectionController } from './controllers/selectionController.js';
 import { FileController } from './controllers/fileController.js';
+import { RecoveryController } from './controllers/recoveryController.js';
 import { TabController } from './controllers/tabController.js';
 import { ViewModeController } from './controllers/viewModeController.js';
 import { renderApp } from './ui/index.js';
@@ -58,6 +59,7 @@ export class App {
         this.criteriaController = new CriteriaController(this.store, this.criteriaManager);
         this.selectionController = new SelectionController(this.store, this.criteriaManager, this.nfs);
         this.fileController = new FileController(this.store, this.nfs, this.criteriaManager);
+        this.recoveryController = new RecoveryController(this.store, this.nfs, this.criteriaManager);
         this.tabController = new TabController(this.store);
         this.viewModeController = new ViewModeController(this.store);
         this.helpController = new HelpController();
@@ -111,6 +113,7 @@ export class App {
         this.criteriaController.init();
         this.selectionController.init();
         this.fileController.init();
+        this.recoveryController.init();
         this.tabController.init();
         this.viewModeController.init();
         this.helpController.init();

@@ -284,6 +284,67 @@
    text-align: center;
 }
 
+/* ----- Recovery Center ----- */
+.recovery-empty,
+.recovery-summary {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.recovery-title {
+   margin: 0;
+   font-size: 0.95rem;
+}
+
+.recovery-empty p,
+.recovery-note {
+   margin: 0;
+   color: var(--text-muted-strong);
+   line-height: 1.5;
+}
+
+.recovery-meta-row {
+   display: flex;
+   justify-content: space-between;
+   gap: 16px;
+   padding: 8px 0;
+   border-bottom: 1px solid var(--border);
+}
+
+.recovery-grid {
+   display: grid;
+   grid-template-columns: repeat(4, minmax(0, 1fr));
+   gap: 10px;
+}
+
+.recovery-metric {
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   padding: 10px;
+   background: var(--bg-main);
+   min-width: 0;
+}
+
+.recovery-metric__label,
+.recovery-metric__delta {
+   display: block;
+   color: var(--text-muted-strong);
+   font-size: 0.78rem;
+}
+
+.recovery-metric__value {
+   display: block;
+   margin: 4px 0;
+   font-size: 1rem;
+}
+
+@media (max-width: 700px) {
+   .recovery-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+   }
+}
+
 /* ----- Утилиты для inline-styled элементов (выносим из HTML) ----- */
 .export-btn--accent {
    background: var(--accent);

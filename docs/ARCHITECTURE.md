@@ -92,6 +92,7 @@ actions, hotkeys и таблицы горячих клавиш в UserManual. И
 |---|---|
 | `KeyboardController` | `findCommandByHotkey()` вместо локального списка `Ctrl+Alt+...` |
 | `FileController` | button ids для save/load/diagnostics берутся из registry |
+| `RecoveryController` | button id центра восстановления берётся из registry |
 | `ThemeController` | видимая метка темы берётся из `theme` command |
 | `applyCommandMetadata()` | начальные `title`/`aria-label` header-кнопок применяются из registry |
 | `generate-manual-contract.mjs` | таблица hotkeys генерируется из `getManualHotkeys()` |
@@ -345,6 +346,29 @@ confirm-модалки. В основном тексте остаётся кор
 diagnostics должны проходить redaction review и unit-тесты
 [diagnostics.test.js](../tests/unit/services/diagnostics.test.js), чтобы support
 bundle оставался полезным для разбора проблем, но не утекал содержимым backlog.
+
+#### Recovery Center (v8.30.56)
+
+`RecoveryController` даёт пользовательский доступ к pre-migration backup
+`sprintPlannerData.backup`, который bootstrap создаёт до разрушительной миграции.
+Runtime-границы:
+
+| Модуль | Ответственность |
+|---|---|
+| [recovery.js](../js/services/recovery.js) | безопасно читает backup metadata/data, строит redacted summary/comparison, делегирует durable save |
+| [recoveryController.js](../js/controllers/recoveryController.js) | открывает модалку, показывает сравнение «сейчас → backup», скачивает backup, подтверждает восстановление |
+| [stateImportApplier.js](../js/controllers/stateImportApplier.js) | общий apply-path для `FileController` и `RecoveryController`: migrate → number format → criteria → task criteria alignment → Store |
+
+Recovery UI не выводит product/task titles. Он показывает только counts,
+версию схемы, timestamp и размер backup. Восстановление сначала проверяет
+future-storage guard (`backup.version > APP_CONFIG.STORAGE_VERSION`), затем
+идёт через тот же migration/apply path, что и загрузка JSON. Если durable save
+в `localStorage` возвращает `!ok`, controller откатывает runtime snapshot и
+показывает ошибку.
+
+Guard/test: [recovery.test.js](../tests/unit/services/recovery.test.js),
+[recoveryController.test.js](../tests/unit/controllers/recoveryController.test.js)
+и e2e-сценарий `Recovery Center` в [planner.spec.js](../tests/e2e/planner.spec.js).
 
 ### 2.8 TaskListHandler boundary (v8.30.48)
 
@@ -666,6 +690,11 @@ smoke/full e2e, child exits/override и CSS `!important` total/budget. Это н
 gate вместо `release:metrics`, а история для сравнения релизов без ручного
 переноса цифр из старых release notes.
 
+`npm run release:metrics-dashboard` генерирует
+[docs/release-metrics-dashboard.md](release-metrics-dashboard.md): latest delta
+между двумя последними релизами и таблицу истории. Dashboard не заменяет release
+gate, а даёт быстрый обзор трендов coverage, e2e времени и CSS debt.
+
 `npm run css:important-report` пишет человекочитаемый snapshot
 [docs/css-important-report.md](css-important-report.md). Это companion-doc к
 release metrics: guard запрещает рост budget, а report показывает, где именно
@@ -674,6 +703,33 @@ release metrics: guard запрещает рост budget, а report показ�
 `npm run release:notes-draft` строит Markdown-заготовку release section из того
 же metrics JSON. Это не заменяет ручной changelog, но убирает повторяющийся
 ручной перенос coverage/e2e/CSS цифр.
+
+### E2E taxonomy (v8.30.56)
+
+Полный `npm run test:e2e` остаётся release gate. Для быстрых локальных проверок
+добавлены focused scripts:
+
+| Script | Назначение |
+|---|---|
+| `npm run test:e2e:critical` | Chromium path: startup, diagnostics, Recovery Center, create task, persistence |
+| `npm run test:e2e:visual` | Chromium visual baselines |
+| `npm run test:e2e:a11y` | axe-core/focus accessibility specs |
+| `npm run test:e2e:mobile` | mobile-webkit smoke через parallel runner |
+
+Source of truth — [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), runner —
+[e2e-taxonomy.mjs](../scripts/e2e-taxonomy.mjs). Guard:
+[e2e-taxonomy-contract.test.js](../tests/unit/architecture/e2e-taxonomy-contract.test.js)
+проверяет, что package scripts не дрейфуют от taxonomy definitions и не
+подменяют full e2e gate.
+
+### Diagnostics issue template (v8.30.56)
+
+`npm run diagnostics:issue-template -- --diagnostics path/to/diagnostics.json --out issue.md`
+рендерит Markdown issue template из redacted diagnostics bundle. Скрипт
+[diagnosticsIssueTemplate.js](../scripts/diagnosticsIssueTemplate.js) читает
+только агрегированные поля (`app`, `runtime`, `storage`, `currentState`,
+`persistedState`, `serviceWorker`, `caches`) и не проходит по произвольным raw
+полям bundle, чтобы случайный пользовательский текст не попал в issue.
 
 **Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
 

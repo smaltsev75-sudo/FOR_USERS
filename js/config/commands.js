@@ -64,6 +64,12 @@ export const COMMANDS = Object.freeze({
         }),
         manualAction: 'Скачать диагностический пакет без текстов задач'
     }),
+    recovery: Object.freeze({
+        id: 'recovery',
+        buttonId: 'recoveryCenterBtn',
+        label: 'Резерв',
+        title: 'Открыть центр восстановления из локальной резервной копии'
+    }),
     help: Object.freeze({
         id: 'help',
         buttonId: 'helpBtn',
@@ -129,6 +135,7 @@ export const HEADER_COMMAND_IDS = Object.freeze([
     'load',
     'save',
     'diagnostics',
+    'recovery',
     'help'
 ]);
 

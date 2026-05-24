@@ -1,11 +1,16 @@
 // js/controllers/fileController.js
 import { messageService } from '../services/message.js';
 import { storageService } from '../services/storage.js';
-import { migratePersistedState, serializeStateForStorage, analyzeImportIssues } from '../state/persistence.js';
+import { serializeStateForStorage, analyzeImportIssues } from '../state/persistence.js';
 import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
 import { createImportConfirmModel, formatImportSuccessMessage } from '../ui/importIssues.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 import { buildSprintPlanFilename } from '../utils/fileName.js';
+import {
+    applyImportedState,
+    createRuntimeSnapshot,
+    restoreRuntimeSnapshot
+} from './stateImportApplier.js';
 import {
     buildDiagnosticsFilename,
     collectDiagnosticsBundle
@@ -153,67 +158,23 @@ export class FileController {
                     // Snapshot для atomic rollback при ошибке во время импорта.
                     // Если внутри try что-то упадёт, восстанавливаем criteriaManager,
                     // nfs и store до состояния до импорта.
-                    const snapshot = {
-                        state: this.store.getState(),
-                        criteria: this.criteriaManager.getCriteria().map(c => ({ ...c, scale: { ...(c.scale || {}) } })),
-                        decimalSeparator: this.nfs.decimalSeparator
-                    };
+                    const snapshot = createRuntimeSnapshot({
+                        store: this.store,
+                        criteriaManager: this.criteriaManager,
+                        nfs: this.nfs
+                    });
                     try {
                         await new Promise(resolve => setTimeout(resolve, 100));
-                        const migratedState = migratePersistedState(data);
-
-                        if (migratedState.numberFormatSettings) {
-                            this.nfs.decimalSeparator = migratedState.numberFormatSettings.decimalSeparator || ',';
-                            // v8.30.24 (P3.7): проверяем status; raньше игнор
-                            // приводил к «импорт показывает успех, но separator
-                            // не сохранился». Контракт уже выработан в App.saveToLS.
-                            const saveResult = this.nfs.saveSettings();
-                            if (saveResult && saveResult.ok === false) {
-                                messageService.showMessage(
-                                    `Не удалось сохранить настройки формата чисел (${saveResult.error}). Импортированный разделитель действует до перезагрузки.`
-                                );
-                            }
-                        }
-
-                        if (migratedState.criteria && migratedState.criteria.length > 0) {
-                            this.criteriaManager.loadCriteria(migratedState.criteria);
-                        } else {
-                            this.criteriaManager.loadDefaultCriteria();
-                        }
-
-                        const criteria = this.criteriaManager.getCriteria();
-                        // v8.30.36: добавляем defaults ТОЛЬКО для текущих valid criteria.
-                        // Раньше spread `...task.criteriaEvaluations` reintroduce'ил
-                        // orphan/invalid keys которые migrate уже выбросил —
-                        // alignment fail. Теперь rebuilding from valid set only.
-                        const validCritIds = new Set(criteria.map(c => c.id));
-                        const tasks = migratedState.tasks.map(task => {
-                            const sourceEvals = task.criteriaEvaluations || {};
-                            const evaluations = {};
-                            for (const c of criteria) {
-                                evaluations[c.id] = sourceEvals[c.id] || { score: 0, value: 0 };
-                            }
-                            // Защита от gap: какие-то migrated evaluations с valid
-                            // ids которые НЕ в текущем criteria? — sourceEvals уже
-                            // отфильтрованы migrate'ом до validCritIds на момент
-                            // импорта. Если criteria поменялись после migrate
-                            // (loadDefaultCriteria), orphans отсеиваются здесь.
-                            for (const k of Object.keys(sourceEvals)) {
-                                const kid = Number(k);
-                                if (!validCritIds.has(kid) && !validCritIds.has(k)) {
-                                    // Silently drop (уже в issues от migrate, повторно
-                                    // показывать не нужно).
-                                    continue;
-                                }
-                            }
-                            return { ...task, criteriaEvaluations: evaluations };
+                        const { migratedState, numberFormatSaveResult } = applyImportedState(data, {
+                            store: this.store,
+                            criteriaManager: this.criteriaManager,
+                            nfs: this.nfs
                         });
-
-                        this.store.loadState({
-                            ...migratedState,
-                            criteria,
-                            tasks
-                        });
+                        if (numberFormatSaveResult && numberFormatSaveResult.ok === false) {
+                            messageService.showMessage(
+                                `Не удалось сохранить настройки формата чисел (${numberFormatSaveResult.error}). Импортированный разделитель действует до перезагрузки.`
+                            );
+                        }
 
                         // v8.30.34: ground truth — реально загруженное число задач
                         // ПОСЛЕ migrate (не из raw data). Раньше при tasks:{} мы
@@ -232,10 +193,11 @@ export class FileController {
                         // Atomic rollback: возвращаем все три источника состояния
                         // в snapshot, чтобы пользователь не получил partial state.
                         try {
-                            this.criteriaManager.loadCriteria(snapshot.criteria);
-                            this.nfs.decimalSeparator = snapshot.decimalSeparator;
-                            this.nfs.saveSettings();
-                            this.store.loadState(snapshot.state);
+                            restoreRuntimeSnapshot(snapshot, {
+                                store: this.store,
+                                criteriaManager: this.criteriaManager,
+                                nfs: this.nfs
+                            });
                         } catch { /* лучшее, что можем сделать после двойного сбоя */ }
                         messageService.showMessage('Ошибка при обработке данных (изменения откачены): ' + error.message);
                     } finally {
