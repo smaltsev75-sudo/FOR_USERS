@@ -1,5 +1,62 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.59) — Mobile WebKit ready wait
+
+> После v8.30.58 CI перестал падать на конфликте порта и дошёл до реального
+> Mobile WebKit smoke, где проявился отдельный Linux/WebKit flake:
+> `waitForLoadState('networkidle')` в `beforeEach` мог ждать бесконечной сетевой
+> тишины вместо готового UI. Mobile smoke теперь ждёт конкретные элементы
+> приложения.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (CI Mobile WebKit flake)** | В GitHub Actions Mobile WebKit 17/18 тестов прошли, но один `beforeEach` упал по timeout на `page.waitForLoadState('networkidle')`: DOM уже загрузился, но networkidle не был надёжным сигналом готовности PWA/SW. | Mobile e2e setup заменён на `domcontentloaded` + ожидание конкретных UI-сигналов `#planningTabContent` и `#mobileMenuToggle` до и после очистки localStorage/reload. | [mobile.spec.js](../tests/e2e/mobile.spec.js) |
+
+### Новые тесты / guard
+
+- `CI=true npm run test:e2e:smoke` — `18/18 PASS`, child exit 0, без `networkidle` timeout.
+- `npm run test:e2e` — `250/250 PASS`, все child exits clean.
+- Release notes сохраняют историю: v8.30.58 починил port reuse, v8.30.59 добил следующий реальный Linux/WebKit flake.
+
+Всего unit-тесты: `1896 → 1896`, suites `154 → 154`.
+Full e2e: `250 → 250`, включая 10 visual baselines и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **PWA readiness не равен networkidle.** Для mobile/WebKit smoke ждать видимый app-root/controls, а не сетевую тишину, особенно после reload и localStorage cleanup.
+2. **После снятия первой CI-поломки надо дождаться следующей.** v8.30.58 убрал port-conflict, но только v8.30.59 подтвердил, что smoke проходит сами тесты в CI-like режиме.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1896/1896 PASS, 154 suites, lines 96.29%, branches 86.92%, 17.80s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `93/93` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `93/93` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2, CI=true reproduction, 18.2s | **0** | **0** | no |
+| `npm run test:e2e` | 250/250 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `93/93` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.59.json` | `docs/release-metrics-history.json` updated for 8.30.59 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.59 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  `CI=true` local reproduction, 18.2s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 210/210 (113.7s),
+  mobile-chromium 18/18 (25.2s), webkit 4/4 (22.6s), mobile-webkit 18/18
+  (31.8s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.59.json`.
+- Release metrics dashboard: `docs/release-metrics-dashboard.md`, latest delta:
+  CSS `93 → 93`, lines `96.29% → 96.29%`, branches `86.92% → 86.92%`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.58) — CI WebKit smoke reuse and clearer recovery copy
 
 > Убрана причина красных GitHub Actions Mobile WebKit smoke, а в справке и UI

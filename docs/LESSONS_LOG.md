@@ -2,6 +2,10 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.59 (Mobile WebKit ready wait)
+
+- **`networkidle` не является надёжным readiness-сигналом для PWA/WebKit smoke.** После v8.30.58 GitHub Actions дошёл до реальных mobile tests, но один `beforeEach` завис на `page.waitForLoadState('networkidle')`: DOM уже был загружен, а networkidle не наступил вовремя. Mobile setup теперь ждёт `domcontentloaded` и конкретные UI-сигналы (`#planningTabContent`, `#mobileMenuToggle`) до/после reload. Codified by: `mobile.spec.js`, `CI=true npm run test:e2e:smoke`.
+
 ## Ловушки v8.30.58 (CI webServer reuse, recovery copy wording)
 
 - **CI `reuseExistingServer` нельзя оставлять только на `!process.env.CI`, если e2e orchestration уже поднял свой verified server.** `e2e-parallel.mjs` держит 8123, `e2e-runner.mjs` видит Sprint Planner signature, но GitHub Actions всё равно падал `port already used`, потому что Playwright config в CI запрещал reuse. Runner-owned server теперь передаётся явным `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`. Codified by: `e2e-runner-must-not-pollute-node-options.test.js`, `CI=true npm run test:e2e:smoke`.
