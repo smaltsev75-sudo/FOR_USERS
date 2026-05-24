@@ -54,8 +54,8 @@ index.html
 Guard: [layer-boundaries.test.js](../tests/unit/architecture/layer-boundaries.test.js)
 статически проверяет ключевые зависимости: `domain/` не импортирует
 `controllers/services/state/ui`, `state/` не импортирует `controllers/services/ui`,
-а `ui/` не импортирует `controllers/state/app`. Это превращает таблицу выше из
-договорённости в release gate.
+`ui/` не импортирует `controllers/state/app`, а `utils/` не импортирует
+продуктовые слои. Это превращает таблицу выше из договорённости в release gate.
 
 ### App coordinators (v8.30.49)
 
@@ -70,6 +70,11 @@ Runtime-ответственности вынесены в маленькие к
 [meta-helper-grep-discipline.test.js](../tests/unit/architecture/meta-helper-grep-discipline.test.js)
 дополнительно следит, что `app.js` не возвращает `persistTimeout`,
 `renderQueued`, `_notifyPersistFailure`, direct `setTimeout` или Storage writes.
+С v8.30.50 тот же guard закрепляет накопленные meta-helper правила:
+`Storage.getItem` только в `try/catch`, новые `innerHTML` write-sites только
+после явного allowlist review, `style=""` в render HTML только для geometry
+(`width`, `stroke-dasharray`, CSS variables), inline handler attributes
+запрещены, а каждое новое `Date.now()` требует review-причину.
 
 ### 2.1 Progressive rendering и generation token (v8.30.0)
 
@@ -80,20 +85,40 @@ module-level `renderGeneration`. Pending idle-callback'и старого рен�
 иначе stale-карточки дозалились бы в уже очищенный новый DOM при быстрой
 смене state. Тестовый хук: `_getRenderGeneration()`.
 
-#### Task list facade split (v8.30.49)
+#### Task list facade split (v8.30.49 → v8.30.50)
 
 [taskList.js](../js/ui/taskList.js) сохраняет публичный контракт для
 `renderTaskList`, `createTaskElement`, `filterTasks`, `resolveDensity` и
-`updateOverloadIndicators`, но часть логики вынесена в подпапку:
+`updateOverloadIndicators`, но runtime/rendering логика вынесена в подпапку:
 
 | Модуль | Ответственность |
 |---|---|
 | [viewState.js](../js/ui/taskList/viewState.js) | search/type filter + density fallback |
 | [focus.js](../js/ui/taskList/focus.js) | capture/restore focus для editable criteria score после `replaceChildren` |
 | [overloadIndicators.js](../js/ui/taskList/overloadIndicators.js) | cumulative role overload tags после каждого batch |
+| [render.js](../js/ui/taskList/render.js) | progressive rendering, generation-token, highlight/pulse orchestration |
+| [taskCard.js](../js/ui/taskList/taskCard.js) | DOM shell карточки, безопасные title/comment slots |
+| [criteriaSection.js](../js/ui/taskList/criteriaSection.js) | criteria score controls + Priority Score block |
+| [estimatesSection.js](../js/ui/taskList/estimatesSection.js) | role effort chips + total effort |
 
 Guard: [task-list-facade-contract.test.js](../tests/unit/architecture/task-list-facade-contract.test.js)
 запрещает возвращать эти helper'ы обратно в фасад.
+
+#### Selection report facade split (v8.30.50)
+
+[selectionReport.js](../js/ui/selectionReport.js) остаётся публичным API для
+`renderSelectionReport`, `ALGORITHM_NAMES`, `METRIC_HINTS`,
+`getSeverityClass()` и `getSeverityHint()`. Внутренние обязанности разнесены:
+
+| Модуль | Ответственность |
+|---|---|
+| [constants.js](../js/ui/selectionReport/constants.js) | имена алгоритмов, иконки, hints, apply-button ids |
+| [format.js](../js/ui/selectionReport/format.js) | severity classes/hints, numeric formatting, metric bar ratios |
+| [sections.js](../js/ui/selectionReport/sections.js) | recommendation banner, algorithm cards, details accordions |
+| [interactions.js](../js/ui/selectionReport/interactions.js) | recommended apply-button state + accordion toggle wiring |
+
+Guard: [selection-report-facade-contract.test.js](../tests/unit/architecture/selection-report-facade-contract.test.js)
+фиксирует фасадную форму и запрещает возвращать section builders в корневой файл.
 
 ### 2.2 Storage contract (v8.30.0)
 
@@ -454,7 +479,7 @@ npm run docs:modules         # обновить docs/MODULE_MAP.md
 
 | Тип | Фреймворк | Команда | Release gate |
 |-----|-----------|---------|--------------|
-| Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --runInBand` | **yes** (coverage exit 0) |
+| Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --maxWorkers=50%` | **yes** (coverage exit 0) |
 | Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
 | E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
 | E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
@@ -499,11 +524,15 @@ root-файлы и root-документацию), затем выполняет
 | `webkit` | Desktop Safari 1280×720 | `webkit.spec.js` | engine-specific smoke (sticky, focus-trap) |
 | `mobile-webkit` | iPhone 13 (390×844), WebKit | `mobile.spec.js` | iOS Safari + mobile-webkit specific |
 
-`visual.spec.js` (v8.30.49) запускается в desktop `chromium` project и хранит
-baseline-снимки для light planning shell, compact task list и dark create-modal.
-Состояния сидируются через `localStorage`, version/timestamp скрыты CSS-маской,
-transitions/animations выключены. Обновлять snapshots только после осознанного
-UI-изменения: `npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots`.
+`visual.spec.js` (v8.30.49 → v8.30.50) запускается в desktop `chromium` project
+и хранит 10 baseline-снимков: light/dark planning shell, compact task list,
+capacity overload, create-task modal, criteria tab, criteria modal, selection
+report, mobile burger menu и print A4 task card. Состояния сидируются через
+`localStorage`, version/timestamp скрыты CSS-маской, transitions/animations
+выключены. Обновлять snapshots только после осознанного UI-изменения:
+`npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots`.
+После update обязательно открыть новые PNG глазами: зелёный snapshot с пустым
+или нерепрезентативным seed не защищает UI.
 
 ### Coverage thresholds (v8.30.49)
 
@@ -523,8 +552,9 @@ Property-based persistence checks через `fast-check` живут в
 
 Тонкий wrapper над Playwright CLI, обходит worker-shutdown race на Node 22+ Windows:
 
-- Spawn'ит Playwright с `--reporter=list,json`. Ground truth для exit-кода — JSON-файл (`test-results/e2e-runner-results.json`, `stats.unexpected`), не stdout-парсинг.
+- Spawn'ит Playwright с `--reporter=list,json`. Ground truth для обычного exit-кода — per-process JSON-файл (`test-results/e2e-runner-results-${process.pid}.json`, `stats.unexpected`), не stdout-парсинг.
 - Stdout-monitor — секундарный watchdog, force-kill child tree после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
+- Windows `mobile-webkit` имеет дополнительный узкий all-ok watchdog: если list reporter уже напечатал все ожидаемые `ok N` строки, failures не было, а child не завершился за 3s, runner делает tree-kill до внутреннего 300s Playwright timeout. Этот путь всегда пишет `[OVERRIDE]` и `child exit=1`, чтобы release notes не называли его clean child exit.
 - **Port 8123 own-server detection (v8.30.33+):** если порт занят, runner делает HTTP GET на `/index.html` и ищет `<title>Sprint Planner` сигнатуру. Свой сервер — info, продолжаем (webServer.reuseExistingServer подхватит). Чужой listener — **fail fast** с явной ошибкой и инструкцией (taskkill/kill). Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
 - **Process-tree cleanup (v8.30.33+):** Playwright spawn'ит worker'ов, worker'ы — браузеры. Простой `child.kill()` оставлял grandchildren orphan. Теперь:
   - **Windows:** `taskkill /F /T /PID <pid>` (T = tree).

@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.49-architecture-visual-hardening';
+const CACHE_VERSION = 'sp-v8.30.50-ui-facade-forcing-v2';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -132,9 +132,17 @@ const ASSETS_TO_CACHE = [
     './js/ui/createTaskRowVM.js',
     './js/ui/selectionRecommendations.js',
     './js/ui/selectionReport.js',
+    './js/ui/selectionReport/constants.js',
+    './js/ui/selectionReport/format.js',
+    './js/ui/selectionReport/interactions.js',
+    './js/ui/selectionReport/sections.js',
     './js/ui/snackbar.js',
+    './js/ui/taskList/criteriaSection.js',
+    './js/ui/taskList/estimatesSection.js',
     './js/ui/taskList/focus.js',
     './js/ui/taskList/overloadIndicators.js',
+    './js/ui/taskList/render.js',
+    './js/ui/taskList/taskCard.js',
     './js/ui/taskList/viewState.js',
     './js/ui/taskList.js',
     './js/ui/utils.js',

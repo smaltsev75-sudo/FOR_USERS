@@ -2,9 +2,23 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.50 (UI facade forcing v2, meta guards, visual baseline expansion)
+
+- **Visual baseline с нерепрезентативным seed — почти то же, что отсутствие baseline.** Первый overload seed для selection report давал `0 задач` во всех алгоритмах: screenshot был зелёный, но не защищал реальный сценарий выбора. Для visual regression seed должен показывать прикладное состояние: перегруз есть, но хотя бы один осмысленный вариант отбора остаётся доступен.
+
+- **`[hidden]` лучше `style.display = 'none'` для optional DOM slots.** В task card JIRA/comment slots можно скрывать семантически через `hidden`; это уменьшает inline-style surface и упрощает architecture guard. Старые unit-тесты нужно проверять на `element.hidden`, не на `style.display`.
+
+- **Regex guard должен быть достаточно узким, чтобы не наказывать правильный код.** Проверка inline handler'ов сначала поймала переменную `onReload`. Правильный grep для CSP-инварианта — искать именно HTML attribute pattern (`<[^>]*\\son[a-z]+=...`), а не любые JS identifiers, начинающиеся с `on`.
+
+- **Facade split без contract-test быстро деградирует.** Как только крупный UI-файл превращён в фасад, рядом нужен architecture test, который запрещает вернуть section builders/render helpers в корень. Иначе следующий удобный фикс опять начнёт наращивать фасад.
+
+- **Playwright final summary может быть слишком поздним для WebKit shutdown race.** В full e2e `mobile-webkit` прошёл все 18 тестов, но затем ждал 300s worker stop timeout до summary. Для Windows `mobile-webkit` runner должен считать `Running N tests` + все `ok 1..N` строки и только после полного all-ok evidence делать pre-summary tree-kill с явным `[OVERRIDE]`. Нельзя превращать это в общий stdout-pass heuristic для всех browser projects.
+
+- **Full coverage не обязан идти serial.** `npm run test:coverage -- --runInBand` занял ~130s; тот же полный coverage с `--maxWorkers=50%` прошёл за 14s с теми же `1779/1779` и 96.61% lines. Использовать `--runInBand` только как fallback для диагностики flaky isolation, а релизный gate держать параллельным.
+
 ## Ловушки v8.30.49 (глубокий split, architecture/property/visual gates)
 
-- **Jest coverageThreshold с glob-ключом работает как per-file gate.** Для layer floor'ов вида `domain >= 95%` использовать directory keys (`./js/domain/`, `./js/state/`), иначе Jest начинает требовать порог от каждого отдельного файла под glob'ом и ломает gate на старых небольших модулях. Проверять результат только реальным `npm run test:coverage -- --runInBand`, не по интуиции из конфига.
+- **Jest coverageThreshold с glob-ключом работает как per-file gate.** Для layer floor'ов вида `domain >= 95%` использовать directory keys (`./js/domain/`, `./js/state/`), иначе Jest начинает требовать порог от каждого отдельного файла под glob'ом и ломает gate на старых небольших модулях. Проверять результат только реальным `npm run test:coverage -- --maxWorkers=50%`, не по интуиции из конфига.
 
 - **Visual regression PNG могут быть молча проигнорированы глобальным `*.png`.** Если проект игнорирует screenshot dumps, Playwright baselines надо явно unignore'ить: `!tests/e2e/visual.spec.js-snapshots/` и `!tests/e2e/visual.spec.js-snapshots/*.png`. После `--update-snapshots` обязательно `git status --ignored` по snapshot-папке: baseline, который не попал в git, не защищает релиз.
 

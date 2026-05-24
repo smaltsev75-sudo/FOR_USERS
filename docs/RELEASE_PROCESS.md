@@ -59,7 +59,7 @@ npm run bump -- 9.0.0
    | # | Команда | Exit gate | Что проверяется |
    |---|---|---|---|
    | a | `npm run lint` | 0 | ESLint clean (no stray edits) |
-   | b | `npm run test:coverage -- --runInBand` | 0 | unit тесты + coverage threshold |
+   | b | `npm run test:coverage -- --maxWorkers=50%` | 0 | unit тесты + coverage threshold |
    | c | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
    | d | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
    | e | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
@@ -123,7 +123,7 @@ GitHub-публикацию. Execute-chain дополнительно:
 
 | Job | Команды | Назначение |
 |---|---|---|
-| `unit-and-lint` | `npm ci`, `npm run lint`, `npm run test:coverage -- --runInBand`, `npm audit --audit-level=moderate`, `npm outdated --long` | Быстрые gates без браузеров |
+| `unit-and-lint` | `npm ci`, `npm run lint`, `npm run test:coverage -- --maxWorkers=50%`, `npm audit --audit-level=moderate`, `npm outdated --long` | Быстрые gates без браузеров |
 | `e2e-smoke` | `npm ci`, `npx playwright install --with-deps`, `npm run test:e2e:smoke` | Mobile WebKit smoke на Ubuntu |
 
 Полный `npm run test:e2e` остаётся обязательным локальным release gate по
@@ -153,21 +153,23 @@ Ubuntu не должен падать из-за честно задокумен�
 `playwright.config.js → webServer`: `npx http-server . -p 8123 --silent --no-cache`.
 **Порт 8123** зафиксирован — `start-server.bat`, `start-server.sh`, playwright.config.js, e2e-runner, README используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта. `reuseExistingServer: !process.env.CI`.
 
-### e2e-runner (v8.30.35: pure decideExitCode + честные лимиты process-tree)
+### e2e-runner (v8.30.50: pure decideExitCode + all-ok watchdog + честные лимиты process-tree)
 
 `scripts/e2e-runner.mjs`:
-- Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в `test-results/e2e-runner-results.json`, `detached: !IS_WINDOWS`. Arch-test `windows-post-exit-cleanup-lie.test.js` стережёт invariant `/detached:\s*!IS_WINDOWS/` — без него `process.kill(-pgid)` на Unix не сработает.
-- **Pure decision helper** [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), покрыт 14 unit-тестами. Каждое condition выводится отдельно:
+- Spawn'ит Playwright CLI с `--reporter=list,json`, JSON в per-process `test-results/e2e-runner-results-${process.pid}.json`, `detached: !IS_WINDOWS`. Arch-test `windows-post-exit-cleanup-lie.test.js` стережёт invariant `/detached:\s*!IS_WINDOWS/` — без него `process.kill(-pgid)` на Unix не сработает.
+- **Pure decision helper** [scripts/e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js), покрыт unit-тестами. Каждое condition выводится отдельно:
   - `report.stale === true` (mtime < CHILD_START_MS - 200ms) → exit 1
   - `report.status === 'interrupted' || 'timedOut'` → exit 1
   - `report.expected === 0 && unexpected === 0` (0 tests ran) → exit 1
   - `report.unexpected > 0` → exit 1 (даже при child exit=0)
   - `wasForceKilled && status==='passed' && expected>0 && unexpected===0` → exit 0 (legitimate worker shutdown race override)
+  - `wasForceKilled && stdoutCompletion.status==='passed' && expected>0 && unexpected===0` → exit 0 только для pre-summary Windows `mobile-webkit` all-ok watchdog; release summary обязан показать child exit 1 + override
   - clean child exit=0 + passed → exit 0
   - **Иначе** child exit code as-is (без blind override)
 - **`decision.reason` всегда в stderr** перед `process.exit(N)`: будущий аудитор должен видеть ПОЧЕМУ runner вышел так как вышел.
 - **Port 8123 own-server detection (v8.30.33+):** HTTP GET на `/index.html`, app title signature (`Sprint Planner` или текущий `Планирование спринта`). Чужой listener — fail fast.
 - **Pre-exit process-tree cleanup (summary watchdog):** через 3 сек после summary в stdout — `killProcessTree(child.pid)` пока child ещё жив. Windows `taskkill /F /T /PID`, Unix `process.kill(-pgid)`. Закрывает класс «grandchild leak».
+- **Pre-summary all-ok watchdog (v8.30.50):** на Windows `mobile-webkit` final summary иногда появляется только после внутреннего `kWorkerStopTimeout = 300000ms`. Runner считает `Running N tests` + все `ok 1..N` строки; если failures не было и child не завершился за 3s после последнего `ok`, tree-kill происходит сразу. Это ускоряет flaky shutdown path, но остаётся честным `[OVERRIDE]`, не clean child exit.
 
 #### Известные лимиты process-tree cleanup (v8.30.35 — честно документировано)
 
@@ -186,7 +188,7 @@ Ubuntu не должен падать из-за честно задокумен�
 
 **Тест `windows-post-exit-cleanup-lie.test.js`** явно документирует: после exit'а fakeChild, `killProcessTree(fakeChild.pid)` НЕ убивает grandchild → `expect(stillAlive).toBe(true)`. Это not bug — это inherent Windows OS limit.
 
-**Реальный механизм cleanup** — pre-exit summary-watchdog. Если worker exit'ит ДО summary в stdout, orphans inevitable. На практике для PLANNER e2e это не наблюдалось — Playwright всегда успевает напечатать summary до exit'а.
+**Реальные механизмы cleanup** — pre-exit summary-watchdog и all-ok watchdog. Если worker exit'ит ДО summary, но после всех `ok` строк, `mobile-webkit` больше не ждёт 300 секунд. Если нет ни summary, ни полного all-ok evidence, override запрещён и runner должен падать/ждать штатный failure path.
 
 ### e2e-parallel summary artifact (v8.30.41)
 

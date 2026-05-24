@@ -1,5 +1,74 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.50) — UI facade forcing v2 + meta guards + e2e acceleration
+
+> Продолжение forcing-function цикла: крупные UI-рендереры `taskList` и
+> `selectionReport` доведены до фасадов, повторяющиеся grep-классы ошибок
+> расширены architecture-gates, а visual regression покрывает 10 критичных
+> состояний вместо 3. Full e2e больше не должен терять 300 секунд на известный
+> Windows/WebKit worker-shutdown race после того, как все тесты уже напечатали
+> `ok`.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (taskList facade unfinished)** | `taskList.js` всё ещё держал card render, criteria section, estimates section и progressive render, несмотря на начатый split. | Файл стал фасадом; вынесены `render.js`, `taskCard.js`, `criteriaSection.js`, `estimatesSection.js`. Старые exports сохранены. | [taskList.js](../js/ui/taskList.js), [taskList/](../js/ui/taskList/) |
+| 2 | **P2 (selectionReport monolith)** | `selectionReport.js` смешивал constants, formatting, section HTML, accordion wiring и modal orchestration. | Вынесены `selectionReport/constants.js`, `format.js`, `sections.js`, `interactions.js`; фасад оставляет `renderSelectionReport` и совместимые exports. | [selectionReport.js](../js/ui/selectionReport.js), [selectionReport/](../js/ui/selectionReport/) |
+| 3 | **P2 (facade drift)** | После split'а будущие правки могли снова вернуть секции в фасады. | Добавлен `selection-report-facade-contract.test.js`, усилен `task-list-facade-contract.test.js`. | [selection-report-facade-contract.test.js](../tests/unit/architecture/selection-report-facade-contract.test.js), [task-list-facade-contract.test.js](../tests/unit/architecture/task-list-facade-contract.test.js) |
+| 4 | **P2 (meta-helper misses)** | Накопленные правила всё ещё частично применялись вручную: `Storage.getItem`, new `innerHTML`, inline event attrs, inline style beyond geometry. | `meta-helper-grep-discipline.test.js` расширен на `getItem` try/catch, reviewed `innerHTML` allowlist, geometry-only `style=""`, no inline handler attrs и global Date.now review. | [meta-helper-grep-discipline.test.js](../tests/unit/architecture/meta-helper-grep-discipline.test.js) |
+| 5 | **P2 (layer invariant gap)** | `utils/` был описан как нижний слой, но не участвовал в layer guard. | `layer-boundaries.test.js` теперь запрещает `utils → app/controllers/domain/services/state/ui`. | [layer-boundaries.test.js](../tests/unit/architecture/layer-boundaries.test.js) |
+| 6 | **P2 (visual coverage too narrow)** | 3 baselines покрывали только shell/list/modal и не ловили overload, criteria, mobile burger, selection report, print A4. | `visual.spec.js` расширен до 10 baselines, новые PNG проверены глазами. | [visual.spec.js](../tests/e2e/visual.spec.js), [snapshots](../tests/e2e/visual.spec.js-snapshots/) |
+| 7 | **P3 (offline drift after split)** | Новые ESM submodules могли сломать PWA/offline startup при забытом precache. | Все новые `taskList/*` и `selectionReport/*` модули добавлены в `sw.js`; module map regenerated. | [sw.js](../sw.js), [MODULE_MAP.md](MODULE_MAP.md) |
+| 8 | **P2 (full e2e wall-time)** | `mobile-webkit` иногда проходил все 18 тестов, но Playwright ждал внутренний 300s worker stop timeout до финального summary. | `e2e-runner` получил узкий Windows `mobile-webkit` all-ok watchdog: после всех `ok N` строк ждёт 3s и делает tree-kill с явным `[OVERRIDE]`, если child не завершился сам. | [e2e-runner.mjs](../scripts/e2e-runner.mjs), [e2eRunnerOutput.js](../scripts/e2eRunnerOutput.js), [e2eRunnerDecision.js](../scripts/e2eRunnerDecision.js) |
+| 9 | **P3 (coverage wall-time)** | Релизный coverage запускался с `--runInBand` и занимал ~130s на Windows, хотя тесты изолированы. | Основной coverage gate переведён на `--maxWorkers=50%`: тот же `1779/1779`, те же 96.61% lines, фактический wall-time 14s. | [RELEASE_PROCESS.md](RELEASE_PROCESS.md), [ci.yml](../.github/workflows/ci.yml), [release-notes-final-gates.test.js](../tests/unit/architecture/release-notes-final-gates.test.js) |
+
+### Новые тесты / guard
+
+- `selection-report-facade-contract.test.js` — contract для selection report facade.
+- `task-list-facade-contract.test.js` усилен до render/card/sections split.
+- `meta-helper-grep-discipline.test.js` +4 guard-класса.
+- `taskListSubmodules.test.js` расширен на criteria/estimates/taskCard submodules.
+- `e2eRunnerOutput.test.js`, `e2eRunnerDecision.test.js`,
+  `e2eParallelSummary.test.js` покрывают all-ok progress parsing и честный
+  pre-summary override.
+- `visual.spec.js` — 10 screenshot baselines: light/dark shell, compact task list,
+  capacity overload, create modal, criteria tab/modal, selection report, mobile
+  burger, print A4 task card.
+
+Всего unit-тесты: `1760 → 1779` (+19), suites `129 → 130` (+1).
+Full e2e: `240 → 247` (+7 visual baselines).
+
+### Уроки и классы ошибок
+
+1. **Visual seed обязан быть прикладным.** Первый overload seed давал report с `0 задач`; baseline был технически зелёным, но бесполезным. Для regression screenshots seed должен показывать реальное пользовательское состояние, а не пустой edge-case.
+2. **Скрытие DOM через `[hidden]` лучше `style.display` для optional slots.** Это снижает inline-style surface и проще проверяется arch-test'ом.
+3. **Regex guard должен искать HTML-атрибут, а не любое `onX` имя переменной.** `onReload` в JS не inline handler; guard сузили до `<... on*=`.
+4. **Facade split должен иметь contract-test сразу.** Иначе крупный UI-файл снова начинает принимать новые helper'ы уже в следующем релизе.
+5. **Final summary Playwright может быть слишком поздним сигналом.** Для Windows `mobile-webkit` shutdown race нужно отслеживать per-test `ok` progress, но применять override только с явной пометкой child exit != 0.
+6. **Coverage не обязан быть serial.** `--runInBand` полезен для диагностики гонок, но обычный full coverage gate на этом наборе стабильно проходит с `--maxWorkers=50%` примерно в 9 раз быстрее.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1779/1779 PASS, 130 suites, lines 96.61%, 14.5s | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 247/247 PASS, parallel projects | **0** | **0** | no |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Visual update: `npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots` → `10/10 PASS`; новые baseline PNG открыты и проверены.
+- Smoke: `18/18 PASS`, wrapper exit 0, child exit 0, без override, 24.8s.
+- Full e2e: `247/247 PASS`, wrapper exit 0, child exits clean; chromium 207/207
+  (106.5s), mobile-chromium 18/18 (26.5s), webkit 4/4 (21.4s),
+  mobile-webkit 18/18 (34.4s). Предыдущий full-run терял ~300s именно на
+  `mobile-webkit` worker shutdown, не на выполнение тестов.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.49) — architecture guards + visual regression + app/taskList split
 
 > Глубокий hardening/refactor-pass без смены runtime-поведения: `App` разложен
