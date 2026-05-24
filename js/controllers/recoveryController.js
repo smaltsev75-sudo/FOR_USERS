@@ -18,6 +18,9 @@ import {
     restoreRuntimeSnapshot
 } from './stateImportApplier.js';
 
+const RECOVERY_COPY_UNAVAILABLE_MESSAGE =
+    'Копия до миграции не найдена или повреждена. Скачать или восстановить сейчас нечего.';
+
 export class RecoveryController {
     constructor(store, numberFormatService, criteriaManager) {
         this.store = store;
@@ -68,8 +71,18 @@ export class RecoveryController {
 
         const backup = this.backup;
         const canRecover = Boolean(backup?.recoverable);
-        if (this.restoreBtn) this.restoreBtn.disabled = !canRecover;
-        if (this.downloadBtn) this.downloadBtn.disabled = !canRecover;
+        syncRecoveryActionState(
+            this.restoreBtn,
+            canRecover,
+            'Восстановить данные из копии до миграции',
+            'Копия до миграции не найдена или повреждена'
+        );
+        syncRecoveryActionState(
+            this.downloadBtn,
+            canRecover,
+            'Скачать резервную копию, созданную перед миграцией данных',
+            'Копия до миграции не найдена или повреждена'
+        );
 
         if (this.health) {
             this.contentEl.append(healthBlock(this.health));
@@ -118,7 +131,7 @@ export class RecoveryController {
     confirmRestore() {
         const backup = this.backup;
         if (!backup?.recoverable) {
-            messageService.showMessage('Резервная копия не найдена или повреждена.');
+            showSnackbar(RECOVERY_COPY_UNAVAILABLE_MESSAGE, { duration: 5000 });
             return;
         }
 
@@ -192,12 +205,19 @@ export class RecoveryController {
     downloadBackup() {
         const backup = this.backup;
         if (!backup?.recoverable) {
-            messageService.showMessage('Резервная копия не найдена или повреждена.');
+            showSnackbar(RECOVERY_COPY_UNAVAILABLE_MESSAGE, { duration: 5000 });
             return;
         }
         storageService.saveFile(backup.state, buildRecoveryBackupFilename());
         showSnackbar('Копия до миграции скачана JSON-файлом.', { duration: 4000 });
     }
+}
+
+function syncRecoveryActionState(button, isAvailable, availableTitle, unavailableTitle) {
+    if (!button) return;
+    button.disabled = false;
+    button.dataset.recoveryAvailable = isAvailable ? 'true' : 'false';
+    button.title = isAvailable ? availableTitle : unavailableTitle;
 }
 
 function block(className, children) {

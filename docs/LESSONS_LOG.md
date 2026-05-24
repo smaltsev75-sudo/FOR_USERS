@@ -2,6 +2,12 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.60 (Recovery copy click feedback)
+
+- **Видимая `disabled`-кнопка без пояснения выглядит как сломанный клик.** В Recovery Center кнопка «Скачать копию до миграции» была disabled при отсутствии recoverable backup, поэтому браузер не отправлял click и пользователь не получал причину. Теперь кнопка остаётся кликабельной, помечается `data-recovery-available="false"` и показывает snackbar. Codified by: `recoveryController.test.js`, e2e `Recovery Center`.
+
+- **`messageModal` из уже открытой модалки может быть формально visible, но недоступен.** При попытке показать сообщение поверх Recovery Center нижняя модалка перехватывала pointer events. Для короткого объяснения отсутствующей recovery-копии используется snackbar, который реально виден поверх модального окна. Codified by: `planner.spec.js` Recovery Center click path.
+
 ## Ловушки v8.30.59 (Mobile WebKit ready wait)
 
 - **`networkidle` не является надёжным readiness-сигналом для PWA/WebKit smoke.** После v8.30.58 GitHub Actions дошёл до реальных mobile tests, но один `beforeEach` завис на `page.waitForLoadState('networkidle')`: DOM уже был загружен, а networkidle не наступил вовремя. Mobile setup теперь ждёт `domcontentloaded` и конкретные UI-сигналы (`#planningTabContent`, `#mobileMenuToggle`) до/после reload. Codified by: `mobile.spec.js`, `CI=true npm run test:e2e:smoke`.

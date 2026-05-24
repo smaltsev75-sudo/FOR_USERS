@@ -1,5 +1,62 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.60) — Recovery copy click feedback
+
+> Исправлен пользовательский сценарий в Центре восстановления: кнопка
+> «Скачать копию до миграции» больше не выглядит сломанной, когда recovery-копии
+> нет. Вместо молчаливого `disabled` пользователь получает явное уведомление.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (visible button with no feedback)** | При отсутствии recoverable `sprintPlannerData.backup` кнопки скачивания/восстановления были нативно `disabled`, поэтому браузер не отправлял click и пользователь видел «ничего не происходит». | Recovery action больше не блокируется `disabled`: доступность помечается `data-recovery-available`, а клик без recovery-копии показывает snackbar с причиной. | [recoveryController.js](../js/controllers/recoveryController.js), [modals.css](../css/modals.css) |
+| 2 | **P2 (nested modal under Recovery Center)** | Если показывать `messageModal` из открытого Recovery Center, модалка формально visible, но нижний Recovery overlay перехватывает pointer events. | Для короткого объяснения отсутствующей копии используется snackbar, который виден поверх модального окна и не требует вложенной модалки. | [recoveryController.js](../js/controllers/recoveryController.js), [planner.spec.js](../tests/e2e/planner.spec.js) |
+| 3 | **P3 (manual did not describe unavailable copy feedback)** | Справка объясняла разницу между текущим JSON и копией до миграции, но не говорила, что произойдёт, если такой копии нет. | UserManual/README/HANDOFF уточняют: при отсутствии или повреждении копии приложение покажет уведомление, а данные не изменятся. | [UserManual.md](UserManual.md), [README.md](../README.md), [HANDOFF.md](../HANDOFF.md) |
+
+### Новые тесты / guard
+
+- `recoveryController.test.js` — клик по обеим recovery-кнопкам без backup показывает snackbar и не запускает restore/download.
+- `recoveryController.test.js` — recoverable copy продолжает скачиваться через `storageService.saveFile`.
+- `planner.spec.js` → `Recovery Center` — реальный Chromium click path: открыть «Резерв» без backup, нажать «Скачать копию до миграции», увидеть snackbar.
+
+Всего unit-тесты: `1896 → 1897` (+1), suites `154 → 154`.
+Full e2e: `250 → 251`, включая 10 visual baselines и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Не путать недоступное действие и действие-пояснение.** Если кнопка видна и пользователь может ожидать ответ, нативный `disabled` создаёт тишину вместо обратной связи.
+2. **Модальный UI надо проверять реальным кликом.** Unit с mocked message service не поймал бы overlay-перехват; e2e показал, что snackbar безопаснее для короткого объяснения внутри Recovery Center.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1897/1897 PASS, 154 suites, lines 96.38%, branches 86.97%, 18.307s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `93/93` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `93/93` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2, 18.0s | **0** | **0** | no |
+| `npm run test:e2e` | 251/251 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `93/93` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.60.json` | `docs/release-metrics-history.json` updated for 8.30.60 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.60 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  18.0s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 211/211 (114.8s),
+  mobile-chromium 18/18 (26.1s), webkit 4/4 (23.0s), mobile-webkit 18/18
+  (31.9s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.60.json`.
+- Release metrics dashboard: `docs/release-metrics-dashboard.md`, latest delta:
+  CSS `93 → 93`, lines `96.29% → 96.38%`, branches `86.92% → 86.97%`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.59) — Mobile WebKit ready wait
 
 > После v8.30.58 CI перестал падать на конфликте порта и дошёл до реального
