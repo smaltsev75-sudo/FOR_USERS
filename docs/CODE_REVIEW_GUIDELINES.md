@@ -177,6 +177,9 @@ export function y() { ... }
   shell/header в `task-card.css`, effort в `task-card-effort.css`, actions в
   `task-card-actions.css`, criteria controls в `task-card-criteria.css`, states
   в `task-card-states.css`, quadrants/view-toggle в `task-card-quadrants.css`.
+  `components.css` не должен содержать `.task-item` / `.task-row` /
+  `.criteria-eval-*` / `.priority-score-*` и другие task-card selectors; это
+  закреплено `css-cascade-contract.test.js`.
 - **Tailwind / Sass / CSS-in-JS / UI-библиотеки** — vanilla CSS3, точка.
 
 ### 4.3 Селекторы

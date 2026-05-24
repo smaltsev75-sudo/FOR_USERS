@@ -2,6 +2,14 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.62 (Task-card CSS ownership, Node 24 runtime opt-in)
+
+- **CSS split не завершён, пока старые selectors остаются в предыдущем owner-файле.** После v8.30.61 `components.css` всё ещё содержал stale `.task-item`, `.task-row`, `.criteria-eval-*`, `.priority-score-*` и похожие правила. Из-за специфичности они могли перебивать новые `task-card-*` файлы, хотя визуально казалось, что split завершён. Решение: удалить stale task-card block из `components.css` и добавить ownership guard. Codified by: `css-cascade-contract.test.js`, `taskCardCss.test.js`, visual/full e2e gates.
+
+- **При удалении legacy CSS сначала отделять мусор от полезного контракта.** Удаление stale block выявило, что `task-jira-link` ellipsis был полезным layout-контрактом: без него print card выросла с ~205px до ~302px. Решение: перенести `white-space/overflow/text-overflow/max-width` в правильный owner `task-card.css`, а не возвращать весь block в `components.css`. Codified by: `taskCardCss.test.js`, visual baseline `print-a4-task-card`.
+
+- **Node 24 rehearsal полезен, но предупреждения останутся в обычных jobs без workflow-level opt-in.** Если GitHub уже показывает Node 20 annotations в `Unit, lint, audit` и `Mobile WebKit smoke`, `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` должен жить на уровне workflow `env`, а не только в rehearsal job. Codified by: `ci-workflow-gates.test.js`.
+
 ## Ловушки v8.30.61 (Actionability, task-card CSS split, Node 24 rehearsal)
 
 - **Критичные видимые команды должны иметь отдельный actionability gate.** Полный e2e может проходить, но не покрывать конкретный “кликнул и получил ответ” путь. Добавлен `test:e2e:actionability`: save/download, theme, help, create modal, auto-select feedback, diagnostics и recovery no-backup snackbar. Codified by: `tests/e2e/actionability.spec.js`, `scripts/e2eTaxonomy.js`.

@@ -520,10 +520,10 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `buttons.css` | Стили кнопок |
 | `forms.css` | Стили полей ввода |
 | `modals.css` | Стили модальных окон |
-| `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14) |
+| `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14); task-card selectors запрещены с v8.30.62 |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
 | `selection-report.css` | Отчёт автоотбора: featured-баннер рекомендации, 3 алгоритм-карточки, метрик-бары, легаси `.comparison-table` (v8.28) |
-| `task-card.css` | Базовая оболочка карточки задачи: `.task-item`, header, `.task-type-badge`, `.task-type-indicator` (скрытый, backward-compat e2e), title/comment/links |
+| `task-card.css` | Базовая оболочка карточки задачи: `.task-item`, header, `.task-type-badge`, `.task-type-indicator` (скрытый, backward-compat e2e), title/comment/links; единственный owner task-card base styles |
 | `task-card-effort.css` | Блок трудозатрат карточки: роли, inline effort inputs, overload placeholder, total effort pill |
 | `task-card-actions.css` | Hover/focus/touch actions карточки: edit/delete/exclude/reorder buttons |
 | `task-card-criteria.css` | Блок критериев карточки: criteria chips, score stepper/input/select, contribution bar, priority score pill |
@@ -562,7 +562,10 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   убрал дублирующие print `black/white !important`, которые уже покрывает
   глобальное print-правило. v8.30.61 механически разделил `task-card.css` на
   concern-файлы без смены cascade-порядка и снял три безопасных non-print
-  `!important`.
+  `!important`. v8.30.62 удалил stale task-card block из `components.css`,
+  который из-за специфичности мог перебивать новые `task-card-*` правила, и
+  закрепил ownership guard: task-card selectors не возвращаются в
+  `components.css`.
 - `npm run css:important-report` генерирует
   [docs/css-important-report.md](css-important-report.md) из реального CSS и
   [docs/css-important-budgets.json](css-important-budgets.json). В release

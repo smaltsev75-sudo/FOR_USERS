@@ -1,5 +1,59 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.62) — Task-card CSS ownership and Node 24 runtime opt-in
+
+> Дозакрыт split карточки задачи после v8.30.61: stale task-card block удалён
+> из `components.css`, ownership закреплён architecture guard'ом, а CI поднял
+> `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` на уровень всего workflow, чтобы
+> обычные jobs не оставались на deprecated Node 20 runtime.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (incomplete CSS ownership split)** | `components.css` всё ещё содержал `.task-item`, `.task-row`, `.task-action-btn`, `.criteria-eval-*`, `.priority-score-*` и другие stale task-card selectors. Из-за специфичности старый блок мог перебивать новые `task-card-*` правила, хотя split визуально выглядел завершённым. | Удалён stale task-card block из `components.css`; task-card selectors теперь принадлежат только `task-card*.css`. | [components.css](../css/components.css), [task-card.css](../css/task-card.css), [task-card-criteria.css](../css/task-card-criteria.css) |
+| 2 | **P2 (CSS regression can return silently)** | После split'а не было отдельного инварианта, запрещающего вернуть task-card rules обратно в `components.css`. | `css-cascade-contract.test.js` получил ownership guard: task-card selectors не допускаются в `components.css`. | [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js) |
+| 3 | **P2 (Node 20 GitHub Actions annotations in normal jobs)** | Node 24 rehearsal был зелёным, но `Unit, lint, audit` и `Mobile WebKit smoke` продолжали получать GitHub annotations про Node 20 actions runtime. | `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` поднят в workflow-level `env`, а guard проверяет глобальный opt-in. | [ci.yml](../.github/workflows/ci.yml), [ci-workflow-gates.test.js](../tests/unit/architecture/ci-workflow-gates.test.js) |
+
+### Новые тесты / guard
+
+- `css-cascade-contract.test.js` — `components.css` больше не может содержать task-card selectors.
+- `ci-workflow-gates.test.js` — проверяет workflow-level Node 24 runtime opt-in.
+- `taskCardCss.test.js` — подтверждает, что task-card bundle остаётся владельцем B4/B5/B8 контрактов после удаления legacy block.
+- Visual baseline обновлён для `task-list-compact` и `print-a4-task-card`: после удаления stale override карточка использует актуальный 4px type border, а JIRA link ellipsis перенесён в `task-card.css`.
+
+Всего unit-тесты: `1899 → 1902` (+3), suites `154 → 154`.
+Full e2e: `252 → 252`, включая 10 visual baselines, actionability и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **CSS split надо закрывать ownership guard'ом.** Если старый owner-файл остаётся с теми же selectors, новый split может быть формальным и даже скрыто перебивать новые правила.
+2. **Runtime rehearsal и runtime opt-in — разные вещи.** Отдельный Node 24 job доказывает совместимость, но предупреждения обычных jobs исчезают только после workflow-level opt-in.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1902/1902 PASS, 154 suites, lines 96.38%, branches 86.97% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `90/90` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `90/90` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | mobile-webkit **1** | yes — watchdog override after all 18 mobile-webkit tests reported ok |
+| `npm run test:e2e` | 252/252 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.62.json` | `docs/release-metrics-history.json` updated for 8.30.62 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.62 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0; child exit 1 was watchdog-overridden after all 18 tests had reported `ok` (known Playwright worker shutdown race).
+- Full e2e: wrapper exit 0, all child exits clean; total `252/252 PASS`.
+- Release metrics artifact: `test-results/release-metrics-v8.30.62.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.61) — Actionability gate, task-card CSS split and Node 24 rehearsal
 
 > Закрыт следующий слой качества после v8.30.60: критичные видимые команды

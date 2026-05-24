@@ -256,6 +256,10 @@
     text-decoration: none;
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
 }
 
 .task-jira-link:hover {
@@ -278,4 +282,3 @@
 .task-comment:empty {
     display: none;
 }
-
