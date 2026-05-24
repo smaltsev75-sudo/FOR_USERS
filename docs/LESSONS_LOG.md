@@ -2,6 +2,10 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.63 (Node24-native GitHub Actions)
+
+- **Workflow-level Node 24 opt-in не убирает annotation, если сам action major ещё таргетит старый runtime.** `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` переводит выполнение на Node 24, но GitHub продолжает показывать forced-runtime warning для `actions/checkout@v4` / `actions/setup-node@v4`. Для PLANNER CI надо использовать Node24-native official majors (`checkout@v6`, `setup-node@v6`) и guard'ить это тестом. Codified by: `ci-workflow-gates.test.js`.
+
 ## Ловушки v8.30.62 (Task-card CSS ownership, Node 24 runtime opt-in)
 
 - **CSS split не завершён, пока старые selectors остаются в предыдущем owner-файле.** После v8.30.61 `components.css` всё ещё содержал stale `.task-item`, `.task-row`, `.criteria-eval-*`, `.priority-score-*` и похожие правила. Из-за специфичности они могли перебивать новые `task-card-*` файлы, хотя визуально казалось, что split завершён. Решение: удалить stale task-card block из `components.css` и добавить ownership guard. Codified by: `css-cascade-contract.test.js`, `taskCardCss.test.js`, visual/full e2e gates.

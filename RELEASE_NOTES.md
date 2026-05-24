@@ -1,5 +1,55 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.63) — Node24-native GitHub Actions
+
+> Закрыта оставшаяся часть Node 20 noise в PLANNER CI: после workflow-level
+> opt-in из v8.30.62 jobs уже выполнялись на Node 24, но GitHub всё ещё
+> показывал annotation про forced runtime для `actions/checkout@v4` и
+> `actions/setup-node@v4`. CI переведён на Node24-native major versions.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (CI warning noise after runtime opt-in)** | `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` переводил actions на Node 24, но GitHub продолжал показывать annotation “actions are being forced” для `checkout@v4` / `setup-node@v4`. | PLANNER CI обновлён на `actions/checkout@v6` и `actions/setup-node@v6`, которые являются актуальными major releases с Node24-native runtime. | [ci.yml](../.github/workflows/ci.yml) |
+| 2 | **P3 (CI guard lag)** | Architecture test проверял наличие actions, но не требовал Node24-native major versions. | `ci-workflow-gates.test.js` теперь требует `checkout@v6` / `setup-node@v6`, сохраняя Node 22 app runtime и Node 24 rehearsal. | [ci-workflow-gates.test.js](../tests/unit/architecture/ci-workflow-gates.test.js) |
+
+### Новые тесты / guard
+
+- `ci-workflow-gates.test.js` — проверяет Node24-native official actions (`checkout@v6`, `setup-node@v6`) плюс workflow-level Node 24 opt-in.
+
+Всего unit-тесты: `1902 → 1902`, suites `154 → 154`.
+Full e2e: `252 → 252`, включая 10 visual baselines, actionability и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Node 24 opt-in и Node24-native actions не одно и то же.** Opt-in доказывает совместимость, но предупреждение GitHub останется, пока action major version сама таргетит старый runtime.
+2. **CI warning cleanup должен быть проверяемым.** Если цель — убрать warning noise, guard должен требовать актуальные official action majors, а не только env-флаг.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1902/1902 PASS, 154 suites, lines 96.38%, branches 86.97% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `90/90` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `90/90` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **1** (`mobile-webkit`) | yes |
+| `npm run test:e2e` | 252/252 PASS, parallel projects | **0** | **1** (`webkit`, `mobile-webkit`) | yes |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.63.json` | `docs/release-metrics-history.json` updated for 8.30.63 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.63 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 1, override yes (`pre-summary worker shutdown race`).
+- Full e2e: wrapper exit 0; Chromium and mobile Chromium child exits clean; WebKit and mobile WebKit child exit 1 with override yes after all tests reported pass; total `252/252 PASS`.
+- Release metrics artifact: `test-results/release-metrics-v8.30.63.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.62) — Task-card CSS ownership and Node 24 runtime opt-in
 
 > Дозакрыт split карточки задачи после v8.30.61: stale task-card block удалён
