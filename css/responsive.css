@@ -73,6 +73,46 @@
 /* Toolbar responsive rules moved to css/toolbar.css (BEM-scoped). */
 
 @media (max-width: 600px) {
+    .header-container {
+        align-items: flex-start;
+    }
+
+    .header-container .header-title {
+        flex: 1 1 100%;
+        margin-bottom: 0;
+    }
+
+    .header-container .export-buttons {
+        display: grid;
+        grid-template-columns: repeat(6, 44px);
+        justify-content: start;
+        width: 100%;
+        gap: 6px;
+    }
+
+    .header-container .export-buttons .export-btn {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        padding: 0;
+        gap: 0;
+        font-size: 0;
+    }
+
+    .header-container .export-buttons .export-btn > .icon,
+    .header-container .export-buttons .theme-toggle-icon .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .header-container .theme-toggle-label {
+        display: none;
+    }
+
+    .tabs-container {
+        top: 94px;
+    }
+
     .modal-content {
         width: 95%;
         padding: 15px;

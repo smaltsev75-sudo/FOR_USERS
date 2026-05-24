@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.53-release-metrics-state-guards';
+const CACHE_VERSION = 'sp-v8.30.54-release-contract-diagnostics';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -99,6 +99,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/task.js',
     './js/domain/validation.js',
     // JS — services
+    './js/services/diagnostics.js',
     './js/services/instanceLock.js',
     './js/services/message.js',
     './js/services/numberFormat.js',

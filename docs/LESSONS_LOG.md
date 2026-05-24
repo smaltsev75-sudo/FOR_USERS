@@ -2,6 +2,18 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.54 (release contract + diagnostics + generated docs)
+
+- **Release automation не должна верить ручным notes/metrics перед push.** `release:public --execute` теперь проверяет release contract до sync/commit/push/release: metrics JSON текущей версии, latest `RELEASE_NOTES`, e2e smoke/full rows, `release:metrics` row и CSS budget должны совпасть. Codified by: `scripts/releaseContract.js`, `release-public-execute-guard.test.js`.
+
+- **Diagnostics bundle полезен только пока он redacted.** Support JSON должен помогать разобрать runtime/storage/cache/state aggregates, но не утекать task titles, JIRA URL, комментариями или названием продукта. Codified by: `js/services/diagnostics.js`, `tests/unit/services/diagnostics.test.js`.
+
+- **Visual baseline seed должен жить в DSL, а не в spec-local JSON.** Иначе один e2e-spec стареет отдельно от остальных сценариев, а screenshot может стать зелёным, но нерепрезентативным. Codified by: `buildVisualBaselineScenario()`, `e2e-support-dsl.test.js`.
+
+- **CSS debt report должен быть артефактом, а не разовой цифрой в release notes.** Budget guard отвечает «можно ли релизить», а `docs/css-important-report.md` показывает селекторы/properties, где долг остаётся. Codified by: `scripts/cssImportantReporter.js`, `npm run css:important-report`.
+
+- **UserManual generator должен покрывать справочные справочники, не только hotkeys.** Task types и алгоритмы отбора теперь живут в `docs/manual-contract.json`; ручной текст справки не должен расходиться с UI/доменной терминологией. Codified by: `scripts/generate-manual-contract.mjs`, `user-manual-drift.test.js`.
+
 ## Ловушки v8.30.53 (release metrics + state guards + seeded e2e)
 
 - **Release metrics должны собираться из артефактов, а не из памяти исполнителя.** Coverage/e2e/CSS цифры теперь читаются из `coverage/coverage-summary.json`, `test-results/e2e-parallel-summary.json` и `docs/css-important-budgets.json`. Это снижает риск очередного «PASS по рассказу, не по последнему запуску». Codified by: `scripts/releaseMetricsCollector.js`, `npm run release:metrics`.

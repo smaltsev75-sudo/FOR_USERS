@@ -77,6 +77,13 @@ export class KeyboardController {
             return false;
         }
 
+        // Ctrl/Cmd+Alt+D – Скачать диагностический пакет
+        if (hasPrimaryModifier && e.altKey && e.code === 'KeyD') {
+            stopEvent();
+            this.fileController?.downloadDiagnostics?.();
+            return false;
+        }
+
         // Delete – Удалить задачу
         if ((e.key === 'Delete' || e.key === 'Del') && !isInput && !this.isModalOpen()) {
             const taskId = this.taskController?.selectedTaskId;

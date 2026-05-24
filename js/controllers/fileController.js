@@ -6,6 +6,10 @@ import { showStatusOverlay, hideStatusOverlay } from '../ui/modalManager.js';
 import { createImportConfirmModel, formatImportSuccessMessage } from '../ui/importIssues.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
 import { buildSprintPlanFilename } from '../utils/fileName.js';
+import {
+    buildDiagnosticsFilename,
+    collectDiagnosticsBundle
+} from '../services/diagnostics.js';
 
 export class FileController {
     constructor(store, numberFormatService, criteriaManager) {
@@ -26,6 +30,7 @@ export class FileController {
     attachEvents() {
         const saveBtn = document.getElementById('saveDataBtn');
         const loadBtn = document.getElementById('loadDataBtn');
+        const diagnosticsBtn = document.getElementById('downloadDiagnosticsBtn');
 
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
@@ -41,6 +46,12 @@ export class FileController {
             });
         } else {
             messageService.showMessage('Ошибка: кнопка «Загрузить» не найдена в DOM');
+        }
+
+        if (diagnosticsBtn) {
+            diagnosticsBtn.addEventListener('click', () => {
+                this.downloadDiagnostics();
+            });
         }
     }
 
@@ -74,6 +85,22 @@ export class FileController {
             storageService.saveFile(data, filename);
         } catch (error) {
             messageService.showMessage('Не удалось сохранить файл: ' + error.message);
+        } finally {
+            this.hideProgress();
+        }
+    }
+
+    async downloadDiagnostics() {
+        this.showProgress('Подготовка диагностики...');
+        try {
+            const bundle = await collectDiagnosticsBundle({
+                state: this.store.getState(),
+                criteria: this.criteriaManager.getCriteria(),
+                decimalSeparator: this.nfs.decimalSeparator
+            });
+            storageService.saveFile(bundle, buildDiagnosticsFilename());
+        } catch (error) {
+            messageService.showMessage('Не удалось подготовить диагностику: ' + error.message);
         } finally {
             this.hideProgress();
         }

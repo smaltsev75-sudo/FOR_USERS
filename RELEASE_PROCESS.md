@@ -61,10 +61,11 @@ npm run bump -- 9.0.0
    | a | `npm run lint` | 0 | ESLint clean (no stray edits) |
    | b | `npm run test:coverage -- --maxWorkers=50%` | 0 | unit тесты + coverage threshold |
    | c | `npm run docs:manual-check` | 0 | generated UserManual blocks актуальны, справка не дрейфует от UI labels / auto-selection behavior |
-   | d | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
-   | e | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
-   | f | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
-   | g | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
+   | d | `npm run css:important-report && node scripts/report-css-important.mjs --check` | 0 | CSS `!important` report актуален и budget не вырос |
+   | e | `npm run test:e2e:smoke` | 0 | mobile-webkit smoke gate (исторически самый проблемный project) |
+   | f | `npm run test:e2e` | 0 | полный e2e suite (все 4 Playwright projects) |
+   | g | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
+   | h | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
 
 5. **После coverage + e2e собрать release metrics snapshot:**
 
@@ -94,7 +95,7 @@ npm run bump -- 9.0.0
    Для smoke-only проверки:
 
    ```bash
-   npm run verify:release-metrics -- --command="npm run test:e2e:smoke"
+   npm run verify:release-metrics -- --command="npm run test:e2e:smoke" --summary=e2e-smoke-summary.tmp.json
    ```
 
    Скрипт читает latest section `docs/RELEASE_NOTES.md` и
@@ -104,7 +105,7 @@ npm run bump -- 9.0.0
 
 7. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
 
-## Public release automation (v8.30.47 → v8.30.48)
+## Public release automation (v8.30.47 → v8.30.54)
 
 Для стандартной доставки PLANNER → `sprint-planner/FOR_USERS` есть dry-run-first
 скрипт:
@@ -114,7 +115,8 @@ npm run release:public -- --version 8.30.47 \
   --title "v8.30.47 — short title" \
   --planner-commit "v8.30.47: short title" \
   --public-commit "v8.30.47 sync short title" \
-  --notes "release notes text" \
+  --metrics test-results/release-metrics-v8.30.47.json \
+  --notes-from-release-notes \
   --public-smoke
 ```
 
@@ -127,7 +129,14 @@ console/page errors и 4xx/5xx ответов.
 
 Перед execute всё равно обязательны gates выше: script не заменяет
 lint/coverage/e2e/audit/release metrics, он автоматизирует только механическую
-доставку и GitHub-публикацию. Execute-chain дополнительно:
+доставку и GitHub-публикацию. С v8.30.54 execute-chain сначала проверяет
+**release contract**: `--metrics` указывает на JSON текущего релиза,
+latest section `docs/RELEASE_NOTES.md` соответствует `--version`, строки
+coverage/smoke/full e2e/release metrics совпадают с metrics JSON, CSS budget
+не содержит violations, а `--notes-from-release-notes` передаёт в GitHub
+Release уже проверенный текст latest release notes без ручного копирования.
+
+Execute-chain дополнительно:
 
 - требует clean worktree в `sprint-planner` до sync, чтобы не затереть чужие
   локальные изменения;

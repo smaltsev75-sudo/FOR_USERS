@@ -306,6 +306,10 @@ Pre-exit summary-watchdog — единственный реальный меха
 
 - имя JSON-экспорта собирает [fileName.js](../js/utils/fileName.js):
   `buildSprintPlanFilename(productName, date)`;
+- диагностический пакет собирает [diagnostics.js](../js/services/diagnostics.js):
+  `collectDiagnosticsBundle()` возвращает версию приложения/storage schema,
+  browser/runtime, service worker/cache, localStorage size и агрегированную
+  сводку state без названия продукта, task titles, JIRA URL и комментариев;
 - модель подтверждения импорта и success-message собирает
   [importIssues.js](../js/ui/importIssues.js);
 - `messageService.showConfirm()` умеет принимать строку для legacy-confirm или
@@ -315,6 +319,13 @@ Pre-exit summary-watchdog — единственный реальный меха
 confirm-модалки. В основном тексте остаётся короткое предупреждение, детали
 раскрываются через `<details>`. Guard:
 [file-controller-import-ui-contract.test.js](../tests/unit/architecture/file-controller-import-ui-contract.test.js).
+
+Кнопка `#downloadDiagnosticsBtn` и hotkey `Ctrl/Cmd+Alt+D` вызывают
+`FileController.downloadDiagnostics()`: controller только собирает зависимости
+из Store/services и отдаёт JSON в `StorageService.saveFile()`. Любые новые поля
+diagnostics должны проходить redaction review и unit-тесты
+[diagnostics.test.js](../tests/unit/services/diagnostics.test.js), чтобы support
+bundle оставался полезным для разбора проблем, но не утекал содержимым backlog.
 
 ### 2.8 TaskListHandler boundary (v8.30.48)
 
@@ -487,9 +498,14 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
   явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
-  `!important` не может расти без осознанного review (`169` всего, `96` в
+  `!important` не может расти без осознанного review (`167` всего, `96` в
   `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
   после `print-verify.spec.js` и visual baseline `print A4 task card`.
+- `npm run css:important-report` генерирует
+  [docs/css-important-report.md](css-important-report.md) из реального CSS и
+  [docs/css-important-budgets.json](css-important-budgets.json). В release
+  gates использовать `node scripts/report-css-important.mjs --check`, чтобы
+  документация по CSS debt не отставала от budget guard'а.
 - [density-css-boundary.test.js](../tests/unit/architecture/density-css-boundary.test.js)
   фиксирует, что task density deltas живут в `density.css`, грузятся после
   `task-card.css` и попадают в PWA precache.
@@ -511,6 +527,7 @@ npm test                     # unit-тесты (Jest + jsdom)
 npm run test:coverage -- --maxWorkers=50%  # unit + coverage (parallel release gate)
 npm run test:smoke           # быстрая проверка unit-подмножества
 npm run docs:manual-check    # generated manual contract + guard от дрейфа справки
+npm run css:important-report # обновить docs/css-important-report.md
 npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
 npm run docs:modules         # обновить docs/MODULE_MAP.md
@@ -522,6 +539,7 @@ npm run docs:modules         # обновить docs/MODULE_MAP.md
 |-----|-----------|---------|--------------|
 | Unit | Jest 30 + jsdom 30 | `npm test`, покрытие — `npm run test:coverage -- --maxWorkers=50%` | **yes** (coverage exit 0) |
 | Docs drift | generator check + Jest architecture guards | `npm run docs:manual-check` | **yes** при изменении UI-copy/UserManual |
+| CSS debt report | Node scanner + budget JSON | `npm run css:important-report`, `node scripts/report-css-important.mjs --check` | **yes** при release/docs gate |
 | Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
 | E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
 | E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
@@ -530,7 +548,7 @@ npm run docs:modules         # обновить docs/MODULE_MAP.md
 
 Все release gates обязательны (см. `docs/RELEASE_PROCESS.md`, чек-лист). Релиз с red gate — категорически нельзя; см. memory `feedback-release-with-red-tests-banned`.
 
-### Release automation (v8.30.47 → v8.30.48)
+### Release automation (v8.30.47 → v8.30.54)
 
 `npm run release:public -- --version <X.Y.Z> ...` строит полный план доставки
 PLANNER → `sprint-planner/FOR_USERS`. По умолчанию это **dry-run**: печатает
@@ -539,21 +557,28 @@ permissions, sync entries и команды commit/push/release. Опасные 
 
 Script использует pure-plan слой [releasePublicPlan.js](../scripts/releasePublicPlan.js),
 покрытый [releasePublicPlan.test.js](../tests/unit/scripts/releasePublicPlan.test.js).
-Перед execute он проверяет `gh repo view --json viewerPermission` для PLANNER и
-FOR_USERS, синхронизирует установленную public-shape (папки `css/js/docs/icons/dev-tools`,
-root-файлы и root-документацию), затем выполняет отдельные commit/push и
-`gh release create`. С v8.30.48:
+Перед execute он проверяет release contract через
+[releaseContract.js](../scripts/releaseContract.js): metrics JSON текущей
+версии, latest `docs/RELEASE_NOTES.md`, строки coverage/smoke/full e2e,
+`release:metrics` и отсутствие CSS budget violations должны совпасть до любых
+мутаций. Затем проверяется `gh repo view --json viewerPermission` для PLANNER и
+FOR_USERS, синхронизируется установленная public-shape (папки
+`css/js/docs/icons/dev-tools`, root-файлы и root-документация), выполняются
+отдельные commit/push и `gh release create`. С v8.30.48:
 
 - флаг `--public-smoke` запускает [public-smoke.mjs](../scripts/public-smoke.mjs)
   по уже синхронизированному public root до commit/push/release;
+- флаг `--notes-from-release-notes` читает latest release notes section и
+  использует её как GitHub Release body после release contract validation;
 - public worktree обязан быть clean до sync;
 - после sync изменённые пути public-проекта проверяются против установленной
   public-shape, чтобы release-скрипт не утянул случайные `.github`, package
   или локальные файлы;
 - architecture guard [release-public-execute-guard.test.js](../tests/unit/architecture/release-public-execute-guard.test.js)
-  следит, что sync/commit/push/release остаются за явным `--execute`, процесс
-  документирует `release:public --execute --public-smoke`, а latest release
-  notes не содержит placeholder'ов.
+  следит, что sync/commit/push/release остаются за явным `--execute`, release
+  contract выполняется до sync, процесс документирует
+  `release:public --execute --public-smoke --notes-from-release-notes`, а
+  latest release notes не содержит placeholder'ов.
 
 ### Playwright projects (`playwright.config.js`)
 
@@ -582,9 +607,12 @@ E2E user workflow helpers живут в [tests/e2e/support/plannerApp.js](../tes
 config. Guard: [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js).
 С v8.30.53 там же есть `seedState()`, а прикладные seed-сценарии вынесены в
 [plannerStates.js](../tests/e2e/support/plannerStates.js): basic tasks,
-overload, quadrants, print A4 и sticky. Visual/e2e tests должны переиспользовать
-эти builders вместо локального `localStorage` JSON, чтобы baseline не стал
-зелёным снимком пустого состояния.
+overload, quadrants, print A4, sticky и visual baseline. Visual/e2e tests должны
+переиспользовать эти builders вместо локального `localStorage` JSON, чтобы
+baseline не стал зелёным снимком пустого состояния. Guard:
+[e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js)
+запрещает возвращать локальный `BASE_STATE` и прямой `localStorage.setItem()`
+в `visual.spec.js`.
 
 ### Coverage thresholds (v8.30.49)
 
@@ -608,6 +636,11 @@ Property-based persistence checks через `fast-check` живут в
 [docs/css-important-budgets.json](css-important-budgets.json). Скрипт пишет
 `test-results/release-metrics-v<version>.json`, печатает короткую сводку и
 падает, если текущий `!important` count превысил общий или per-file budget.
+
+`npm run css:important-report` пишет человекочитаемый snapshot
+[docs/css-important-report.md](css-important-report.md). Это companion-doc к
+release metrics: guard запрещает рост budget, а report показывает, где именно
+остаточный долг живёт сейчас.
 
 `npm run release:notes-draft` строит Markdown-заготовку release section из того
 же metrics JSON. Это не заменяет ручной changelog, но убирает повторяющийся

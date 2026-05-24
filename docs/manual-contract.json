@@ -22,6 +22,40 @@
       "description": "Группировка задач по четырём квадрантам приоритета."
     }
   ],
+  "taskTypes": [
+    {
+      "code": "US",
+      "label": "User Story",
+      "description": "новая функциональность, пользовательская история"
+    },
+    {
+      "code": "Bug",
+      "label": "Bug",
+      "description": "ошибка, требующая исправления"
+    },
+    {
+      "code": "Tech",
+      "label": "Tech",
+      "description": "технический долг, рефакторинг, улучшения архитектуры"
+    }
+  ],
+  "selectionAlgorithms": [
+    {
+      "name": "Priority-Effort Matrix",
+      "order": "Q1 → Q2 → Q3 → Q4",
+      "bestFor": "быстро объяснить выбор задач через квадранты приоритета и effort"
+    },
+    {
+      "name": "Value Density",
+      "order": "valueDensity ↓",
+      "bestFor": "получить максимум Priority Score на один час работы"
+    },
+    {
+      "name": "Hybrid",
+      "order": "Q1/Q2 по valueDensity, Q3/Q4 по priorityScore",
+      "bestFor": "сохранить логику квадрантов, но эффективнее расходовать ёмкость на важных задачах"
+    }
+  ],
   "hotkeys": [
     {
       "windows": "Ctrl+Alt+S",
@@ -47,6 +81,11 @@
       "windows": "Ctrl+Alt+P",
       "macos": "Cmd+Alt+P",
       "action": "Открыть окно печати браузера"
+    },
+    {
+      "windows": "Ctrl+Alt+D",
+      "macos": "Cmd+Alt+D",
+      "action": "Скачать диагностический пакет без текстов задач"
     },
     {
       "windows": "Ctrl+Enter",

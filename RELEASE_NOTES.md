@@ -1,5 +1,69 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.54) — release contract, diagnostics and mobile header hardening
+
+> Релизная цепочка получила проверяемый contract перед push/release, приложение
+> добавило redacted diagnostics bundle для support-сценариев, visual baseline
+> переехал на общий seed DSL, UserManual generator покрывает справочные
+> справочники, а мобильная шапка стала компактной icon-only сеткой для всех
+> шести действий.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (release contract drift)** | `release:public` мог взять ручные notes/metrics, даже если latest `RELEASE_NOTES.md` и metrics JSON уже разошлись. | Добавлен `releaseContract.js`; `release:public --execute` валидирует metrics JSON, latest release notes, coverage/e2e rows, `release:metrics` row и CSS budget до sync/commit/push/release. | [releaseContract.js](../scripts/releaseContract.js), [release-public.mjs](../scripts/release-public.mjs), [release-public-execute-guard.test.js](../tests/unit/architecture/release-public-execute-guard.test.js) |
+| 2 | **P2 (support without data leak)** | Для разбора проблем не было отдельного support-export: полный JSON проекта содержал названия задач, JIRA URL, комментарии и продукт. | Добавлена кнопка «Диагностика» и `Ctrl/Cmd+Alt+D`: bundle содержит version/runtime/SW/cache/storage/state aggregates без пользовательских текстов. | [diagnostics.js](../js/services/diagnostics.js), [fileController.js](../js/controllers/fileController.js), [keyboardController.js](../js/controllers/keyboardController.js) |
+| 3 | **P2 (visual seed drift)** | `visual.spec.js` держал локальный baseline-state, который мог устареть отдельно от общего e2e DSL. | Visual baseline использует `buildVisualBaselineScenario()` и `PlannerApp.seedState()`; architecture guard запрещает возвращать локальный `BASE_STATE`/direct `localStorage.setItem`. | [plannerStates.js](../tests/e2e/support/plannerStates.js), [visual.spec.js](../tests/e2e/visual.spec.js), [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js) |
+| 4 | **P3 (manual drift)** | UserManual generator покрывал hotkeys/density/view blocks, но task types и алгоритмы отбора оставались ручным текстом. | `manual-contract.json` теперь генерирует task type glossary, selection algorithm table и diagnostics hotkey; manual guard проверяет новые блоки. | [manual-contract.json](manual-contract.json), [generate-manual-contract.mjs](../scripts/generate-manual-contract.mjs), [UserManual.md](UserManual.md) |
+| 5 | **P3 (CSS debt visibility)** | CSS budget говорил только «167/167», но не показывал текущие селекторы/properties остаточного `!important` долга. | Добавлен `npm run css:important-report` и автогенерируемый `docs/css-important-report.md`; release docs требуют `--check`. | [cssImportantReporter.js](../scripts/cssImportantReporter.js), [report-css-important.mjs](../scripts/report-css-important.mjs), [css-important-report.md](css-important-report.md) |
+| 6 | **P3 (mobile header capacity)** | Новая diagnostics-кнопка сделала мобильную шапку тесной и сдвинула visual baseline. | На ≤600px header actions стали стабильной 6×44px icon-only сеткой, а dropdown tabs открываются ниже шапки. | [responsive.css](../css/responsive.css), [mobile-burger-menu baseline](../tests/e2e/visual.spec.js-snapshots/mobile-burger-menu-chromium-win32.png) |
+
+### Новые тесты / guard
+
+- `releaseContract.test.js` — validation envelope для release metrics + latest release notes.
+- `cssImportantReporter.test.js` — сбор селекторов/properties и Markdown render CSS debt report.
+- `diagnostics.test.js` — redaction и runtime/storage/cache summary diagnostics bundle.
+- `fileController.test.js` и `keyboardController.test.js` расширены diagnostics click/hotkey flow.
+- `release-public-execute-guard.test.js` теперь проверяет release contract до mutating delivery steps.
+- `user-manual-drift.test.js` расширен generated task types / selection algorithms.
+- `e2e-support-dsl.test.js` закрепляет shared visual baseline seed.
+
+Всего unit-тесты: `1831 → 1850` (+19), suites `138 → 141` (+3).
+Full e2e: `247/247`, включая 10 visual baselines.
+
+### Уроки и классы ошибок
+
+1. **Release contract должен падать до sync, а не после GitHub release.** Проверяем metrics/notes/CSS/e2e как единый pre-mutation gate.
+2. **Diagnostics export должен быть агрегатом.** Support bundle полезен только пока не утекает backlog text.
+3. **Новая header action на mobile меняет layout capacity.** Добавление кнопки — это UI-событие, а не только DOM-событие; visual baseline помог поймать тесную шапку.
+4. **CSS debt нуждается в карте, не только в лимите.** Budget запрещает рост, report показывает, куда потом идти резать долг.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1850/1850 PASS, 141 suites, lines 96.62%, branches 87.37%, 15.5s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `167/167` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `167/167` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 247/247 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `167/167` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  26.4s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 207/207 (107.8s),
+  mobile-chromium 18/18 (26.5s), webkit 4/4 (22.1s), mobile-webkit 18/18
+  (35.8s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.54.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.53) — release metrics, state guard and seeded e2e
 
 > Релизная дисциплина переведена ближе к артефактам: coverage/e2e/CSS метрики
