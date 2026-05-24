@@ -33,7 +33,7 @@ export function createTaskElement(
 
     const el = document.createElement('div');
     el.className = `task-item type-${vm.type}${vm.excluded ? ' excluded' : ''}`;
-    el.draggable = false; // управляется динамически через TaskDragController (mousedown на .drag-handle)
+    el.draggable = false; // native drag включается на ручке; тело карточки использует mouse-fallback
     el.tabIndex = 0;
     el.dataset.index = index;
     el.dataset.id = vm.id;
@@ -50,7 +50,6 @@ export function createTaskElement(
     const dragIconHtml = icon('gripVertical');
     const moveUpIconHtml = icon('chevronUp');
     const moveDownIconHtml = icon('chevronDown');
-    const printEffort = `<span class="print-only-effort">Effort: ${nfs.formatNumber(taskTotal)}</span>`;
     const isFirstTask = index <= 0;
     const isLastTask = taskCount > 0 && index >= taskCount - 1;
     const moveUpDisabled = isFirstTask ? ' disabled' : '';
@@ -68,7 +67,7 @@ export function createTaskElement(
     el.innerHTML = `
         <div class="task-row task-row--header">
             <div class="drag-handle" aria-hidden="true">${dragIconHtml}</div>
-            <div class="task-order-number">${index + 1}</div>
+            <div class="task-order-number" title="Позиция задачи в текущем списке" aria-label="Позиция задачи в текущем списке">№${index + 1}</div>
             <div class="task-type-indicator type-${vm.type}" aria-hidden="true">${escapeHtml(vm.typeLetter)}</div>
             <div class="task-meta-badges">
                 ${statusBadgeHtml}
@@ -92,7 +91,7 @@ export function createTaskElement(
         </div>
         <div class="task-estimates">${estimatesHtml}</div>
         ${criteriaEvaluationHtml}
-    ` + printEffort;
+    `;
 
     // Use textContent for XSS safety
     const titleEl = el.querySelector('.task-title');

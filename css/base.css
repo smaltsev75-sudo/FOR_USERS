@@ -212,14 +212,6 @@
     display: none;
 }
 
-/* v8.30.25: print-only effort на task-card. Скрыт в обычном UI, показывается
-   только при печати (правило показа — в print.css media="print"). Вынесено
-   из inline style="display:none" в taskList.js по гайду §4.2: static styles
-   принадлежат CSS, inline только для вычисляемых значений. */
-.print-only-effort {
-    display: none;
-}
-
 /* v8.30.28: ROOT-CAUSE FIX. Раньше (v8.30.27) был safety-net `html, body
    { overflow-x: hidden }` для clip'а mobile-overflow. По CSS-spec любой
    overflow ≠ visible на ancestor создаёт scroll-context и ломает

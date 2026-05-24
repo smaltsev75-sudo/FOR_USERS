@@ -28,3 +28,6 @@ export const ALGORITHM_KEYS = [
 
 /** Причина исключения задачи алгоритмом автоотбора. */
 export const EXCLUSION_REASON_ALGORITHM = 'Исключена алгоритмом';
+
+/** Причина дополнительного исключения safety-guard'ом при применении результата. */
+export const EXCLUSION_REASON_CAPACITY_GUARD = 'Исключена алгоритмом: превышение ёмкости';

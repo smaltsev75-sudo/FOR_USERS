@@ -88,63 +88,63 @@ Total: **90/90** `!important` declarations.
 | Line | Selector | Property |
 |---:|---|---|
 | 46 | `.criteria-eval-step` | `display` |
-| 72 | `*` | `background` |
-| 73 | `*` | `color` |
-| 74 | `*` | `border-color` |
-| 75 | `*` | `box-shadow` |
-| 76 | `*` | `font-family` |
-| 92 | `.availability-info` | `background` |
-| 109 | `.availability-info select` | `border` |
-| 127 | `.toolbar__status-group` | `background` |
-| 160 | `.progress-bg` | `background` |
-| 166 | `.progress-fill` | `background` |
-| 189 | `.table-dash th` | `background` |
-| 197 | `.total-row` | `background` |
-| 225 | `.task-order-number` | `background` |
-| 271 | `.priority-score-container` | `display` |
-| 274 | `.priority-score-container` | `background` |
-| 275 | `.priority-score-container` | `border` |
-| 281 | `.est-box-total` | `display` |
-| 284 | `.est-box-total` | `background` |
-| 285 | `.est-box-total` | `border` |
-| 328 | `.task-estimates` | `border-top` |
-| 340 | `.criteria-eval-head` | `display` |
-| 347 | `.mobile-criteria-abbreviation` | `display` |
-| 353 | `.est-box:not(.est-box-total)` | `display` |
-| 356 | `.est-box:not(.est-box-total)` | `border` |
-| 357 | `.est-box:not(.est-box-total)` | `background` |
-| 367 | `.est-box .est-role-label` | `display` |
-| 383 | `.est-input-container` | `display` |
-| 385 | `.est-input-container` | `background` |
-| 386 | `.est-input-container` | `border` |
-| 390 | `.task-estimates .est-input-container input` | `display` |
-| 400 | `.task-estimates .est-input-container input` | `border` |
-| 401 | `.task-estimates .est-input-container input` | `background` |
-| 409 | `.est-box-suffix` | `display` |
-| 417 | `.est-box-total` | `display` |
-| 420 | `.est-box-total` | `border` |
-| 421 | `.est-box-total` | `border-left` |
-| 422 | `.est-box-total` | `background` |
-| 432 | `.est-box-total-label` | `display` |
-| 439 | `.criteria-row` | `display` |
-| 442 | `.criteria-row` | `border-top` |
-| 450 | `.criteria-eval-item` | `display` |
-| 453 | `.criteria-eval-item` | `border` |
-| 454 | `.criteria-eval-item` | `background` |
-| 464 | `.criteria-eval-abbreviation` | `display` |
-| 472 | `.criteria-eval-weight` | `display` |
-| 474 | `.criteria-eval-weight` | `color` |
-| 482 | `.criteria-eval-stepper` | `display` |
-| 484 | `.criteria-eval-stepper` | `border` |
-| 485 | `.criteria-eval-stepper` | `background` |
-| 490 | `.criteria-eval-score` | `display` |
-| 495 | `.criteria-eval-score` | `background` |
-| 496 | `.criteria-eval-score` | `border` |
-| 503 | `.criteria-score-dropdown` | `display` |
-| 507 | `.criteria-score-print` | `display` |
-| 526 | `.criteria-eval-contribution` | `display` |
-| 532 | `.criteria-row-body .priority-score-container` | `display` |
-| 535 | `.criteria-row-body .priority-score-container` | `border` |
-| 536 | `.criteria-row-body .priority-score-container` | `border-left` |
-| 537 | `.criteria-row-body .priority-score-container` | `background` |
-| 546 | `.priority-score-value` | `display` |
+| 61 | `*` | `background` |
+| 62 | `*` | `color` |
+| 63 | `*` | `border-color` |
+| 64 | `*` | `box-shadow` |
+| 65 | `*` | `font-family` |
+| 81 | `.availability-info` | `background` |
+| 98 | `.availability-info select` | `border` |
+| 116 | `.toolbar__status-group` | `background` |
+| 149 | `.progress-bg` | `background` |
+| 155 | `.progress-fill` | `background` |
+| 178 | `.table-dash th` | `background` |
+| 186 | `.total-row` | `background` |
+| 214 | `.task-order-number` | `background` |
+| 260 | `.priority-score-container` | `display` |
+| 263 | `.priority-score-container` | `background` |
+| 264 | `.priority-score-container` | `border` |
+| 270 | `.est-box-total` | `display` |
+| 273 | `.est-box-total` | `background` |
+| 274 | `.est-box-total` | `border` |
+| 317 | `.task-estimates` | `border-top` |
+| 329 | `.criteria-eval-head` | `display` |
+| 336 | `.mobile-criteria-abbreviation` | `display` |
+| 342 | `.est-box:not(.est-box-total)` | `display` |
+| 345 | `.est-box:not(.est-box-total)` | `border` |
+| 346 | `.est-box:not(.est-box-total)` | `background` |
+| 356 | `.est-box .est-role-label` | `display` |
+| 372 | `.est-input-container` | `display` |
+| 374 | `.est-input-container` | `background` |
+| 375 | `.est-input-container` | `border` |
+| 379 | `.task-estimates .est-input-container input` | `display` |
+| 389 | `.task-estimates .est-input-container input` | `border` |
+| 390 | `.task-estimates .est-input-container input` | `background` |
+| 398 | `.est-box-suffix` | `display` |
+| 406 | `.est-box-total` | `display` |
+| 409 | `.est-box-total` | `border` |
+| 410 | `.est-box-total` | `border-left` |
+| 411 | `.est-box-total` | `background` |
+| 421 | `.est-box-total-label` | `display` |
+| 428 | `.criteria-row` | `display` |
+| 431 | `.criteria-row` | `border-top` |
+| 439 | `.criteria-eval-item` | `display` |
+| 442 | `.criteria-eval-item` | `border` |
+| 443 | `.criteria-eval-item` | `background` |
+| 453 | `.criteria-eval-abbreviation` | `display` |
+| 461 | `.criteria-eval-weight` | `display` |
+| 463 | `.criteria-eval-weight` | `color` |
+| 471 | `.criteria-eval-stepper` | `display` |
+| 473 | `.criteria-eval-stepper` | `border` |
+| 474 | `.criteria-eval-stepper` | `background` |
+| 479 | `.criteria-eval-score` | `display` |
+| 484 | `.criteria-eval-score` | `background` |
+| 485 | `.criteria-eval-score` | `border` |
+| 492 | `.criteria-score-dropdown` | `display` |
+| 496 | `.criteria-score-print` | `display` |
+| 515 | `.criteria-eval-contribution` | `display` |
+| 521 | `.criteria-row-body .priority-score-container` | `display` |
+| 524 | `.criteria-row-body .priority-score-container` | `border` |
+| 525 | `.criteria-row-body .priority-score-container` | `border-left` |
+| 526 | `.criteria-row-body .priority-score-container` | `background` |
+| 535 | `.priority-score-value` | `display` |

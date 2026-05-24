@@ -6,6 +6,24 @@
 
 import { SELECTION_CONFIG } from './config.js';
 
+function normalizeRoleEffort(task) {
+    const source = task?.est && typeof task.est === 'object'
+        ? task.est
+        : (task?.roleEffort && typeof task.roleEffort === 'object' ? task.roleEffort : {});
+
+    return Object.fromEntries(SELECTION_CONFIG.ROLES.map((role) => {
+        const value = Number(source[role]);
+        return [role, Number.isFinite(value) && value > 0 ? value : 0];
+    }));
+}
+
+function normalizeTaskEffort(task, roleEffort) {
+    const roleTotal = Object.values(roleEffort).reduce((sum, value) => sum + value, 0);
+    if (roleTotal > 0) return roleTotal;
+    const explicit = Number(task?.effort);
+    return Number.isFinite(explicit) && explicit > 0 ? explicit : 0;
+}
+
 /**
  * Подготавливает задачи для алгоритмов отбора.
  * Нормализует данные: вычисляет valueDensity (ценность/трудозатраты),
@@ -16,7 +34,8 @@ import { SELECTION_CONFIG } from './config.js';
  */
 export function prepareTasks(tasks) {
     return tasks.map(task => {
-        const effort = task.effort || 0;         // общие трудозатраты (часы)
+        const roleEffort = normalizeRoleEffort(task);
+        const effort = normalizeTaskEffort(task, roleEffort); // общие трудозатраты (часы)
         const priorityScore = task.priorityScore || 0; // взвешенный приоритет (0-100)
         // Плотность ценности: сколько «приоритета» приходится на 1 час работы.
         // Zero-effort задачи всё равно hard-excluded в selectTasksUniform();
@@ -27,7 +46,7 @@ export function prepareTasks(tasks) {
             title: task.title,
             priorityScore,
             effort,
-            roleEffort: { ...task.roleEffort }, // трудозатраты по ролям: { BE: 8, FE: 4, QA: 2 }
+            roleEffort, // трудозатраты по ролям: { uiux: 8, fe: 4, qa: 2 }
             valueDensity,
             excluded: task.excluded || false,    // вручную исключённые задачи
             type: task.type,                     // тип: US, Bug, Tech

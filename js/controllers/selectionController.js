@@ -6,11 +6,16 @@ import { compareAlgorithms } from '../domain/selection/index.js';
 import { fixTaskOrder } from '../domain/task.js';
 import {
     buildAlgorithmsCacheKey,
+    buildCapacitySafeSelection,
     buildTasksWithPriority,
     setSelectionLoadingState
 } from './selection/selectionHelpers.js';
 import { LruCache } from '../utils/lruCache.js';
-import { ALGORITHM_KEYS, EXCLUSION_REASON_ALGORITHM } from '../domain/selection/config.js';
+import {
+    ALGORITHM_KEYS,
+    EXCLUSION_REASON_ALGORITHM,
+    EXCLUSION_REASON_CAPACITY_GUARD
+} from '../domain/selection/config.js';
 import { renderSelectionReport } from '../ui/selectionReport.js';
 import { renderRecommendations } from '../ui/selectionRecommendations.js';
 import { hideModal } from '../ui/modalManager.js';
@@ -170,15 +175,27 @@ export class SelectionController {
             return;
         }
 
-        const allTasks = this.store.getState().tasks;
-        const selectedIds = new Set(algoResult.selectedTasks.map(t => t.rawTask?.id || t.id));
+        const state = this.store.getState();
+        const allTasks = state.tasks;
+        const capacityByRole = this.calculateCapacityByRole();
+        const safety = buildCapacitySafeSelection(
+            algoResult.selectedTasks,
+            allTasks,
+            capacityByRole,
+            state.roles
+        );
+        const selectedIds = safety.selectedIds;
+        const droppedIds = safety.droppedIds;
 
         const updatedTasks = allTasks.map(task => {
             const isSelected = selectedIds.has(task.id);
+            const wasDroppedBySafety = droppedIds.has(task.id);
             return {
                 ...task,
                 excluded: isSelected ? 0 : 1,
-                exclusionReason: isSelected ? '' : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM)
+                exclusionReason: isSelected
+                    ? ''
+                    : (wasDroppedBySafety ? EXCLUSION_REASON_CAPACITY_GUARD : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM))
             };
         });
 
@@ -191,7 +208,10 @@ export class SelectionController {
         this.invalidateAlgorithmsCache();
 
         this.closeReport();
-        messageService.showMessage(`Применён алгоритм: ${algoResult.algorithmName || algorithmKey}`);
+        const safetySuffix = droppedIds.size > 0
+            ? `. Защитная проверка дополнительно исключила задач: ${droppedIds.size}, чтобы не превысить ёмкость.`
+            : '';
+        messageService.showMessage(`Применён алгоритм: ${algoResult.algorithmName || algorithmKey}${safetySuffix}`);
     }
 
     closeReport() {

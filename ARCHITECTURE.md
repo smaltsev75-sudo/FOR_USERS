@@ -431,7 +431,7 @@ store.update*() → notify() → listeners → schedulePersist() + requestRender
 ## 4. Алгоритмы автоматического отбора задач
 
 Все три алгоритма используют общую базу (`domain/selection/base.js`):
-- **prepareTasks** — нормализация данных, расчёт valueDensity
+- **prepareTasks** — нормализация данных, расчёт valueDensity; при наличии `est` берёт текущие оценки из задачи, а `roleEffort` использует только как fallback для уже подготовленных объектов
 - **calculateMedians** — вычисление медиан приоритета и трудозатрат
 - **categorizeIntoQuadrants** — распределение по 4 квадрантам
 - **compareByValueDensity** — компаратор по valueDensity ↓ (Value Density, Hybrid Q1/Q2)
@@ -509,6 +509,18 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
    - Все зависимости уже отобраны
 3. Если все условия выполнены → задача включается в спринт
 4. Если нет → задача исключается с указанием причины
+
+### 4.5. Apply-time capacity guard (`selectionController.js`)
+
+`SelectionController.applyAlgorithm()` не применяет `selectedTasks` из отчёта напрямую. Перед записью в store он вызывает `buildCapacitySafeSelection()` из `controllers/selection/selectionHelpers.js` и повторно набирает выбранные задачи по текущим `state.tasks`, `state.roles` и `capacityByRole`.
+
+Инвариант: после применения алгоритма ни одна роль и команда целиком не должны превышать доступную ёмкость. Если результат отчёта устарел, кэш повреждён или будущая правка алгоритма вернёт небезопасный набор, apply-guard оставит переполняющие задачи исключёнными с причиной `Исключена алгоритмом: превышение ёмкости`.
+
+Контракты UserManual закреплены тестами:
+- `selectionManualContract.test.js` — порядок Matrix / Value Density / Hybrid ровно по описанию в UserManual.
+- `selectionCapacity.property.test.js` — property-based invariant для всех трёх алгоритмов: selected load ≤ role/team capacity.
+- `selectionController.test.js` — stale/unsafe result не может быть применён поверх живого состояния.
+- `user-incidents.spec.js` — e2e после применения автоотбора проверяет отсутствие role/team overload.
 
 ## 5. CSS стратегия
 

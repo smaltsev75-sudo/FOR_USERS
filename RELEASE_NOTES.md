@@ -1,5 +1,64 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.64) — Selection and JSON trust hardening
+
+> Закрыты пользовательские инциденты по ключевым доверительным сценариям:
+> ручной порядок задач, печать, понятность номера позиции, изменение Priority
+> Score через dropdown, строгая ёмкость после автоотбора и JSON save/load
+> roundtrip. Дополнительно UserManual-контракт алгоритмов теперь закреплён
+> отдельными unit/property/e2e тестами.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (selection trust / capacity postcondition)** | Применение результата алгоритма доверяло `selectedTasks` из отчёта как готовому набору. При stale/corrupt result это могло оставить роль или команду выше ёмкости. | `applyAlgorithm()` повторно набирает выбранные задачи по живому `state.tasks` и `capacityByRole`; переполняющие задачи исключаются с причиной `Исключена алгоритмом: превышение ёмкости`. | [selectionController.js](../js/controllers/selectionController.js), [selectionHelpers.js](../js/controllers/selection/selectionHelpers.js) |
+| 2 | **P1 (manual contract drift)** | Реализация алгоритмов могла расходиться с UserManual без прямого guard'а. | Добавлен manual-contract suite: Matrix Q1→Q2→Q3→Q4, Value Density по `priorityScore / effort`, Hybrid по описанным правилам; property-based invariant доказывает `selected load ≤ capacity`. | [selectionManualContract.test.js](../tests/unit/domain/selection/selectionManualContract.test.js), [selectionCapacity.property.test.js](../tests/unit/domain/selection/selectionCapacity.property.test.js) |
+| 3 | **P1 (stale effort source)** | `prepareTasks()` мог доверять `roleEffort` раньше актуального `est`, если объект содержал оба поля. Это создавало риск расчёта по устаревшим служебным данным. | При наличии `est` алгоритмы используют именно видимые пользователю оценки трудозатрат; `roleEffort` остаётся fallback'ом только для подготовленных объектов. | [base.js](../js/domain/selection/base.js), [base.test.js](../tests/unit/domain/selection/base.test.js) |
+| 4 | **P2 (task reordering actionability)** | Пользовательский drag из тела карточки был ненадёжен: native HTML5 drag стабильно работал с ручки, но не с title/comment/body. | Native drag оставлен для ручки; для неинтерактивной области карточки добавлен mouse-fallback reorder. Desktop ↑/↓ и body-drag покрыты e2e. | [taskDragController.js](../js/controllers/task/taskDragController.js), [user-incidents.spec.js](../tests/e2e/user-incidents.spec.js) |
+| 5 | **P2 (print duplicate)** | В PDF печаталась отдельная строка `Effort: N`, дублирующая `Σ Effort`. | Удалён `print-only-effort`; print e2e проверяет отсутствие дублирующей строки. | [taskCard.js](../js/ui/taskList/taskCard.js), [print-verify.spec.js](../tests/e2e/print-verify.spec.js) |
+| 6 | **P2 (JSON trust path)** | Save/Load JSON был покрыт actionability download, но не полным пользовательским roundtrip'ом восстановления плана. | Добавлен e2e `Save JSON -> Load JSON`: проверяет задачи, исключения, причины, зависимости, критерии, оценки и настройки спринта после импорта. | [user-incidents.spec.js](../tests/e2e/user-incidents.spec.js) |
+| 7 | **P3 (unclear row number)** | Число перед бейджем статуса выглядело как непонятный ID. | Номер отображается как `№N` с aria/title “Позиция задачи в текущем списке”; ширина CSS адаптирована под префикс. | [taskCard.js](../js/ui/taskList/taskCard.js), [task-card.css](../css/task-card.css) |
+
+### Новые тесты / guard
+
+- `selectionManualContract.test.js` — executable contract UserManual для Matrix / Value Density / Hybrid.
+- `selectionCapacity.property.test.js` — 150 property-based прогонов на все три алгоритма.
+- `user-incidents.spec.js` — e2e для ↑/↓, body drag, dropdown Priority Score, auto-selection capacity postcondition и JSON roundtrip.
+- `print-verify.spec.js` — guard против повторного `Effort: N` в PDF/print.
+
+Всего unit-тесты: `1902 → 1915` (+13), suites `154 → 156` (+2).
+Full e2e: `252 → 258` (+6), включая 10 visual baselines, actionability, print verify, user incident regressions и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Ключевой алгоритм должен иметь apply-time postcondition.** Отчёт алгоритма — рекомендация, но запись в store обязана заново проверить ёмкость по живым данным.
+2. **UserManual для алгоритма должен быть executable contract.** Если пользователь принимает решение по описанию, порядок отбора и tie-breakers должны быть закреплены тестом.
+3. **Actionability ≠ trust.** Кнопка “Сохранить” может скачивать файл, но доверие даёт только roundtrip “сохранить → загрузить → получить тот же план”.
+4. **Визуальный инцидент проверяется в пользовательском режиме.** PDF-дубли ловятся print e2e, а не только grep/unit.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---:|---:|---|
+| `npm run lint` | ESLint clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1915/1915 PASS; coverage lines 96.28%, branches 86.89% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS; manual contract and UserManual drift guards green | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 258/258 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.64.json` | `docs/release-metrics-history.json` updated for 8.30.64 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.64 | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | CSS important report up to date, budget `90/90` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | no outdated packages reported | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no.
+- Full e2e: wrapper exit 0, all child exits clean; Chromium `218/218`, mobile Chromium `18/18`, WebKit `4/4`, mobile WebKit `18/18`, total `258/258 PASS`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.63) — Node24-native GitHub Actions
 
 > Закрыта оставшаяся часть Node 20 noise в PLANNER CI: после workflow-level

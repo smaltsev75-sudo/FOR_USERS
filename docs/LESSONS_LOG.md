@@ -2,6 +2,20 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.64 (Selection and JSON trust hardening)
+
+- **Для ключевого алгоритма отчёт не равен безопасному применению.** Даже если `compareAlgorithms()` вернул корректный набор, к моменту клика «Применить» state мог измениться или результат мог быть stale. Apply-layer обязан повторно проверить role/team capacity по живым задачам и не записывать перегруз. Codified by: `buildCapacitySafeSelection()`, `selectionController.test.js`, `user-incidents.spec.js`.
+
+- **UserManual алгоритма должен быть executable contract.** Если справка обещает Matrix Q1→Q2→Q3→Q4, Value Density по `priorityScore / effort`, Hybrid с VD в Q1/Q2, это должно проверяться тестами как публичный контракт, а не оставаться текстом. Codified by: `selectionManualContract.test.js`.
+
+- **Служебные поля не должны перебивать видимые пользователю оценки.** `roleEffort` полезен как подготовленное поле, но при наличии `est` алгоритмы обязаны считать по текущим оценкам в карточке. Иначе отчёт может расходиться с UI. Codified by: `base.test.js`.
+
+- **Actionability download не доказывает доверие к JSON save/load.** Кнопка «Сохранить» может скачивать файл, но ключевой пользовательский контракт — roundtrip: сохранить JSON, загрузить его обратно и восстановить тот же план с задачами, исключениями, причинами, зависимостями, критериями и настройками. Codified by: `user-incidents.spec.js`.
+
+- **HTML5 drag у вложенных элементов ненадёжен.** Ручка может работать через native drag, а title/comment/body — нет или behave differently. Для тела карточки нужен собственный mouse-fallback, а интерактивные элементы должны оставаться обычными controls. Codified by: `taskDragController.test.js`, `user-incidents.spec.js`.
+
+- **PDF-дубликаты надо проверять print-mode тестом.** Удаление/добавление print-only элементов нельзя считать безопасным без `emulateMedia('print')`: лишний `Effort: N` был виден только в PDF/печати. Codified by: `print-verify.spec.js`.
+
 ## Ловушки v8.30.63 (Node24-native GitHub Actions)
 
 - **Workflow-level Node 24 opt-in не убирает annotation, если сам action major ещё таргетит старый runtime.** `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` переводит выполнение на Node 24, но GitHub продолжает показывать forced-runtime warning для `actions/checkout@v4` / `actions/setup-node@v4`. Для PLANNER CI надо использовать Node24-native official majors (`checkout@v6`, `setup-node@v6`) и guard'ить это тестом. Codified by: `ci-workflow-gates.test.js`.
