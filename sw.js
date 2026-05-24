@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.54-release-contract-diagnostics';
+const CACHE_VERSION = 'sp-v8.30.55-command-registry-diagnostics';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -46,6 +46,7 @@ const ASSETS_TO_CACHE = [
     './js/app.js',
     './js/app/persistenceCoordinator.js',
     './js/app/renderScheduler.js',
+    './js/config/commands.js',
     // JS — vendor (offline-готовый marked + DOMPurify для справки)
     './js/vendor/marked.min.js',
     './js/vendor/purify.min.js',
@@ -125,6 +126,7 @@ const ASSETS_TO_CACHE = [
     // JS — ui
     './js/ui/appVersionBadge.js',
     './js/ui/blockedScreen.js',
+    './js/ui/commandMetadata.js',
     './js/ui/createForm.js',
     './js/ui/criteriaList.js',
     './js/ui/header.js',

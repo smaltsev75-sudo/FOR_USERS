@@ -363,27 +363,27 @@
 #createCriteriaContainer .criteria-score-select {
     width: 100%;
     min-width: 50px;
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text) !important;
-    border-radius: 6px !important;
-    font-size: 0.78rem !important;
-    padding: 6px 4px !important;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    padding: 6px 4px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    text-align: center !important;
+    text-align: center;
     cursor: pointer;
     box-sizing: border-box;
 }
 
 #createCriteriaContainer .criteria-score-select:hover {
-    border-color: var(--border-light) !important;
+    border-color: var(--border-light);
 }
 
 #createCriteriaContainer .criteria-score-select:focus,
 #createCriteriaContainer .criteria-score-select:focus-visible {
     outline: none;
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px var(--accent-bg-strong) !important;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg-strong);
 }
 
 /* ---------- Roles block: карточки ролей с пресетами ---------- */
@@ -429,28 +429,28 @@
     text-transform: uppercase;
 }
 
-.cf-role__input {
-    width: 100% !important;
+.create-form .cf-role__input {
+    width: 100%;
     box-sizing: border-box;
-    padding: 6px 8px !important;
-    background: transparent !important;
-    border: none !important;
-    border-bottom: 1.5px solid var(--border-light) !important;
-    border-radius: 0 !important;
-    color: var(--text) !important;
-    font-size: 0.95rem !important;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--border-light);
+    border-radius: 0;
+    color: var(--text);
+    font-size: 0.95rem;
     font-weight: 600;
-    text-align: right !important;
+    text-align: right;
     font-variant-numeric: tabular-nums;
-    box-shadow: none !important;
+    box-shadow: none;
     transition: border-bottom-color 0.15s ease;
 }
 
-.cf-role__input:focus,
-.cf-role__input:focus-visible {
+.create-form .cf-role__input:focus,
+.create-form .cf-role__input:focus-visible {
     outline: none;
-    border-bottom-color: var(--accent) !important;
-    box-shadow: 0 1px 0 0 var(--accent) !important;
+    border-bottom-color: var(--accent);
+    box-shadow: 0 1px 0 0 var(--accent);
 }
 
 .cf-role__input::placeholder {

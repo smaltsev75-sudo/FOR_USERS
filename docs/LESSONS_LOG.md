@@ -2,6 +2,16 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.55 (command registry, diagnostics e2e, CSS debt trend)
+
+- **Hotkeys нельзя держать одновременно в контроллере, HTML title и UserManual.** До v8.30.55 таблица горячих клавиш была в `manual-contract.json`, а runtime-логика — в `KeyboardController`. Это создавало drift-риск: UI мог поменяться, а справка остаться старой. Решение: `js/config/commands.js` как source of truth, `KeyboardController` ищет command через `findCommandByHotkey()`, UserManual берёт `getManualHotkeys()`, а `command-registry-contract.test.js` запрещает вернуть ручной дубль.
+
+- **Diagnostics support-flow надо проверять как пользовательский download, не только unit redaction.** Unit-тест доказывает форму JSON, но не доказывает, что кнопка реально скачивает файл и пользователь видит результат. v8.30.55 добавил e2e: seed с секретными product/task/JIRA/comment, download JSON, проверка отсутствия секретов и snackbar success. Это закрывает связку UI → FileController → Blob download → redacted bundle.
+
+- **CSS `!important` debt лучше резать на дубликатах и специфичности, не через широкий cascade rewrite.** Безопасный выигрыш v8.30.55: удалить дублированный `.overload-tag` из `task-card.css` (тот же стиль уже в `components.css`) и заменить `create-task-modal.css` overrides на `.create-form .cf-role__input` / ID-specific selectors. Budget упал `167 → 128`, не затрагивая `print.css`.
+
+- **Release metrics без истории дают только одноточечную честность.** `release:metrics` доказывает текущий релиз, но сравнение с прошлым релизом раньше приходилось читать из длинных release notes. `release:metrics-history` обновляет tracked `docs/release-metrics-history.json` с coverage/e2e/CSS trend. Это не gate, а память проекта в машинном виде.
+
 ## Ловушки v8.30.54 (release contract + diagnostics + generated docs)
 
 - **Release automation не должна верить ручным notes/metrics перед push.** `release:public --execute` теперь проверяет release contract до sync/commit/push/release: metrics JSON текущей версии, latest `RELEASE_NOTES`, e2e smoke/full rows, `release:metrics` row и CSS budget должны совпасть. Codified by: `scripts/releaseContract.js`, `release-public-execute-guard.test.js`.

@@ -30,6 +30,7 @@ import { APP_VERSION } from './version.js';
 import { APP_CONFIG } from './utils/appConfig.js';
 import { PersistenceCoordinator } from './app/persistenceCoordinator.js';
 import { RenderScheduler } from './app/renderScheduler.js';
+import { applyCommandMetadata } from './ui/commandMetadata.js';
 
 export class App {
     /**
@@ -98,6 +99,7 @@ export class App {
     }
 
     init() {
+        applyCommandMetadata();
         renderAppVersionBadge();
         bindPrintTimestamp();
         this.themeController.init();

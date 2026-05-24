@@ -55,52 +55,5 @@
       "order": "Q1/Q2 по valueDensity, Q3/Q4 по priorityScore",
       "bestFor": "сохранить логику квадрантов, но эффективнее расходовать ёмкость на важных задачах"
     }
-  ],
-  "hotkeys": [
-    {
-      "windows": "Ctrl+Alt+S",
-      "macos": "Cmd+Alt+S",
-      "action": "Сохранить данные в файл"
-    },
-    {
-      "windows": "Ctrl+Alt+O",
-      "macos": "Cmd+Alt+O",
-      "action": "Загрузить данные из файла"
-    },
-    {
-      "windows": "Ctrl+Alt+N",
-      "macos": "Cmd+Alt+N",
-      "action": "Открыть окно создания новой задачи (работает даже при фокусе в поле ввода)"
-    },
-    {
-      "windows": "Ctrl+Alt+F",
-      "macos": "Cmd+Alt+F",
-      "action": "Установить фокус в поле поиска задач (работает даже при фокусе в поле ввода)"
-    },
-    {
-      "windows": "Ctrl+Alt+P",
-      "macos": "Cmd+Alt+P",
-      "action": "Открыть окно печати браузера"
-    },
-    {
-      "windows": "Ctrl+Alt+D",
-      "macos": "Cmd+Alt+D",
-      "action": "Скачать диагностический пакет без текстов задач"
-    },
-    {
-      "windows": "Ctrl+Enter",
-      "macos": "Cmd+Enter",
-      "action": "Создать задачу или сохранить изменения в форме"
-    },
-    {
-      "windows": "Delete (при фокусе на карточке задачи)",
-      "macos": "Delete",
-      "action": "Удалить выбранную задачу"
-    },
-    {
-      "windows": "Esc",
-      "macos": "Esc",
-      "action": "Закрыть любое модальное окно"
-    }
   ]
 }

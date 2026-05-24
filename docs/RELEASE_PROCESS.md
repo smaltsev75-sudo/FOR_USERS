@@ -71,12 +71,16 @@ npm run bump -- 9.0.0
 
    ```bash
    npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json
+   npm run release:metrics-history -- --metrics test-results/release-metrics-v<X.Y.Z>.json
    ```
 
    Команда читает `coverage/coverage-summary.json`,
    `test-results/e2e-parallel-summary.json`, smoke summary (если сохранён) и
    `docs/css-important-budgets.json`. Если CSS `!important` превысил общий или
    per-file budget, command exit должен быть non-zero и релиз останавливается.
+   `release:metrics-history` обновляет tracked
+   `docs/release-metrics-history.json`, чтобы coverage/e2e/CSS тренд не
+   приходилось восстанавливать из старых release notes.
    Для черновика секции можно затем выполнить:
 
    ```bash

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-05-24T14:06:26.123Z",
+  "releases": [
+    {
+      "version": "8.30.54",
+      "generatedAt": "2026-05-24T13:38:20.332Z",
+      "coverage": {
+        "statementsPct": 96.62,
+        "branchesPct": 87.37,
+        "functionsPct": 96.85,
+        "linesPct": 96.62
+      },
+      "e2e": {
+        "smoke": {
+          "passed": 18,
+          "projectCount": 1,
+          "wrapperExit": 0,
+          "childExit": 0,
+          "override": false,
+          "seconds": 26.414
+        },
+        "full": {
+          "passed": 247,
+          "projectCount": 4,
+          "wrapperExit": 0,
+          "childExit": 0,
+          "override": false,
+          "seconds": 192.196
+        }
+      },
+      "cssImportant": {
+        "total": 167,
+        "budget": 167,
+        "overBudgetCount": 0
+      }
+    },
+    {
+      "version": "8.30.55",
+      "generatedAt": "2026-05-24T14:06:21.593Z",
+      "coverage": {
+        "statementsPct": 96.72,
+        "branchesPct": 87.19,
+        "functionsPct": 96.88,
+        "linesPct": 96.72
+      },
+      "e2e": {
+        "smoke": {
+          "passed": 18,
+          "projectCount": 1,
+          "wrapperExit": 0,
+          "childExit": 0,
+          "override": false,
+          "seconds": 25.796
+        },
+        "full": {
+          "passed": 248,
+          "projectCount": 4,
+          "wrapperExit": 0,
+          "childExit": 0,
+          "override": false,
+          "seconds": 193.874
+        }
+      },
+      "cssImportant": {
+        "total": 128,
+        "budget": 128,
+        "overBudgetCount": 0
+      }
+    }
+  ]
+}

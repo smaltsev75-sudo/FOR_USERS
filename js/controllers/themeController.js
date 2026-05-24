@@ -1,10 +1,12 @@
 // js/controllers/themeController.js
 
 import { ICONS } from '../utils/icons.js';
+import { getCommand } from '../config/commands.js';
 
 const THEME_KEY = 'sprintPlannerTheme';
 const DARK = 'dark';
 const LIGHT = 'light';
+const THEME_COMMAND = getCommand('theme');
 
 /**
  * Контроллер переключения светлой/тёмной темы.
@@ -53,7 +55,7 @@ export class ThemeController {
             iconEl.innerHTML = ICONS[iconKey] || '';
         }
         if (labelEl) {
-            labelEl.textContent = 'Тема';
+            labelEl.textContent = THEME_COMMAND.label;
         }
         this._btn.dataset.themeIcon = iconKey;
         this._btn.title = theme === LIGHT

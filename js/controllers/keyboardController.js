@@ -1,6 +1,7 @@
 // js/controllers/keyboardController.js
 
 import { hideModal } from '../ui/modalManager.js';
+import { findCommandByHotkey } from '../config/commands.js';
 
 export class KeyboardController {
     constructor(taskController, fileController, printFn = () => globalThis.print()) {
@@ -34,53 +35,37 @@ export class KeyboardController {
 
         const targetTag = e.target?.tagName?.toLowerCase() || '';
         const isInput = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select';
-        const hasPrimaryModifier = e.ctrlKey || e.metaKey;
 
-        // Ctrl/Cmd+Alt+S – Сохранить
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyS') {
+        const command = findCommandByHotkey(e);
+        if (command) {
             stopEvent();
-            this.fileController?.saveToFile();
-            return false;
-        }
-
-        // Ctrl/Cmd+Alt+O – Загрузить
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyO') {
-            stopEvent();
-            this.fileController?.loadFromFile();
-            return false;
-        }
-
-        // Ctrl/Cmd+Alt+N – Открыть модальное окно создания задачи
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyN') {
-            stopEvent();
-            if (this.taskController) {
-                this.taskController.openCreateModal();
+            switch (command.id) {
+                case 'save':
+                    this.fileController?.saveToFile();
+                    break;
+                case 'load':
+                    this.fileController?.loadFromFile();
+                    break;
+                case 'createTask':
+                    this.taskController?.openCreateModal();
+                    break;
+                case 'focusSearch': {
+                    const searchInput = document.getElementById('taskSearchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                    break;
+                }
+                case 'print':
+                    this.printFn();
+                    break;
+                case 'diagnostics':
+                    this.fileController?.downloadDiagnostics?.();
+                    break;
+                default:
+                    break;
             }
-            return false;
-        }
-
-        // Ctrl/Cmd+Alt+F – Фокус на поиск
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyF') {
-            stopEvent();
-            const searchInput = document.getElementById('taskSearchInput');
-            if (searchInput) {
-                searchInput.focus();
-                searchInput.select();
-            }
-            return false;
-        }
-
-        // Ctrl/Cmd+Alt+P – Печать
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyP') {
-            stopEvent();
-            this.printFn();
-            return false;
-        }
-
-        // Ctrl/Cmd+Alt+D – Скачать диагностический пакет
-        if (hasPrimaryModifier && e.altKey && e.code === 'KeyD') {
-            stopEvent();
-            this.fileController?.downloadDiagnostics?.();
             return false;
         }
 

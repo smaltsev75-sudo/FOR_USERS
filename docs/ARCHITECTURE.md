@@ -19,6 +19,7 @@ index.html
   └─ js/app.js (orchestrator)
        ├─ js/state/store.js          — единое хранилище состояния (state.ui.density, viewMode, expandedQuadrants — v8.14)
        ├─ js/state/persistence.js    — facade миграции/сериализации; детали в js/state/persistence/* (v8.30.46)
+       ├─ js/config/commands.js      — единый registry UI-команд, hotkeys и manual actions (v8.30.55)
        ├─ js/controllers/*           — управление UI и сценариями
        │    ├─ task/                  — создание, редактирование, drag&drop, undo-delete
        │    ├─ criteria/              — управление критериями оценки
@@ -48,6 +49,7 @@ index.html
 | `domain/` | ❌ | ❌ | ✅ |
 | `controllers/` | ✅ | ✅ | оркестрация |
 | `services/` | ✅ | ❌ | ❌ |
+| `config/` | ❌ | ❌ | декларативные runtime-контракты |
 | `ui/` | ✅ | через параметры (не импортирует Store) | ❌ |
 | `utils/` | ❌ | ❌ | ❌ |
 
@@ -80,6 +82,23 @@ Runtime-ответственности вынесены в маленькие к
 после явного allowlist review, `style=""` в render HTML только для geometry
 (`width`, `stroke-dasharray`, CSS variables), inline handler attributes
 запрещены, а каждое новое `Date.now()` требует review-причину.
+
+### Command registry (v8.30.55)
+
+[commands.js](../js/config/commands.js) — единый source of truth для header
+actions, hotkeys и таблицы горячих клавиш в UserManual. Из него берут данные:
+
+| Поверхность | Контракт |
+|---|---|
+| `KeyboardController` | `findCommandByHotkey()` вместо локального списка `Ctrl+Alt+...` |
+| `FileController` | button ids для save/load/diagnostics берутся из registry |
+| `ThemeController` | видимая метка темы берётся из `theme` command |
+| `applyCommandMetadata()` | начальные `title`/`aria-label` header-кнопок применяются из registry |
+| `generate-manual-contract.mjs` | таблица hotkeys генерируется из `getManualHotkeys()` |
+
+Guard: [command-registry-contract.test.js](../tests/unit/architecture/command-registry-contract.test.js)
+проверяет, что header-кнопки существуют в HTML, их initial titles совпадают с
+registry, а `manual-contract.json` больше не дублирует hotkeys руками.
 
 ### 2.1 Progressive rendering и generation token (v8.30.0)
 
@@ -498,9 +517,11 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
   явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
-  `!important` не может расти без осознанного review (`167` всего, `96` в
+  `!important` не может расти без осознанного review (`128` всего, `96` в
   `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
-  после `print-verify.spec.js` и visual baseline `print A4 task card`.
+  после `print-verify.spec.js` и visual baseline `print A4 task card`; v8.30.55
+  убрал дублированный overload-блок из `task-card.css` и заменил modal-form
+  overrides в `create-task-modal.css` на нормальную специфичность.
 - `npm run css:important-report` генерирует
   [docs/css-important-report.md](css-important-report.md) из реального CSS и
   [docs/css-important-budgets.json](css-important-budgets.json). В release
@@ -530,10 +551,11 @@ npm run docs:manual-check    # generated manual contract + guard от дрейф
 npm run css:important-report # обновить docs/css-important-report.md
 npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
+npm run release:metrics-history -- --metrics test-results/release-metrics-v<X.Y.Z>.json
 npm run docs:modules         # обновить docs/MODULE_MAP.md
 ```
 
-### Тестовые суиты (v8.30.52)
+### Тестовые суиты (v8.30.55)
 
 | Тип | Фреймворк | Команда | Release gate |
 |-----|-----------|---------|--------------|
@@ -636,6 +658,13 @@ Property-based persistence checks через `fast-check` живут в
 [docs/css-important-budgets.json](css-important-budgets.json). Скрипт пишет
 `test-results/release-metrics-v<version>.json`, печатает короткую сводку и
 падает, если текущий `!important` count превысил общий или per-file budget.
+
+`npm run release:metrics-history -- --metrics test-results/release-metrics-v<version>.json`
+обновляет tracked trend artifact
+[docs/release-metrics-history.json](release-metrics-history.json): coverage %,
+smoke/full e2e, child exits/override и CSS `!important` total/budget. Это не
+gate вместо `release:metrics`, а история для сравнения релизов без ручного
+переноса цифр из старых release notes.
 
 `npm run css:important-report` пишет человекочитаемый snapshot
 [docs/css-important-report.md](css-important-report.md). Это companion-doc к

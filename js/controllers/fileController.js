@@ -10,6 +10,8 @@ import {
     buildDiagnosticsFilename,
     collectDiagnosticsBundle
 } from '../services/diagnostics.js';
+import { showSnackbar } from '../ui/snackbar.js';
+import { getCommand } from '../config/commands.js';
 
 export class FileController {
     constructor(store, numberFormatService, criteriaManager) {
@@ -28,9 +30,9 @@ export class FileController {
     }
 
     attachEvents() {
-        const saveBtn = document.getElementById('saveDataBtn');
-        const loadBtn = document.getElementById('loadDataBtn');
-        const diagnosticsBtn = document.getElementById('downloadDiagnosticsBtn');
+        const saveBtn = document.getElementById(getCommand('save').buttonId);
+        const loadBtn = document.getElementById(getCommand('load').buttonId);
+        const diagnosticsBtn = document.getElementById(getCommand('diagnostics').buttonId);
 
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
@@ -99,6 +101,10 @@ export class FileController {
                 decimalSeparator: this.nfs.decimalSeparator
             });
             storageService.saveFile(bundle, buildDiagnosticsFilename());
+            showSnackbar(
+                'Диагностический пакет скачан. Файл не содержит тексты задач, JIRA-ссылки, комментарии и название продукта.',
+                { duration: 6000 }
+            );
         } catch (error) {
             messageService.showMessage('Не удалось подготовить диагностику: ' + error.message);
         } finally {

@@ -1071,33 +1071,6 @@
     }
 }
 
-/* ---------- ИНДИКАТОР ПЕРЕГРУЗКИ — МИНИМАЛЬНЫЙ, ПО ШИРИНЕ ПОЛЯ ---------- */
-.overload-tag {
-    background: var(--danger) !important;
-    color: white !important;
-    font-size: 0.5rem !important;
-    /* мелкий шрифт */
-    font-weight: 600 !important;
-    padding: 1px 4px !important;
-    /* минимальные отступы */
-    border-radius: 3px !important;
-    white-space: nowrap !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 2px !important;
-    max-width: 100% !important;
-    /* не шире родителя */
-    box-sizing: border-box !important;
-    line-height: 1.2 !important;
-    box-shadow: 0 1px 2px var(--danger-shadow) !important;
-}
-
-.overload-percent {
-    font-size: 0.45rem !important;
-    opacity: 0.9 !important;
-}
-
 /* Анимации */
 @keyframes slideIn {
     from {

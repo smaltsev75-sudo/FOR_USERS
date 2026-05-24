@@ -1,5 +1,69 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.55) — command registry, diagnostics e2e and CSS debt cut
+
+> Команды приложения получили единый registry для UI/hotkeys/UserManual,
+> diagnostics export теперь проверяется полноценным download e2e и даёт
+> пользователю success snackbar, CSS `!important` budget снижен без редизайна,
+> а release metrics получили tracked history artifact для сравнения релизов.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (command drift)** | Hotkeys, `title` header-кнопок и UserManual могли расходиться: часть контрактов жила в `KeyboardController`, часть в HTML, часть в `manual-contract.json`. | Добавлен `js/config/commands.js`; runtime hotkeys, button ids, theme label и generated manual hotkeys теперь берут данные из одного registry. | [commands.js](../js/config/commands.js), [keyboardController.js](../js/controllers/keyboardController.js), [generate-manual-contract.mjs](../scripts/generate-manual-contract.mjs) |
+| 2 | **P2 (support UX not exercised)** | Diagnostics bundle был покрыт unit-тестами, но не было проверки реального UI-path: кнопка → Blob download → redacted JSON → user feedback. | Добавлен e2e download-test с секретными product/task/JIRA/comment seed-данными; проверяется отсутствие секретов в JSON и success snackbar. | [planner.spec.js](../tests/e2e/planner.spec.js), [fileController.js](../js/controllers/fileController.js), [diagnostics.js](../js/services/diagnostics.js) |
+| 3 | **P3 (CSS debt after report)** | CSS debt report показывал `167/167`, но `task-card.css` дублировал overload styles, а create-modal держал лишние overrides вместо специфичности. | Удалён duplicate `.overload-tag` block из `task-card.css`; create-modal score/role inputs перешли на нормальную специфичность. Budget tightened `167 → 128`. | [task-card.css](../css/task-card.css), [create-task-modal.css](../css/create-task-modal.css), [css-important-budgets.json](css-important-budgets.json) |
+| 4 | **P3 (metrics history missing)** | `release:metrics` давал честный snapshot текущего релиза, но тренд coverage/e2e/CSS приходилось восстанавливать из длинных release notes. | Добавлен `release:metrics-history`, tracked `docs/release-metrics-history.json` и unit-тест compact/upsert logic. | [releaseMetricsHistory.js](../scripts/releaseMetricsHistory.js), [update-release-metrics-history.mjs](../scripts/update-release-metrics-history.mjs), [release-metrics-history.json](release-metrics-history.json) |
+| 5 | **P3 (new source of truth unguarded)** | Новый registry сам мог стать ещё одним ручным документом без контракта с HTML и UserManual. | Добавлены guards: registry button titles сверяются с `index.html`, UserManual hotkeys — с `getManualHotkeys()`, `manual-contract.json` не содержит hotkeys. | [command-registry-contract.test.js](../tests/unit/architecture/command-registry-contract.test.js), [commands.test.js](../tests/unit/config/commands.test.js), [commandMetadata.test.js](../tests/unit/ui/commandMetadata.test.js) |
+
+### Новые тесты / guard
+
+- `command-registry-contract.test.js` — header commands и UserManual hotkeys идут из registry.
+- `commands.test.js` — matching `Ctrl/Cmd+Alt+...` и manual hotkey export.
+- `commandMetadata.test.js` — применение `title` / `aria-label` из registry к DOM.
+- `releaseMetricsHistory.test.js` — compact summary и upsert/sort release history.
+- `planner.spec.js` расширен diagnostics download/redaction/snackbar e2e-сценарием.
+- `fileController.test.js` расширен проверкой success snackbar после diagnostics download.
+
+Всего unit-тесты: `1850 → 1859` (+9), suites `141 → 145` (+4).
+Full e2e: `247 → 248`, включая 10 visual baselines.
+
+### Уроки и классы ошибок
+
+1. **Command metadata — продуктовый контракт.** Если hotkey есть в UI, справке и runtime, он должен жить в одном registry, а не копироваться руками.
+2. **Support export надо проверять как пользовательский workflow.** Redaction unit-тест полезен, но реальный download + snackbar закрывает класс wiring-регрессий.
+3. **CSS debt сначала резать там, где есть дубли и специфичность.** Это дешевле и безопаснее, чем широкий `@layer` rewrite без дополнительного visual cycle.
+4. **Release metrics должны иметь историю.** Snapshot текущего релиза честен, но tracked trend помогает видеть, улучшается ли проект между релизами.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1859/1859 PASS, 145 suites, lines 96.72%, branches 87.19%, 16.1s | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `128/128` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `128/128` | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 248/248 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `128/128` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.55.json` | `docs/release-metrics-history.json` updated for 8.30.55 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  25.8s.
+- Full e2e: wrapper exit 0, all child exits clean; chromium 208/208 (108.5s),
+  mobile-chromium 18/18 (27.4s), webkit 4/4 (22.5s), mobile-webkit 18/18
+  (35.5s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.55.json`.
+- Release metrics history: `docs/release-metrics-history.json` содержит 8.30.54
+  и 8.30.55 trend entries.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.54) — release contract, diagnostics and mobile header hardening
 
 > Релизная цепочка получила проверяемый contract перед push/release, приложение
