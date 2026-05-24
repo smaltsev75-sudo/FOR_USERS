@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.60-recovery-copy-click-feedback';
+const CACHE_VERSION = 'sp-v8.30.61-actionability-css-node24';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -34,6 +34,11 @@ const ASSETS_TO_CACHE = [
     './css/criteria.css',
     './css/selection-report.css',
     './css/task-card.css',
+    './css/task-card-effort.css',
+    './css/task-card-actions.css',
+    './css/task-card-criteria.css',
+    './css/task-card-states.css',
+    './css/task-card-quadrants.css',
     './css/density.css',
     './css/capacity-strip.css',
     './css/team-capacity.css',

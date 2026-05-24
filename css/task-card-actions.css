@@ -1,0 +1,121 @@
+/* ---------- task-card-actions.css ---------- */
+/* Task card hover actions. Split from task-card.css; keep stylesheet order in index.html. */
+
+/* Кнопки — hover-only actions (B5).
+   По умолчанию скрыты (opacity:0), показываются на :hover/:focus-within
+   родительского .task-item, либо когда любой из кнопок в фокусе. */
+.task-btn-group {
+    display: flex;
+    gap: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    /* pointer-events:none не выставляем — kbd-фокус должен попадать в кнопки */
+}
+
+.task-item:hover .task-btn-group,
+.task-item:focus-within .task-btn-group,
+.task-btn-group:focus-within {
+    opacity: 1;
+}
+
+/* Touch-устройства (нет hover) — всегда показываем кнопки */
+@media (hover: none), (pointer: coarse) {
+    .task-btn-group {
+        opacity: 1;
+    }
+}
+
+/* Reduced-motion — мгновенный показ без анимации */
+@media (prefers-reduced-motion: reduce) {
+    .task-btn-group {
+        transition: none;
+    }
+}
+
+.task-action-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.task-action-btn:hover {
+    background: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px var(--shadow-md);
+}
+
+.task-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+.task-action-btn:disabled:hover {
+    background: var(--button-bg);
+    border-color: var(--border-light);
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-move-up:hover:not(:disabled),
+.btn-move-down:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.btn-edit:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.btn-delete:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-bg-subtle);
+}
+
+.btn-exclude:hover:not(.excluded) {
+    color: var(--warning);
+    border-color: var(--warning);
+    background: var(--warning-bg-subtle);
+}
+
+.btn-exclude.excluded {
+    color: var(--excluded);
+    border-color: var(--excluded);
+    background: var(--excluded-bg);
+    position: relative;
+}
+
+.btn-exclude.excluded::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    width: 18px;
+    height: 2px;
+    background-color: var(--excluded);
+    pointer-events: none;
+}
+
+.btn-exclude.excluded:hover {
+    color: var(--success);
+    border-color: var(--success);
+    background: var(--success-bg-subtle);
+}
+

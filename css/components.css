@@ -43,7 +43,7 @@
 }
 
 .number-display {
-    text-align: right !important;
+    text-align: right;
 }
 
 /* Кнопки → см. buttons.css */

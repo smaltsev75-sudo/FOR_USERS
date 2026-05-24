@@ -1,5 +1,63 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.61) — Actionability gate, task-card CSS split and Node 24 rehearsal
+
+> Закрыт следующий слой качества после v8.30.60: критичные видимые команды
+> получили focused click-path, самый крупный CSS-файл карточки задачи разделён
+> без смены cascade-порядка, CI заранее репетирует GitHub Actions runtime на
+> Node 24, а CSS `!important` budget снижен без широкого rewrite.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (silent visible action regression)** | Full e2e мог оставаться зелёным, но не гарантировал, что критичная видимая кнопка даёт пользователю ответ. | Добавлен `test:e2e:actionability`: save/download, theme toggle, help, create modal, auto-selection feedback, diagnostics download и recovery no-backup snackbar проверяются реальными кликами. | [actionability.spec.js](../tests/e2e/actionability.spec.js), [e2eTaxonomy.js](../scripts/e2eTaxonomy.js) |
+| 2 | **P2 (task-card CSS hotspot)** | `task-card.css` был крупнейшим CSS-файлом и смешивал shell, effort, actions, criteria controls, states и quadrants. | Механический split на subfiles с тем же порядком подключения перед `density.css`; PWA precache и cascade-order guard обновлены. | [task-card.css](../css/task-card.css), [task-card-effort.css](../css/task-card-effort.css), [task-card-actions.css](../css/task-card-actions.css), [task-card-criteria.css](../css/task-card-criteria.css), [task-card-states.css](../css/task-card-states.css), [task-card-quadrants.css](../css/task-card-quadrants.css) |
+| 3 | **P2 (upcoming GitHub Actions runtime shift)** | GitHub CI предупреждает о принудительном переводе JavaScript actions с Node 20 на Node 24. | Добавлен лёгкий CI job `Node 24 rehearsal` с `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`, `node-version: 24`, lint и representative architecture guards. | [ci.yml](../.github/workflows/ci.yml), [ci-workflow-gates.test.js](../tests/unit/architecture/ci-workflow-gates.test.js) |
+| 4 | **P3 (CSS important debt)** | В non-print CSS оставались три безопасно снимаемых `!important`. | Сняты `!important` из `.number-display`, `.criteria-item-grip:hover`, compact `.task-comment`; budget tightened `93 → 90`. | [components.css](../css/components.css), [criteria.css](../css/criteria.css), [density.css](../css/density.css), [css-important-budgets.json](css-important-budgets.json) |
+
+### Новые тесты / guard
+
+- `actionability.spec.js` — реальный click path для критичных видимых команд.
+- `test:e2e:actionability` — focused taxonomy bucket, guarded by `e2e-taxonomy-contract.test.js` and `e2eTaxonomy.test.js`.
+- `ci-workflow-gates.test.js` — проверяет Node 24 rehearsal job и representative guards.
+- `css-cascade-contract.test.js` / `precache-coverage.test.js` — task-card subfiles грузятся и precache'ятся в правильном порядке.
+
+Всего unit-тесты: `1897 → 1899` (+2), suites `154 → 154`.
+Full e2e: `251 → 252`, включая 10 visual baselines, actionability и large backlog perf spec.
+
+### Уроки и классы ошибок
+
+1. **Actionability — отдельный пользовательский контракт.** Если команда видима, клик должен дать observable result: download, modal, snackbar/message или изменение состояния.
+2. **CSS split безопаснее широкого `@layer` rewrite.** Сначала уменьшаем hotspot и сохраняем порядок каскада, затем можно точечно двигаться к layers под visual gate.
+3. **Platform shifts надо репетировать до дедлайна.** Лёгкий Node 24 CI job дешевле, чем внезапный красный main после изменения GitHub runner behavior.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1899/1899 PASS, 154 suites, lines 96.38%, branches 86.97% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run css:important-report` | `docs/css-important-report.md` regenerated, CSS `90/90` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | report up to date, CSS `90/90` | **0** | n/a | — |
+| `npm run test:e2e:actionability` | 1/1 PASS, chromium visible commands | **0** | **0** | no |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 252/252 PASS, parallel projects | **0** | mobile-webkit **1** | yes — watchdog override after all 18 mobile-webkit tests reported ok |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.61.json` | `docs/release-metrics-history.json` updated for 8.30.61 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.61 | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Actionability: chromium `1/1 PASS`, wrapper exit 0, child exit 0, override no.
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no.
+- Full e2e: wrapper exit 0, total `252/252 PASS`; `mobile-webkit` child exit 1 was watchdog-overridden after all 18 tests had reported `ok` (known Playwright worker shutdown race), other projects exited clean.
+- Release metrics artifact: `test-results/release-metrics-v8.30.61.json`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.60) — Recovery copy click feedback
 
 > Исправлен пользовательский сценарий в Центре восстановления: кнопка

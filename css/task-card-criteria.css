@@ -1,0 +1,382 @@
+/* ---------- task-card-criteria.css ---------- */
+/* Task card priority criteria controls. Split from task-card.css; keep stylesheet order in index.html. */
+
+/* ─── Блок «Метрики приоритета» — компактный 1-row layout ──────── */
+
+.criteria-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.criteria-row-body {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.criteria-evaluation {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 0;
+}
+
+/* ===== v8.27.2: Criteria evaluation redesign — Warm Sandy Theme ============
+   Stepper [-] N [+] вместо <select>, контрибьюшн-бар отображает вклад
+   (score × weight). Цвет/насыщенность — функция от score-level (zero/low/mid/high).
+   Контракт событий: см. taskController._dispatchCriteriaScore(). */
+
+.criteria-eval-item {
+    /* Локальные токены, привязанные к уровню score: переопределяются через
+       data-score-level и плавно интерполируются color-mix'ом по border. */
+    --eval-accent: var(--text-muted);
+    --eval-bar-bg: var(--overlay-faint);
+    --eval-card-bg: var(--bg-card);
+
+    background: var(--eval-card-bg);
+    border: 1px solid color-mix(in srgb, var(--eval-accent) 35%, var(--border));
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    min-width: 132px;
+    min-height: 26px;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.18s ease;
+}
+
+/* Цветовые «уровни» score: zero (0) → muted; low (1-3) → warm sand;
+   mid (4-7) → охра; high (8-10) → терракота. WCAG AA в обеих темах. */
+.criteria-eval-item[data-score-level="zero"] { --eval-accent: var(--text-muted); }
+.criteria-eval-item[data-score-level="low"]  { --eval-accent: var(--warning); }
+.criteria-eval-item[data-score-level="mid"]  { --eval-accent: var(--accent); }
+.criteria-eval-item[data-score-level="high"] { --eval-accent: var(--print); }
+
+.criteria-eval-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.1;
+    flex-wrap: nowrap;
+}
+
+.criteria-eval-abbreviation {
+    font-weight: 800;
+    font-size: 0.72rem;
+    color: var(--eval-accent);
+    letter-spacing: 0.04em;
+    transition: color 0.25s ease;
+}
+
+.criteria-eval-weight {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    background: var(--overlay-faint);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.4;
+}
+
+.criteria-eval-contribution {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--eval-accent);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.25s ease;
+    opacity: 0.85;
+}
+.criteria-eval-item[data-score-level="zero"] .criteria-eval-contribution { opacity: 0.45; }
+
+/* ── Stepper [-] N [+] ─────────────────────────────────────────────────── */
+.criteria-eval-stepper {
+    display: inline-grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    background: var(--eval-bar-bg);
+    border-radius: 6px;
+    padding: 1px;
+    cursor: default;
+    outline: none;
+    transition: box-shadow 0.18s ease;
+}
+
+.criteria-eval-stepper:focus-within {
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.criteria-eval-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.criteria-eval-step:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--eval-accent) 22%, transparent);
+    color: var(--eval-accent);
+}
+
+.criteria-eval-step:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.criteria-eval-step:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+}
+
+.criteria-eval-step:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.criteria-eval-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--eval-accent);
+    font-variant-numeric: tabular-nums;
+    padding: 2px 6px;
+    transition: color 0.25s ease;
+    user-select: none;
+}
+
+.criteria-score-input {
+    width: 3ch;
+    min-width: 30px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    font-variant-numeric: inherit;
+    line-height: 1;
+    text-align: center;
+    outline: none;
+}
+
+.criteria-score-input:focus-visible {
+    border-color: var(--eval-accent);
+    background: color-mix(in srgb, var(--eval-accent) 12%, transparent);
+}
+
+.criteria-score-input::-webkit-outer-spin-button,
+.criteria-score-input::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.criteria-score-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.criteria-score-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    min-width: 20px;
+    height: 22px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--eval-accent);
+}
+
+.criteria-score-dropdown::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    pointer-events: none;
+}
+
+.criteria-eval-score .criteria-score-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+    outline: none;
+}
+
+.criteria-eval-score .criteria-score-select option {
+    color: var(--text);
+    background: var(--bg-card);
+}
+
+.criteria-score-dropdown:focus-within {
+    border-color: var(--eval-accent);
+    background: color-mix(in srgb, var(--eval-accent) 12%, transparent);
+}
+
+.criteria-score-print {
+    display: none;
+}
+
+/* ── Contribution bar (фьюшн weight×score) ─────────────────────────────── */
+.criteria-eval-bar {
+    display: block;
+    height: 3px;
+    background: var(--eval-bar-bg);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.criteria-eval-bar-fill {
+    display: block;
+    height: 100%;
+    background: var(--eval-accent);
+    border-radius: 2px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Touch-устройства: увеличиваем step-кнопки до 44×44 (WCAG 2.5.5). */
+@media (hover: none), (pointer: coarse) {
+    .criteria-eval-step {
+        width: 32px;
+        height: 32px;
+        font-size: 1.05rem;
+    }
+
+    .criteria-score-input {
+        height: 32px;
+        min-width: 34px;
+    }
+
+    .criteria-score-dropdown {
+        height: 32px;
+        width: 24px;
+        min-width: 24px;
+    }
+}
+
+/* Reduced motion — убираем плавные ширины и цвета. */
+@media (prefers-reduced-motion: reduce) {
+    .criteria-eval-item,
+    .criteria-eval-bar-fill,
+    .criteria-eval-step,
+    .criteria-eval-score,
+    .criteria-eval-abbreviation,
+    .criteria-eval-contribution {
+        transition: none;
+    }
+}
+
+/* Бейдж Priority Score — главная метрика, теперь компактный inline-pill. */
+.priority-score-container {
+    border-radius: 8px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid var(--accent-border-faint);
+    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    min-height: 26px;
+}
+
+.priority-score-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--accent-bg-light);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.priority-score-icon .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.priority-score-meta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    line-height: 1;
+    min-width: 0;
+}
+
+.priority-score-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.priority-score-sublabel {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.priority-score-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    /* v8.27.2: pulse при изменении значения. Класс .priority-score-value--pulsed
+       навешивается JS-ом и снимается через 350ms. */
+    transition: transform 0.18s ease, text-shadow 0.18s ease;
+}
+
+.priority-score-value--pulsed {
+    transform: scale(1.12);
+    text-shadow: 0 0 6px var(--accent-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .priority-score-value,
+    .priority-score-value--pulsed {
+        transition: none;
+        transform: none;
+        text-shadow: none;
+    }
+}
+

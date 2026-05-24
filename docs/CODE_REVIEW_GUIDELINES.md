@@ -129,6 +129,8 @@ export function y() { ... }
 
 - **Custom properties в `:root`** для всех цветов, отступов, размеров шрифтов (`css/base.css`). Темизация через `[data-theme]` + `var(--token)`.
 - **`@layer`** для управления каскадом — не «cascade-через-порядок-импортов».
+  Пока полный перенос старых файлов в layers не выполнен, держать явный
+  stylesheet order и не оборачивать отдельный файл в `@layer` без visual pass.
 - **`clamp()`** для fluid typography, `min()` / `max()` для адаптивных размеров.
 - **`@container`** queries для компонентной адаптивности (task-card, criteria-list), не только `@media`.
 - **`:focus-visible`** отдельно от `:focus` — keyboard-фокус с ring, mouse — без.
@@ -171,6 +173,10 @@ export function y() { ... }
 - **Inline `style="..."` в HTML/JS** для не-вычисляемых значений (вычисляемая ширина прогресс-бара — OK; цвет — в CSS).
 - **Vendor-префиксы** (`-webkit-`, `-moz-`) — autoprefixer не используется, modern browsers не нужны.
 - **`!important`** — допустим **только** в `print.css` и в утилитах с осознанной перебивкой (`error`, `dragging`).
+- **Task card CSS** — новые стили карточки класть в соответствующий subfile:
+  shell/header в `task-card.css`, effort в `task-card-effort.css`, actions в
+  `task-card-actions.css`, criteria controls в `task-card-criteria.css`, states
+  в `task-card-states.css`, quadrants/view-toggle в `task-card-quadrants.css`.
 - **Tailwind / Sass / CSS-in-JS / UI-библиотеки** — vanilla CSS3, точка.
 
 ### 4.3 Селекторы
@@ -216,6 +222,9 @@ export function y() { ... }
 - Каждый тест изолирован: `localStorage.clear()` в `beforeEach`.
 - Проверки `:hover`-классов: после `createTask()` / клика на save сделать `await page.mouse.move(0, 0)` + `body.click({position:{x:1,y:1}})` (см. `CLAUDE.md`).
 - A11y-тесты через axe-core — в `tests/e2e/accessibility.spec.js`.
+- Для видимых команд UI проверять actionability: реальный `page.click()`
+  должен приводить к download, modal, snackbar/message или изменению состояния.
+  Быстрый bucket: `npm run test:e2e:actionability`.
 - Ассерты против DOM-структуры, не визуального снимка.
 - При удалении/переименовании DOM-элемента — синхронно ревизуй `tests/e2e/**/*.spec.js`.
 

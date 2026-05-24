@@ -2,6 +2,14 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.61 (Actionability, task-card CSS split, Node 24 rehearsal)
+
+- **Критичные видимые команды должны иметь отдельный actionability gate.** Полный e2e может проходить, но не покрывать конкретный “кликнул и получил ответ” путь. Добавлен `test:e2e:actionability`: save/download, theme, help, create modal, auto-select feedback, diagnostics и recovery no-backup snackbar. Codified by: `tests/e2e/actionability.spec.js`, `scripts/e2eTaxonomy.js`.
+
+- **Большой CSS-файл лучше сначала разделить без изменения cascade, а не сразу мигрировать в `@layer`.** `task-card.css` был механически разделён на subfiles с тем же порядком подключения: shell, effort, actions, criteria, states, quadrants. Codified by: `css-cascade-contract.test.js`, `precache-coverage.test.js`, visual/full e2e gates.
+
+- **Node 24 GitHub Actions runtime надо репетировать до принудительного переключения.** CI получил лёгкий `Node 24 rehearsal` с `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`, чтобы будущий platform shift не пришёл как внезапный красный CI. Codified by: `ci-workflow-gates.test.js`.
+
 ## Ловушки v8.30.60 (Recovery copy click feedback)
 
 - **Видимая `disabled`-кнопка без пояснения выглядит как сломанный клик.** В Recovery Center кнопка «Скачать копию до миграции» была disabled при отсутствии recoverable backup, поэтому браузер не отправлял click и пользователь не получал причину. Теперь кнопка остаётся кликабельной, помечается `data-recovery-available="false"` и показывает snackbar. Codified by: `recoveryController.test.js`, e2e `Recovery Center`.

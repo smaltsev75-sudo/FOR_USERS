@@ -523,7 +523,12 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14) |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
 | `selection-report.css` | Отчёт автоотбора: featured-баннер рекомендации, 3 алгоритм-карточки, метрик-бары, легаси `.comparison-table` (v8.28) |
-| `task-card.css` | Карточка задачи: `.task-type-badge` (иконка + полное название типа), `.task-type-indicator` (скрытый, backward-compat e2e), hover-only actions, sticky-headers для quadrants (v8.14) |
+| `task-card.css` | Базовая оболочка карточки задачи: `.task-item`, header, `.task-type-badge`, `.task-type-indicator` (скрытый, backward-compat e2e), title/comment/links |
+| `task-card-effort.css` | Блок трудозатрат карточки: роли, inline effort inputs, overload placeholder, total effort pill |
+| `task-card-actions.css` | Hover/focus/touch actions карточки: edit/delete/exclude/reorder buttons |
+| `task-card-criteria.css` | Блок критериев карточки: criteria chips, score stepper/input/select, contribution bar, priority score pill |
+| `task-card-states.css` | Responsive, animation and drag states for task rows |
+| `task-card-quadrants.css` | View toggle and Quadrants grouping styles, включая sticky group headers |
 | `density.css` | Единая точка density-delta для `#taskList[data-density]`: `--task-row-*`, compact visibility и compact criteria stepper |
 | `team-capacity.css` | Team Capacity Dashboard (v8.21): header с gauge, сетка карточек ролей с inputs FTE%/Отпуск внутри, levels success/warning/danger, preview overlay при drag, single-iteration overload pulse |
 | `capacity-strip.css` | Legacy 5-сегментная Capacity Strip (v8.14): сохранён как dual-class hooks `cap-segment*` для backward-compat e2e/unit тестов; live UI рендерит `js/ui/teamCapacity.js` |
@@ -547,14 +552,17 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 - [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js)
   закрепляет безопасный первый шаг CSS migration: только `base.css` объявляет
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
-  явным, `print.css` грузится последним с `media="print"`, а текущий бюджет
-  `!important` не может расти без осознанного review (`93` всего, `61` в
+  явным, `print.css` грузится последним с `media="print"`, task-card subfiles
+  грузятся в исходном порядке до `density.css`, а текущий бюджет
+  `!important` не может расти без осознанного review (`90` всего, `61` в
   `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
   после `print-verify.spec.js` и visual baseline `print A4 task card`; v8.30.55
   убрал дублированный overload-блок из `task-card.css` и заменил modal-form
   overrides в `create-task-modal.css` на нормальную специфичность; v8.30.57
   убрал дублирующие print `black/white !important`, которые уже покрывает
-  глобальное print-правило.
+  глобальное print-правило. v8.30.61 механически разделил `task-card.css` на
+  concern-файлы без смены cascade-порядка и снял три безопасных non-print
+  `!important`.
 - `npm run css:important-report` генерирует
   [docs/css-important-report.md](css-important-report.md) из реального CSS и
   [docs/css-important-budgets.json](css-important-budgets.json). В release
@@ -562,7 +570,7 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   документация по CSS debt не отставала от budget guard'а.
 - [density-css-boundary.test.js](../tests/unit/architecture/density-css-boundary.test.js)
   фиксирует, что task density deltas живут в `density.css`, грузятся после
-  `task-card.css` и попадают в PWA precache.
+  task-card subfiles и попадают в PWA precache.
 
 ## 6. Безопасность
 
@@ -725,6 +733,7 @@ release metrics: guard запрещает рост budget, а report показ�
 | `npm run test:e2e:a11y` | axe-core/focus accessibility specs |
 | `npm run test:e2e:mobile` | mobile-webkit smoke через parallel runner |
 | `npm run test:e2e:perf` | Chromium large-backlog gate: 300 задач, render + search filter |
+| `npm run test:e2e:actionability` | Chromium click path: видимые команды должны выполнить действие или показать feedback |
 
 Source of truth — [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), runner —
 [e2e-taxonomy.mjs](../scripts/e2e-taxonomy.mjs). Guard:
@@ -735,6 +744,10 @@ Source of truth — [e2eTaxonomy.js](../scripts/e2eTaxonomy.js), runner —
 Perf taxonomy не заменяет профилирование. Это regression gate на уже найденный
 класс деградации: overload-индикаторы не должны пересчитывать весь список после
 каждого progressive-render batch.
+
+Actionability taxonomy не заменяет full e2e. Это быстрый guard на класс ошибок
+«кнопка видна, но клик не даёт наблюдаемого результата»: download, modal,
+snackbar или сообщение.
 
 ### Diagnostics issue template (v8.30.56)
 

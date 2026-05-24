@@ -1,0 +1,186 @@
+/* ---------- task-card-quadrants.css ---------- */
+/* Task list view toggle and quadrant grouping. Split from task-card.css; keep stylesheet order in index.html. */
+
+/* ========================================================================== */
+/* view-toggle (stream C) — переключатель режима списка задач                 */
+/* ========================================================================== */
+
+.view-toggle {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.view-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1;
+    /* Touch-target ≥44px на coarse-указателях обеспечивается :where ниже. */
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+    border-left: 1px solid var(--border);
+}
+
+.view-toggle-btn:hover {
+    background: var(--bg-card-hover, rgba(127, 127, 127, 0.08));
+    color: var(--text-primary, var(--text));
+}
+
+.view-toggle-btn.active {
+    background: var(--accent, #00d9ff);
+    color: var(--accent-text, #0f172a);
+    font-weight: 600;
+}
+
+.view-toggle-btn:focus-visible {
+    outline: 2px solid var(--accent, #00d9ff);
+    outline-offset: 2px;
+}
+
+.view-toggle-label {
+    /* На узких экранах прячется — остаётся только иконка. */
+}
+
+@media (max-width: 720px) {
+    .view-toggle-label {
+        display: none;
+    }
+    .view-toggle-btn {
+        padding: 8px 10px;
+    }
+}
+
+@media (pointer: coarse) {
+    .view-toggle-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ========================================================================== */
+/* Quadrant grouping (stream C) — группы задач по квадрантам приоритета       */
+/* ========================================================================== */
+
+.quadrant-group {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    /* ВАЖНО: НИКАКОГО overflow ≠ visible на ancestor sticky-summary,
+       иначе sticky привязывается к этому контейнеру, а не к viewport
+       (#taskList тоже НЕ имеет overflow). См. CLAUDE.md «CSS-ловушки». */
+}
+
+.quadrant-group[open] {
+    /* Отображение «open» — работает через нативный <details>. */
+}
+
+/* Sticky-заголовок: позиционируется относительно прокрутки страницы. */
+.quadrant-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    list-style: none;
+    /* убираем стандартный disclosure-маркер браузера */
+}
+
+.quadrant-group-header::-webkit-details-marker {
+    display: none;
+}
+.quadrant-group-header::marker {
+    display: none;
+}
+
+.quadrant-group-header:hover {
+    background: var(--bg-card-hover, rgba(127, 127, 127, 0.05));
+}
+
+.quadrant-group-header:focus-visible {
+    outline: 2px solid var(--accent, #00d9ff);
+    outline-offset: -2px;
+}
+
+.quadrant-group-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--accent, #00d9ff);
+}
+
+.quadrant-group-title {
+    font-weight: 600;
+    color: var(--text, currentColor);
+}
+
+.quadrant-group-summary {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.quadrant-summary-sep {
+    color: var(--border);
+}
+
+.quadrant-group-body {
+    padding: 8px 12px 12px;
+}
+
+/* Скрытый indicator для свёрнутого состояния (через [open] селектор). */
+.quadrant-group:not([open]) .quadrant-group-header {
+    border-bottom: 0;
+}
+
+/* v8.29.1: 5-я группа «Исключённые из спринта» — визуально приглушена,
+   чтобы пользователь сразу понимал, что это «архив», а не активные задачи.
+   Иконка eyeOff унаследует цвет --text-muted (не --accent, как у Q1..Q4).
+   Карточки задач сами по себе уже выглядят приглушёнными благодаря классу
+   `.task-item.excluded` (opacity ниже), здесь снижаем визуальный вес заголовка. */
+.quadrant-group--excluded .quadrant-group-icon {
+    color: var(--text-muted);
+}
+
+.quadrant-group--excluded .quadrant-group-title {
+    color: var(--text-muted);
+}
+
+.quadrant-group--excluded {
+    /* лёгкий отступ от Q4, чтобы визуально оторвать от приоритетного контента */
+    margin-top: 16px;
+}
+
+@media (pointer: coarse) {
+    .quadrant-group-header {
+        min-height: 44px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quadrant-group-header,
+    .view-toggle-btn {
+        transition: none;
+    }
+}

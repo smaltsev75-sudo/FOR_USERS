@@ -181,7 +181,8 @@ Ubuntu не должен падать из-за честно задокумен�
 `npm run test:e2e:critical` (startup/diagnostics/Recovery/create/persistence),
 `npm run test:e2e:visual`, `npm run test:e2e:a11y`,
 `npm run test:e2e:mobile`, `npm run test:e2e:perf` (300-task backlog render +
-filter). Source of truth — `scripts/e2eTaxonomy.js`, guard —
+filter), `npm run test:e2e:actionability` (видимые команды должны выполнить
+действие или показать feedback). Source of truth — `scripts/e2eTaxonomy.js`, guard —
 `tests/unit/architecture/e2e-taxonomy-contract.test.js`.
 
 | project | viewport / engine | testMatch | testIgnore |

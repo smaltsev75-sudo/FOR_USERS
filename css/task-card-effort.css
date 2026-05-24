@@ -1,0 +1,213 @@
+/* ---------- task-card-effort.css ---------- */
+/* Task card estimates and effort summary. Split from task-card.css; keep stylesheet order in index.html. */
+
+/* ─── Блок оценок трудозатрат ────────────────────────────────────────
+   Компактный 1-row layout: label inline → chips → Σ total.
+   Каждый chip = иконка роли + label + input. */
+.task-estimates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0 0;
+    border-top: 1px dashed var(--border);
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.task-estimates-label,
+.criteria-section-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+
+.task-estimates-grid {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.task-estimates-roles {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    min-width: 0;
+}
+
+.task-estimates-roles .est-box {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Compact chip: иконка + label + input в ОДНОЙ строке.
+   Bar и многострочный header удалены — экономим вертикаль. */
+.est-box {
+    background: var(--overlay-faint);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 26px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.est-box--filled {
+    background: var(--accent-bg-faint);
+}
+
+/* v8.30.26: spacer для пустых overload-placeholder cells.
+   Раньше рендерился как inline `<div style="height:12px"></div>` (P3 нарушение
+   CODE_REVIEW_GUIDELINES.md §4.2 — static inline styles запрещены).
+   Назначение: зарезервировать вертикальное место под overload-tag, чтобы
+   соседние строки не «прыгали» по высоте при появлении/исчезновении overload. */
+.overload-placeholder-spacer {
+    height: 12px;
+}
+
+.est-box--empty .est-input-container input {
+    color: var(--text-muted);
+}
+
+/* Скрытая, но в DOM остаётся — нужна для backward-compat тестов */
+.est-box-header {
+    display: contents;
+}
+
+.est-role-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.est-role-icon .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.est-role-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    max-width: 50px;
+}
+
+/* Bar скрыт во всех плотностях — оставлен в DOM для backward-compat тестов */
+.est-box-bar,
+.est-box-bar-fill {
+    display: none;
+}
+
+.est-input-container {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0 4px;
+    flex: 1 1 auto;
+    min-width: 36px;
+    min-height: 22px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* v8.30.0: empty-state списка задач — раньше inline `style.cssText` в taskList.js */
+.task-list-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.est-input-container:hover {
+    border-color: var(--border-light);
+}
+
+.est-input-container:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg-strong);
+}
+
+.est-input-container input {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: 100%;
+    min-width: 0;
+    text-align: right;
+    box-sizing: border-box;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+}
+
+.est-input-container input:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.est-box-suffix {
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+}
+
+/* Итоговый бейдж Effort = sum(est). Компактный inline-pill. */
+.est-box-total {
+    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    border: 1px solid var(--accent-border-faint);
+    border-radius: 7px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-shrink: 0;
+    min-height: 26px;
+}
+
+.est-box-total-icon {
+    display: inline-flex;
+    color: var(--accent);
+}
+
+.est-box-total-icon .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.est-box-total-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.task-effort-value {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--accent);
+    white-space: nowrap;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+

@@ -33,7 +33,7 @@
 }
 
 #taskList[data-density="compact"] .task-comment {
-    display: none !important;
+    display: none;
 }
 
 #taskList[data-density="compact"] .est-role-label,

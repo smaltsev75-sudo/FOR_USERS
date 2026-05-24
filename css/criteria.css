@@ -430,8 +430,10 @@
    opacity: 0.7;
 }
 
+.criteria-item-header:hover .criteria-item-grip:hover,
+.criteria-item-header:focus-within .criteria-item-grip:hover,
 .criteria-item-grip:hover {
-   opacity: 1 !important;
+   opacity: 1;
    color: var(--accent);
 }
 
