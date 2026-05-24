@@ -1,5 +1,64 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.53) — release metrics, state guard and seeded e2e
+
+> Релизная дисциплина переведена ближе к артефактам: coverage/e2e/CSS метрики
+> собираются скриптом, CSS debt получил per-file budget, Store snapshot
+> mutation закрыт architecture guard, а e2e/visual тесты получили общий
+> прикладной seed DSL.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (release metrics drift)** | Coverage/e2e/CSS цифры в release notes переносились руками из разных stdout/JSON и легко расходились с последним запуском. | Добавлен `release:metrics`: читает `coverage-summary.json`, smoke/full e2e summary и CSS budget, пишет `test-results/release-metrics-vX.Y.Z.json` и падает при CSS budget violation. | [releaseMetricsCollector.js](../scripts/releaseMetricsCollector.js), [collect-release-metrics.mjs](../scripts/collect-release-metrics.mjs), [package.json](../package.json) |
+| 2 | **P3 (release notes boilerplate)** | Релизная таблица метрик каждый раз собиралась вручную, что плодило одинаковые ошибки и placeholder risk. | Добавлен `release:notes-draft`: строит Markdown-заготовку секции из metrics JSON; закрытые поверхности всё равно пишутся вручную. | [releaseNotesSectionGenerator.js](../scripts/releaseNotesSectionGenerator.js), [generate-release-notes-section.mjs](../scripts/generate-release-notes-section.mjs) |
+| 3 | **P2 (CSS debt can move sideways)** | Общий `!important` budget не запрещал новый файл с `!important` или рост отдельного компонента. | Бюджет вынесен в JSON и проверяется по total/per-file/unbudgeted files; текущий лимит tightened до `167/167`, print `96`. | [css-important-budgets.json](css-important-budgets.json), [css-cascade-contract.test.js](../tests/unit/architecture/css-cascade-contract.test.js) |
+| 4 | **P2 (shallow freeze mutation gap)** | `Store.getState()` freeze'ит только верхний уровень; вложенные `state.tasks.push(...)`/`state.config.x = ...` могли пройти тихо. | Добавлен architecture guard на прямые snapshot/root-slice mutations вне `Store`; состояние меняется через setters/update или pure helpers. | [state-mutation-boundary.test.js](../tests/unit/architecture/state-mutation-boundary.test.js), [store.js](../js/state/store.js) |
+| 5 | **P2 (e2e seed drift)** | Spec'и могли собирать локальный `localStorage` JSON и случайно получить зелёный, но нерепрезентативный baseline. | Добавлен общий `plannerStates.js` с basic/overload/quadrants/print/sticky scenarios и `PlannerApp.seedState()`. | [plannerStates.js](../tests/e2e/support/plannerStates.js), [plannerApp.js](../tests/e2e/support/plannerApp.js), [stateHelpers.js](../tests/e2e/stateHelpers.js) |
+
+### Новые тесты / guard
+
+- `releaseMetricsCollector.test.js` — 5 проверок coverage/e2e/CSS metrics envelope.
+- `releaseNotesSectionGenerator.test.js` — 1 проверка Markdown-заготовки из metrics JSON.
+- `state-mutation-boundary.test.js` — architecture guard против прямых Store snapshot/root-slice mutations.
+- `e2e-support-dsl.test.js` расширен seed-builder contract'ом.
+- `css-cascade-contract.test.js` теперь читает `docs/css-important-budgets.json` и проверяет unbudgeted `!important` files.
+
+Всего unit-тесты: `1823 → 1831` (+8), suites `135 → 138` (+3).
+Full e2e: без изменения количества, `247/247`.
+
+### Уроки и классы ошибок
+
+1. **Release metrics должны жить в артефактах.** Ручной перенос PASS-цифр остаётся слишком хрупким даже при дисциплине.
+2. **Budget должен равняться факту, а не оставлять запас.** `167/167` лучше, чем `167/169`, потому что не разрешает тихий рост.
+3. **Shallow freeze — не immutability boundary.** Нужен статический guard на nested mutations, иначе проблема проявится только как странный state drift.
+4. **Seed DSL — часть качества visual/e2e.** Общий builder делает тестовые состояния намеренными и переиспользуемыми.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---|---|---|
+| `npm run lint` | clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1831/1831 PASS, 138 suites, lines 96.69%, branches 87.92%, 18.1s | **0** | n/a | — |
+| `npm run docs:manual-check` | 24/24 PASS, 2 suites + generator check | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 247/247 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `167/167` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | clean (no output) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no,
+  25.9s.
+- Full e2e: wrapper exit 0, child exits clean; chromium 207/207 (107.9s),
+  mobile-chromium 18/18 (27.0s), webkit 4/4 (22.4s), mobile-webkit 18/18
+  (35.3s).
+- Release metrics artifact: `test-results/release-metrics-v8.30.53.json`;
+  `release:notes-draft` smoke-tested with `test-results/release-notes-v8.30.53.md`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.52) — controller splits + manual generator + print debt cut
 
 > Один связный рефакторинг без смены runtime-функций: вынесены реальные

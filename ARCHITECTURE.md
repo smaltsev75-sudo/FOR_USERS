@@ -57,6 +57,11 @@ Guard: [layer-boundaries.test.js](../tests/unit/architecture/layer-boundaries.te
 `ui/` не импортирует `controllers/state/app`, а `utils/` не импортирует
 продуктовые слои. Это превращает таблицу выше из договорённости в release gate.
 
+Guard: [state-mutation-boundary.test.js](../tests/unit/architecture/state-mutation-boundary.test.js)
+запрещает прямую мутацию snapshot'ов из `Store.getState()` и корневых полей
+`state.*` вне `Store`. Новое изменение состояния должно идти через setter/update
+метод Store или через чистый helper, который возвращает новый массив/patch.
+
 ### App coordinators (v8.30.49)
 
 `App` остаётся bootstrap/orchestrator'ом: создание Store, контроллеров и wiring.
@@ -575,6 +580,11 @@ E2E user workflow helpers живут в [tests/e2e/support/plannerApp.js](../tes
 `planner.spec.js` не должен заново объявлять локальные workflow helpers для
 создания задач, сброса состояния, переключения вкладок или изменения sprint
 config. Guard: [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-dsl.test.js).
+С v8.30.53 там же есть `seedState()`, а прикладные seed-сценарии вынесены в
+[plannerStates.js](../tests/e2e/support/plannerStates.js): basic tasks,
+overload, quadrants, print A4 и sticky. Visual/e2e tests должны переиспользовать
+эти builders вместо локального `localStorage` JSON, чтобы baseline не стал
+зелёным снимком пустого состояния.
 
 ### Coverage thresholds (v8.30.49)
 
@@ -582,11 +592,26 @@ config. Guard: [e2e-support-dsl.test.js](../tests/unit/architecture/e2e-support-
 `domain/` 95% statements/functions/lines, `state/` 95% statements/lines,
 `controllers/` 85%, `ui/` 85% statements/lines и 70% branches. Цель — не дать
 новым доменным/миграционным модулям провалить покрытие за счёт UI-среднего.
+Coverage reporters включают `json-summary`, потому что release metrics collector
+читает `coverage/coverage-summary.json`, а не парсит текстовый stdout.
 
 Property-based persistence checks через `fast-check` живут в
 [persistence.properties.test.js](../tests/unit/state/persistence.properties.test.js):
 `migratePersistedState` должен быть total function для arbitrary JSON-ish input,
 а цикл `migrate → serialize → migrate` стабилен для нормализованных state slices.
+
+### Release metrics collector (v8.30.53)
+
+`npm run release:metrics` собирает машинно-читаемый snapshot релиза из уже
+полученных артефактов: `coverage/coverage-summary.json`, smoke/full
+`test-results/e2e-parallel-summary.json` и CSS budget
+[docs/css-important-budgets.json](css-important-budgets.json). Скрипт пишет
+`test-results/release-metrics-v<version>.json`, печатает короткую сводку и
+падает, если текущий `!important` count превысил общий или per-file budget.
+
+`npm run release:notes-draft` строит Markdown-заготовку release section из того
+же metrics JSON. Это не заменяет ручной changelog, но убирает повторяющийся
+ручной перенос coverage/e2e/CSS цифр.
 
 **Webserver** (`webServer` в playwright.config.js): `npx http-server . -p 8123 --silent --no-cache` на порту **8123**. Порт зафиксирован — `start-server.bat`, `start-server.sh`, README, UserManual, e2e-runner используют один и тот же 8123. Legacy-упоминания 8000/8080 в старых docs больше не отражают реальное поведение проекта.
 

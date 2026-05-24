@@ -2,6 +2,18 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.53 (release metrics + state guards + seeded e2e)
+
+- **Release metrics должны собираться из артефактов, а не из памяти исполнителя.** Coverage/e2e/CSS цифры теперь читаются из `coverage/coverage-summary.json`, `test-results/e2e-parallel-summary.json` и `docs/css-important-budgets.json`. Это снижает риск очередного «PASS по рассказу, не по последнему запуску». Codified by: `scripts/releaseMetricsCollector.js`, `npm run release:metrics`.
+
+- **CSS debt budget должен быть per-file, иначе общий лимит маскирует перенос долга.** После снижения `!important` важно запрещать не только рост total, но и новый unbudgeted файл с `!important`. Codified by: `docs/css-important-budgets.json`, `tests/unit/architecture/css-cascade-contract.test.js`.
+
+- **Store snapshot shallow-freeze не защищает вложенные мутации.** Прямой `state.tasks.push(...)` или `store.getState().config.x = ...` может обойти верхнеуровневый freeze и дать тихий drift. Codified by: `tests/unit/architecture/state-mutation-boundary.test.js`.
+
+- **E2E seed — часть тестового контракта, а не служебная копипаста.** Общие сценарии basic/overload/quadrants/print/sticky должны жить в `plannerStates.js`; spec выбирает сценарий, а не собирает случайный localStorage JSON. Codified by: `tests/e2e/support/plannerStates.js`, `tests/unit/architecture/e2e-support-dsl.test.js`.
+
+- **Release notes draft полезен только как черновик метрик.** Скрипт может подставить coverage/e2e/CSS строки, но не должен превращать changelog в автогенерированный TODO-текст без инженерного описания закрытых поверхностей. Codified by: `scripts/releaseNotesSectionGenerator.js`.
+
 ## Ловушки v8.30.52 (controller splits + manual generator + print debt)
 
 - **Большой controller-split должен выносить бизнесовый mapping, а не просто строки.** `TaskFormController` был рискован не размером, а смешением DOM, `task.est`/form estimates и create/edit patch. Чистый `taskFormDraft.js` теперь доказывает create→`estimates`, edit→`est` и weighted score без jsdom. Codified by: `tests/unit/controllers/task/taskFormDraft.test.js`.

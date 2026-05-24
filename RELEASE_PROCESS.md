@@ -66,7 +66,26 @@ npm run bump -- 9.0.0
    | f | `npm audit --audit-level=moderate` | 0 | 0 moderate+ vulnerabilities |
    | g | `npm outdated --long` | 0 | clean (или явно задокументированный outdated) |
 
-5. **После e2e запуска сверить RELEASE_NOTES с summary artifact:**
+5. **После coverage + e2e собрать release metrics snapshot:**
+
+   ```bash
+   npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json
+   ```
+
+   Команда читает `coverage/coverage-summary.json`,
+   `test-results/e2e-parallel-summary.json`, smoke summary (если сохранён) и
+   `docs/css-important-budgets.json`. Если CSS `!important` превысил общий или
+   per-file budget, command exit должен быть non-zero и релиз останавливается.
+   Для черновика секции можно затем выполнить:
+
+   ```bash
+   npm run release:notes-draft -- --metrics test-results/release-metrics-v<X.Y.Z>.json
+   ```
+
+   Заготовка не заменяет ручной список закрытых поверхностей, но помогает не
+   переносить coverage/e2e/CSS цифры руками.
+
+6. **После e2e запуска сверить RELEASE_NOTES с summary artifact:**
 
    ```bash
    npm run verify:release-metrics -- --command="npm run test:e2e"
@@ -83,7 +102,7 @@ npm run bump -- 9.0.0
    `Wrapper exit`, `Playwright child exit`, `Override` и PASS-count совпадают
    с реальным e2e summary artifact.
 
-6. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
+7. **Коммит** с сообщением `vX.Y.Z: <короткое описание>`.
 
 ## Public release automation (v8.30.47 → v8.30.48)
 
@@ -107,8 +126,8 @@ npm run release:public -- --version 8.30.47 \
 console/page errors и 4xx/5xx ответов.
 
 Перед execute всё равно обязательны gates выше: script не заменяет
-lint/coverage/e2e/audit, он автоматизирует только механическую доставку и
-GitHub-публикацию. Execute-chain дополнительно:
+lint/coverage/e2e/audit/release metrics, он автоматизирует только механическую
+доставку и GitHub-публикацию. Execute-chain дополнительно:
 
 - требует clean worktree в `sprint-planner` до sync, чтобы не затереть чужие
   локальные изменения;
