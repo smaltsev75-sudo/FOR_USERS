@@ -534,7 +534,7 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `modals.css` | Стили модальных окон |
 | `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14); task-card selectors запрещены с v8.30.62 |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
-| `selection-report.css` | Отчёт автоотбора: 3 алгоритм-карточки с кнопками применения, метрик-бары, блок «Рекомендации», аккордеоны описаний/детализации |
+| `selection-report.css` | Отчёт автоотбора: 3 алгоритм-карточки с кнопками применения, выровненные ряды метрик и metric bars, блок «Рекомендации», аккордеоны описаний/детализации |
 | `task-card.css` | Базовая оболочка карточки задачи: `.task-item`, header, `.task-type-badge`, `.task-type-indicator` (скрытый, backward-compat e2e), title/comment/links; единственный owner task-card base styles |
 | `task-card-effort.css` | Блок трудозатрат карточки: роли, inline effort inputs, overload placeholder, total effort pill |
 | `task-card-actions.css` | Hover/focus/touch actions карточки: edit/delete/exclude/reorder buttons |

@@ -263,6 +263,11 @@
    gap: 10px;
 }
 
+.rec-card--algo .rec-card-header {
+   align-items: flex-start;
+   min-height: 34px;
+}
+
 /* v8.28.1: убрана внутренняя обводка `0 0 0 1px var(--accent)` —
    достаточно `border-color: var(--accent)` + soft glow.
    Двойная обводка давала «двойную линию» эффект на тёмной теме. */
@@ -274,8 +279,10 @@
 .rec-card--algo .rec-card-title {
    font-size: 0.85rem;
    display: flex;
-   align-items: center;
+   align-items: flex-start;
    gap: 6px;
+   line-height: 1.25;
+   min-width: 0;
 }
 
 .rec-card--algo .rec-card-title .icon {
@@ -475,6 +482,10 @@
    .algo-cards-grid,
    .algo-info-grid {
       grid-template-columns: 1fr;
+   }
+
+   .rec-card--algo .rec-card-header {
+      min-height: 0;
    }
 
    .rec-card-metrics {

@@ -1,5 +1,54 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.66) — Selection report metric alignment
+
+> В карточках сравнения алгоритмов выровнены одноимённые параметры
+> (`Выбрано задач`, `Загрузка`, `Сумм. Effort`, `Priority Score`, `Плотность`)
+> между карточками. Длинный заголовок рекомендованного алгоритма больше не
+> сдвигает метрики вниз относительно соседних карточек.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (comparison readability regression)** | При переносе длинного заголовка одной карточки строки метрик начинались ниже, чем в соседних карточках. Пользователь сравнивал разные параметры с вертикальным смещением. | У карточек алгоритмов появилась одинаковая header-зона в горизонтальной сетке; на мобильной одной колонке высота остаётся естественной. | [selection-report.css](../css/selection-report.css) |
+| 2 | **P3 (visual-only layout bug without guard)** | Дефект был заметен только в реальном modal layout и мог не ловиться unit-тестами. | E2E проверяет `getBoundingClientRect().top` для одноимённых строк метрик во всех трёх карточках; обновлён visual baseline. | [planner.spec.js](../tests/e2e/planner.spec.js), [visual.spec.js-snapshots](../tests/e2e/visual.spec.js-snapshots/selection-report-overload-chromium-win32.png) |
+
+### Новые тесты / guard
+
+- `planner.spec.js` — в реальном модальном окне проверяет, что все одноимённые строки метрик в карточках имеют одинаковую вертикальную позицию.
+- `visual.spec.js` — обновлён baseline `selection-report-overload` после выравнивания.
+
+Всего unit-тесты: `1918 → 1918`, suites `156 → 156`.
+Full e2e: `259 → 259`, включая selection report metric alignment contract и 10 visual baselines.
+
+### Уроки и классы ошибок
+
+1. **Сравнительные карточки должны иметь общую вертикальную сетку.** Если заголовок одной карточки переносится на две строки, метрики соседних карточек не должны уходить на разные уровни.
+2. **Layout-дефекты в модалке надо защищать e2e-координатами и baseline.** Для такого класса ошибок unit-test разметки недостаточен.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---:|---:|---|
+| `npm run lint` | ESLint clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1918/1918 PASS; coverage lines 96.27%, branches 86.87% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS; UserManual drift guards green | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **1** | yes |
+| `npm run test:e2e` | 259/259 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.66.json` | `docs/release-metrics-history.json` updated for 8.30.66 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.66 | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | CSS important report up to date, budget `90/90` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | no outdated packages reported | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 1, override yes — известная Playwright/WebKit worker-shutdown race после всех `ok`.
+- Full e2e: wrapper exit 0, all child exits clean; Chromium `219/219`, mobile Chromium `18/18`, WebKit `4/4`, mobile WebKit `18/18`, total `259/259 PASS`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.65) — Selection report UI cleanup
 
 > Убрано дублирование в модальном окне сравнения алгоритмов: отдельный блок
