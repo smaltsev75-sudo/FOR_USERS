@@ -139,7 +139,7 @@ Guard: [task-list-facade-contract.test.js](../tests/unit/architecture/task-list-
 |---|---|
 | [constants.js](../js/ui/selectionReport/constants.js) | имена алгоритмов, иконки, hints, apply-button ids |
 | [format.js](../js/ui/selectionReport/format.js) | severity classes/hints, numeric formatting, metric bar ratios |
-| [sections.js](../js/ui/selectionReport/sections.js) | recommendation banner, algorithm cards, details accordions |
+| [sections.js](../js/ui/selectionReport/sections.js) | algorithm cards with embedded apply actions, recommendations entry point, descriptions/details accordions |
 | [interactions.js](../js/ui/selectionReport/interactions.js) | recommended apply-button state + accordion toggle wiring |
 
 Guard: [selection-report-facade-contract.test.js](../tests/unit/architecture/selection-report-facade-contract.test.js)
@@ -534,7 +534,7 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `modals.css` | Стили модальных окон |
 | `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14); task-card selectors запрещены с v8.30.62 |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
-| `selection-report.css` | Отчёт автоотбора: featured-баннер рекомендации, 3 алгоритм-карточки, метрик-бары, легаси `.comparison-table` (v8.28) |
+| `selection-report.css` | Отчёт автоотбора: 3 алгоритм-карточки с кнопками применения, метрик-бары, блок «Рекомендации», аккордеоны описаний/детализации |
 | `task-card.css` | Базовая оболочка карточки задачи: `.task-item`, header, `.task-type-badge`, `.task-type-indicator` (скрытый, backward-compat e2e), title/comment/links; единственный owner task-card base styles |
 | `task-card-effort.css` | Блок трудозатрат карточки: роли, inline effort inputs, overload placeholder, total effort pill |
 | `task-card-actions.css` | Hover/focus/touch actions карточки: edit/delete/exclude/reorder buttons |

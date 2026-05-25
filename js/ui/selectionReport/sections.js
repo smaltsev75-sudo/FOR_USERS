@@ -5,43 +5,13 @@ import { icon } from '../../utils/icons.js';
 import {
     ALGORITHM_ICON,
     ALGORITHM_NAMES,
+    APPLY_BUTTON_IDS,
     METRIC_HINTS,
     QUADRANT_DISPLAY,
     SECTION_HINTS,
     algoDetailHint
 } from './constants.js';
 import { fmt1, fmt2, loadBarFillClass, ratioPct } from './format.js';
-
-/**
- * Featured-баннер с рекомендованным алгоритмом.
- * @param {Object} recommended - элемент comparableData
- * @returns {string}
- */
-export function buildRecommendationBannerHtml(recommended) {
-    if (!recommended) return '';
-    const name = escapeHtml(recommended.name);
-    const tasksLabel = `${recommended.tasksCount} задач`;
-    const loadLabel = `${formatUiPercent(recommended.displayLoad)}% загрузка`;
-    const priorityLabel = `Priority Score: ${fmt1(recommended.displayPriority)}`;
-    const densityLabel = `Плотность: ${fmt2(recommended.displayDensity)}`;
-
-    return `
-<div class="rec-card rec-card--featured" data-recommended="${escapeHtml(recommended.algo)}">
-    <div class="rec-card-header">
-        <span class="rec-card-title">${icon('check')} Рекомендация: ${name}</span>
-        <span class="algo-card-marker">Лучший выбор</span>
-    </div>
-    <div class="rec-card-body">
-        Оптимальный баланс между объёмом отбора и суммарной ценностью при текущих ёмкостях команды.
-    </div>
-    <div class="rec-card-metrics">
-        <span class="best-value" title="${escapeHtml(METRIC_HINTS.tasks)}">${escapeHtml(tasksLabel)}</span>
-        <span class="best-value" title="${escapeHtml(METRIC_HINTS.load)}">${escapeHtml(loadLabel)}</span>
-        <span class="best-value" title="${escapeHtml(METRIC_HINTS.priority)}">${escapeHtml(priorityLabel)}</span>
-        <span class="best-value" title="${escapeHtml(METRIC_HINTS.density)}">${escapeHtml(densityLabel)}</span>
-    </div>
-</div>`;
-}
 
 /**
  * Аккордеон с описанием алгоритмов.
@@ -95,6 +65,21 @@ export function buildAlgorithmDescriptionsHtml() {
         </p>
     </div>
 </div>`;
+}
+
+function buildApplyButtonHtml(item) {
+    const id = APPLY_BUTTON_IDS[item.algo];
+    if (!id) return '';
+    const shortName = item.algo === 'value-density' ? 'Value Density'
+        : item.algo === 'hybrid' ? 'Hybrid'
+            : 'Matrix';
+    return `
+    <div class="algo-card-actions">
+        <button id="${id}" type="button" class="export-btn export-btn--select-algorithm" data-algorithm="${escapeHtml(item.algo)}" aria-label="Применить алгоритм ${escapeHtml(item.name)}">
+            ${icon('check')}
+            <span>Применить ${escapeHtml(shortName)}</span>
+        </button>
+    </div>`;
 }
 
 /**
@@ -162,6 +147,7 @@ export function buildAlgorithmCardHtml(item, bestValues, recommendedKey) {
             <span class="metric-bar"><span class="metric-bar__fill" style="width:${densityPct}%"></span></span>
         </div>
     </div>
+    ${buildApplyButtonHtml(item)}
 </div>`;
 }
 

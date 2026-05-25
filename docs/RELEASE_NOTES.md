@@ -1,5 +1,59 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.65) — Selection report UI cleanup
+
+> Убрано дублирование в модальном окне сравнения алгоритмов: отдельный блок
+> «Рекомендация» удалён, кнопки применения перенесены внутрь карточек
+> алгоритмов, а справочный аккордеон «Об алгоритмах отбора» расположен ниже
+> кнопки «Рекомендации».
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (duplicated recommendation UI)** | Top-banner «Рекомендация» повторял данные, уже видимые в карточке лучшего алгоритма: название, метрики и статус рекомендации. | Featured recommendation banner удалён; рекомендация остаётся только как бейдж «Рекомендовано» и primary-состояние кнопки в карточке алгоритма. | [selectionReport.js](../js/ui/selectionReport.js), [sections.js](../js/ui/selectionReport/sections.js), [selection-report.css](../css/selection-report.css) |
+| 2 | **P2 (apply action separated from decision data)** | Три кнопки «Применить» внизу модалки требовали глазами сопоставлять кнопку с карточкой алгоритма. | Apply-кнопки генерируются внутри соответствующих карточек сравнения; нижний footer оставлен только для закрытия окна. | [sections.js](../js/ui/selectionReport/sections.js), [index.html](../index.html), [planner.spec.js](../tests/e2e/planner.spec.js) |
+| 3 | **P3 (secondary help before primary decision)** | Аккордеон «Об алгоритмах отбора» стоял выше карточек сравнения и перегружал основной путь. | Аккордеон перенесён ниже кнопки «Рекомендации»: сначала сравнение и выбор, затем справочное пояснение. | [selectionReport.js](../js/ui/selectionReport.js), [selectionReport.test.js](../tests/unit/ui/selectionReport.test.js) |
+| 4 | **P3 (nested button click target)** | Делегация selection modal проверяла `e.target.id`; клик по SVG/span внутри кнопки мог не попасть в обработчик. | Делегация использует ближайшую кнопку через `closest('button')`. | [selectionController.js](../js/controllers/selectionController.js), [selectionController.test.js](../tests/unit/controllers/selectionController.test.js) |
+
+### Новые тесты / guard
+
+- `selectionReport.test.js` — запрещает возврат `rec-card--featured`, проверяет порядок «Рекомендации» → «Об алгоритмах отбора» и наличие apply-кнопок внутри карточек.
+- `selectionController.test.js` — проверяет клик по дочернему SVG внутри apply-кнопки.
+- `planner.spec.js` — e2e-контракт реального selection modal layout.
+- `visual.spec.js` — обновлён baseline `selection-report-overload`.
+
+Всего unit-тесты: `1915 → 1918` (+3), suites `156 → 156`.
+Full e2e: `258 → 259` (+1), включая selection report layout contract и 10 visual baselines.
+
+### Уроки и классы ошибок
+
+1. **Не дублировать вывод как отдельный баннер, если карточка уже несёт тот же смысл.** Рекомендация должна быть состоянием карточки, а не вторым источником истины.
+2. **Кнопка выбора должна быть рядом с данными выбора.** Для сравнения алгоритмов apply-action внутри карточки снижает риск ошибочного сопоставления.
+3. **Справка идёт после основного действия.** «Об алгоритмах» полезен, но не должен отталкивать карточки сравнения вниз.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---:|---:|---|
+| `npm run lint` | ESLint clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1918/1918 PASS; coverage lines 96.27%, branches 86.87% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS; UserManual drift guards green | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 259/259 PASS, parallel projects | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `npm run release:metrics-history -- --metrics test-results/release-metrics-v8.30.65.json` | `docs/release-metrics-history.json` updated for 8.30.65 | **0** | n/a | — |
+| `npm run release:metrics-dashboard` | `docs/release-metrics-dashboard.md` updated for 8.30.65 | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | CSS important report up to date, budget `90/90` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | no outdated packages reported | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no.
+- Full e2e: wrapper exit 0, all child exits clean; Chromium `219/219`, mobile Chromium `18/18`, WebKit `4/4`, mobile WebKit `18/18`, total `259/259 PASS`.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.64) — Selection and JSON trust hardening
 
 > Закрыты пользовательские инциденты по ключевым доверительным сценариям:

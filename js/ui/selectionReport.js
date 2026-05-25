@@ -18,7 +18,6 @@ import {
     buildAlgorithmCardsHtml,
     buildAlgorithmDescriptionsHtml,
     buildAlgorithmDetailsHtml,
-    buildRecommendationBannerHtml,
     buildRecommendationsButtonHtml
 } from './selectionReport/sections.js';
 import { bindAccordionHandlers, highlightRecommendedApplyButton } from './selectionReport/interactions.js';
@@ -56,10 +55,9 @@ export function renderSelectionReport(multiSelectionResults, algorithms = ALGORI
     const recommendedKey = recommended ? recommended.algo : null;
 
     contentEl.innerHTML = [
-        buildRecommendationBannerHtml(recommended),
-        buildAlgorithmDescriptionsHtml(),
         buildAlgorithmCardsHtml(comparableData, bestValues, recommendedKey),
         buildRecommendationsButtonHtml(),
+        buildAlgorithmDescriptionsHtml(),
         buildAlgorithmDetailsHtml(results, comparison, algorithms)
     ].join('');
 

@@ -51,7 +51,7 @@ export class SelectionController {
         const modal = document.getElementById('selectionReportModal');
         if (modal) {
             modal.addEventListener('click', (e) => {
-                const target = e.target;
+                const target = e.target.closest?.('button') || e.target;
                 if (target.id === 'applyMatrixBtn') {
                     this.applyAlgorithm('matrix');
                 } else if (target.id === 'applyValueDensityBtn') {

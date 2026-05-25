@@ -18,7 +18,7 @@ import { formatUiPercent } from '../utils/percent.js';
 /**
  * Builds the HTML for a single recommendation card.
  * @param {Object} rec
- * @param {string} [modifier] - дополнительный модификатор класса (например, 'rec-card--featured')
+ * @param {string} [modifier] - дополнительный модификатор класса (например, 'rec-card--full')
  * @returns {string}
  */
 function buildRecCardHtml(rec, modifier = '') {

@@ -228,32 +228,6 @@
    color: var(--text-muted);
 }
 
-/* ===== Featured recommendation banner =====
-   Использует базовый .rec-card с модификатором --featured.
-   Подсветка через --accent, чтобы попадать в общий язык акцентных
-   состояний приложения (focus/hover/active в кнопках, тогглах). */
-.rec-card--featured {
-   border-color: var(--accent);
-   background: var(--accent-bg-faint);
-   padding: 14px 16px;
-   margin-bottom: 16px;
-   box-shadow: 0 4px 12px var(--accent-shadow);
-}
-
-/* v8.28.1: убрана яркая cyan-окраска заголовка featured-карточки —
-   текст оставлен в базовом --text, акцентный цвет несёт только иконка.
-   До правки на тёмной теме сочетание cyan #00d9ff title + cyan icon +
-   cyan border + cyan glow создавало чрезмерный контраст. */
-.rec-card--featured .rec-card-title {
-   font-size: 0.9rem;
-   color: var(--text);
-}
-
-.rec-card--featured .rec-card-title .icon {
-   margin-right: 4px;
-   color: var(--accent);
-}
-
 .rec-card-body {
    font-size: 0.8rem;
    line-height: 1.5;
@@ -323,6 +297,7 @@
    display: flex;
    flex-direction: column;
    gap: 8px;
+   flex: 1;
 }
 
 .algo-card-metric {
@@ -375,6 +350,17 @@
 .metric-bar__fill--success { background: var(--success); }
 .metric-bar__fill--warning { background: var(--warning); }
 .metric-bar__fill--danger  { background: var(--danger); }
+
+.algo-card-actions {
+   margin-top: auto;
+   padding-top: 2px;
+}
+
+.export-btn--select-algorithm {
+   width: 100%;
+   justify-content: center;
+   min-height: 34px;
+}
 
 @media (prefers-reduced-motion: reduce) {
    .metric-bar__fill {
