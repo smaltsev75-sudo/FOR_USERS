@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-25T08:05:21.750Z",
+  "updatedAt": "2026-05-26T04:56:26.600Z",
   "releases": [
     {
       "version": "8.30.54",
@@ -423,6 +423,39 @@
           "childExit": 0,
           "override": false,
           "seconds": 198.225
+        }
+      },
+      "cssImportant": {
+        "total": 90,
+        "budget": 90,
+        "overBudgetCount": 0
+      }
+    },
+    {
+      "version": "8.30.67",
+      "generatedAt": "2026-05-26T04:56:10.575Z",
+      "coverage": {
+        "statementsPct": 96.23,
+        "branchesPct": 86.5,
+        "functionsPct": 97.04,
+        "linesPct": 96.23
+      },
+      "e2e": {
+        "smoke": {
+          "passed": 18,
+          "projectCount": 1,
+          "wrapperExit": 0,
+          "childExit": 0,
+          "override": false,
+          "seconds": 19.301
+        },
+        "full": {
+          "passed": 260,
+          "projectCount": 4,
+          "wrapperExit": 0,
+          "childExit": 1,
+          "override": true,
+          "seconds": 206.249
         }
       },
       "cssImportant": {

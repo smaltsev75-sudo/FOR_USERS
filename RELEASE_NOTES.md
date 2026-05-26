@@ -1,5 +1,54 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.67) — Effort input focus stability
+
+> Исправлен пользовательский сценарий массовой корректировки трудозатрат:
+> при переходе между Effort-полями одной задачи фокус больше не теряется, а
+> длинный список задач не прокручивается самопроизвольно после commit'а
+> предыдущего поля.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P1 (user-reported editing blocker)** | Inline Effort `change` обновлял Store и запускал полный re-render task-list. `replaceChildren()` уничтожало DOM input'а, поэтому переход FE → QA/BE мог терять фокус и срывать редактирование конкретной задачи. | Task-list focus helper теперь запоминает активный редактируемый control карточки: Effort input по `taskId + roleId` и criteria score по прежнему key. После render восстанавливаются focus, caret и selection. | [focus.js](../js/ui/taskList/focus.js), [render.js](../js/ui/taskList/render.js) |
+| 2 | **P1 (scroll anchoring jump)** | На длинном списке временное удаление всех карточек при `replaceChildren()` давало браузеру шанс сдвинуть viewport на тысячи пикселей, даже если новый input затем получал фокус. | Focus snapshot дополнен `scrollX/Y`; restore выполняет `focus({ preventScroll: true })` и явный возврат scroll position после вставки нового DOM. | [focus.js](../js/ui/taskList/focus.js) |
+| 3 | **P2 (missing user-contract guard)** | Старые unit-проверки покрывали только criteria-score focus, но не пользовательский переход между Effort-полями на прокрученном списке. | Добавлены unit guard для Effort focus/caret/scroll и e2e user-incident: 24 задачи, задача в середине списка, переход FE → QA → BE, проверка focus, scrollY и persisted JSON. | [taskListSubmodules.test.js](../tests/unit/ui/taskListSubmodules.test.js), [user-incidents.spec.js](../tests/e2e/user-incidents.spec.js) |
+| 4 | **P3 (release hygiene)** | `npm outdated` показывал три Babel dev-зависимости ниже wanted/latest и блокировал clean release gate. | Обновлены `@babel/core`, `@babel/plugin-transform-modules-commonjs`, `@babel/preset-env` до `7.29.7`; runtime-код приложения не менялся. | [package.json](../package.json), [package-lock.json](../package-lock.json) |
+
+### Новые тесты / guard
+
+- `taskListSubmodules.test.js` — проверяет восстановление inline Effort input с `preventScroll`, caret и `scrollTo()`.
+- `user-incidents.spec.js` — воспроизводит пользовательский сценарий правки Effort в середине длинного списка и проверяет отсутствие скачка scroll.
+
+Всего unit-тесты: `1918 → 1919` (+1), suites `156 → 156`.
+Full e2e: `259 → 260` (+1), включая новый user-incident contract для Effort focus/scroll.
+
+### Уроки и классы ошибок
+
+1. **Focus restore без scroll restore не закрывает длинный список.** `preventScroll` защищает сам `focus()`, но не отменяет scroll anchoring после временного схлопывания DOM.
+2. **Editable task-card controls должны иметь общий focus snapshot.** Если карточка пересоздаётся после commit'а одного поля, snapshot должен покрывать Effort, criteria и будущие inline controls, а не точечный класс одного input'а.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Playwright child exit | Override |
+|---|---|---:|---:|---|
+| `npm run lint` | ESLint clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1919/1919 PASS; coverage lines 96.23%, branches 86.5% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS; UserManual drift guards green | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **0** | no |
+| `npm run test:e2e` | 260/260 PASS, parallel projects | **0** | mobile-webkit **1** | yes |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON written; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | CSS important report up to date, budget `90/90` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | no outdated packages reported | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, child exit 0, override no.
+- Full e2e: `260/260 PASS`; Chromium `220/220`, mobile Chromium `18/18`, WebKit `4/4`, mobile WebKit `18/18`. Mobile WebKit child exit 1 был override после всех `ok` строк из-за известной worker-shutdown race.
+
+---
+
 ## Версия: май 2026 (обновление 8.30.66) — Selection report metric alignment
 
 > В карточках сравнения алгоритмов выровнены одноимённые параметры

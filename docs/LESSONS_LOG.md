@@ -2,6 +2,10 @@
 
 > Исторический журнал PLANNER. Активные правила остаются в `CLAUDE.md`; сюда вынесены длинные war-stories и audit notes, чтобы не раздувать стартовый контекст AI-сессии.
 
+## Ловушки v8.30.67 (Effort input focus stability)
+
+- **Полный re-render списка во время редактирования обязан сохранять не только focus, но и scroll.** При переходе между inline Effort-полями `change` обновлял Store, `renderTaskList()` делал `replaceChildren()`, браузерное scroll anchoring видело временно схлопнутый длинный список и переносило viewport. Решение: snapshot активного task-list control (`taskId`/`roleId` или criteria key), caret и `scrollX/Y`, затем restore с `preventScroll` и явным `scrollTo()`. Codified by: `taskListSubmodules.test.js`, `user-incidents.spec.js`.
+
 ## Ловушки v8.30.66 (Selection report metric alignment)
 
 - **Сравнительные карточки должны иметь одинаковую вертикальную сетку метрик.** Длинный заголовок рекомендованного алгоритма переносился на две строки и сдвигал `Выбрано задач`, `Загрузка` и остальные параметры ниже, из-за чего сравнение читалось неровно. Решение: фиксированная header-зона в горизонтальной сетке карточек, e2e-проверка `getBoundingClientRect().top` для одноимённых рядов и visual baseline `selection-report-overload`. Codified by: `planner.spec.js`, `visual.spec.js`.

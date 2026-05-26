@@ -1,7 +1,7 @@
 import { calculateAvailability } from '../../domain/role.js';
 import { calculatePriorityScore } from '../../domain/criteria.js';
 import { calculateTaskTotal } from '../../domain/task.js';
-import { captureCriteriaScoreFocus, restoreCriteriaScoreFocus } from './focus.js';
+import { captureTaskListFocus, restoreTaskListFocus } from './focus.js';
 import { createTaskElement } from './taskCard.js';
 import { filterTasks, resolveDensity } from './viewState.js';
 import { createOverloadIndicatorModel, updateOverloadIndicators } from './overloadIndicators.js';
@@ -91,9 +91,9 @@ export function renderTaskList(state, nfs, taskController = null) {
         if (valueEl && id) previousScores.set(id, valueEl.textContent);
     });
 
-    // v8.30.39: запоминаем focused criteria score input/stepper (если был
-    // внутри #taskList), чтобы вернуть фокус после replaceChildren.
-    const focusedCriteriaScoreKey = captureCriteriaScoreFocus(taskListEl);
+    // Запоминаем focused editable control внутри #taskList, чтобы вернуть фокус
+    // после replaceChildren без прокрутки viewport.
+    const focusedTaskListControl = captureTaskListFocus(taskListEl);
 
     taskListEl.replaceChildren();
     taskListEl.dataset.density = resolveDensity(state.ui);
@@ -178,5 +178,5 @@ export function renderTaskList(state, nfs, taskController = null) {
 
     highlightNewTask(state, taskListEl);
     pulseChangedPriorityScores(taskListEl, previousScores);
-    restoreCriteriaScoreFocus(taskListEl, focusedCriteriaScoreKey);
+    restoreTaskListFocus(taskListEl, focusedTaskListControl);
 }
