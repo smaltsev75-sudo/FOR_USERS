@@ -439,6 +439,15 @@ store.update*() → notify() → listeners → schedulePersist() + requestRender
 - **selectTasksUniform** — жадный отбор с проверкой ёмкости по ролям
 - **buildSelectionResult** — формирование стандартного результата алгоритма (quadrants, medians, stats)
 
+> **Инвариант медиан (v8.30.68):** `matrix.js`, `hybrid.js`, `valueDensity.js`
+> считают `calculateMedians` / `categorizeIntoQuadrants` ТОЛЬКО по не-исключённым
+> задачам (`prepared.filter(t => !t.excluded)`). Исключённые передаются в
+> `selectTasksUniform` отдельно (в конце), чтобы попасть в `excludedTasks` с
+> причиной «Исключена вручную», но не перекашивать медиану/классификацию
+> активных. Это тот же инвариант, что и в `ui/selection/quadrants.js` (v8.29.1):
+> outlier'ы в excluded не должны менять порядок отбора активных задач. Закреплён
+> тестами `excluded tasks do not skew medians` в matrix/hybrid/valueDensity.
+
 ### 4.1. Priority-Effort Matrix (`matrix.js`)
 
 Задачи распределяются по 4 квадрантам относительно медиан приоритета и трудозатрат:

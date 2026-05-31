@@ -1,5 +1,58 @@
 # Release Notes
 
+## Версия: май 2026 (обновление 8.30.68) — Selection medians, accessible hints, modal Escape
+
+> Релиз по итогам сквозного ревью (код + UI + документация + архитектура + тесты).
+> Главный фикс — корректность автоотбора: медианы алгоритмов больше не
+> перекашиваются вручную исключёнными задачами. Плюс доступность info-подсказок,
+> закрытие именно верхнего модального окна по Escape и уточнения справки.
+
+### Закрытые поверхности
+
+| # | Severity | Класс ошибки | Фикс | Где |
+|---|---|---|---|---|
+| 1 | **P2 (корректность отбора)** | Медианы priority/effort в Matrix/Hybrid/Value Density считались по ВСЕМ задачам, включая вручную исключённые. Outlier'ы в excluded перекашивали медиану → менялась квадрантная классификация активных задач и порядок жадного отбора. Sibling-промах инварианта v8.29.1 (там фикс был только в `ui/selection/quadrants.js`). | Медиана и квадранты считаются только по не-исключённым задачам; исключённые по-прежнему передаются в `selectTasksUniform` и помечаются «Исключена вручную». | [matrix.js](../js/domain/selection/matrix.js), [hybrid.js](../js/domain/selection/hybrid.js), [valueDensity.js](../js/domain/selection/valueDensity.js) |
+| 2 | **P3 (a11y + консистентность)** | Info-подсказки в заголовках дашборда были `<span title>ⓘ` — недоступны с клавиатуры/тач/скринридера; при этом config-форма уже использовала доступные `<button aria-label>`. | Подсказки переведены на доступные `<button class="info-hint" aria-label>` с SVG-иконкой (тот же паттерн, что `.cfg-info-btn`). `aria-label` несёт полный текст пояснения. | [index.html](../index.html), [components.css](../css/components.css) |
+| 3 | **P3 (UX/robustness)** | Escape закрывал первое открытое модальное по фиксированному индексу массива, а не верхнее. При двух одновременно открытых окнах (редко) мог закрыться не тот. | Добавлен LIFO-стек открытия в `modalManager`; `getTopmostOpenModal()` закрывает верхнее, fallback — прежний массив. | [modalManager.js](../js/ui/modalManager.js), [keyboardController.js](../js/controllers/keyboardController.js) |
+| 4 | **P3 (import robustness)** | `alignTasksToCriteria` (выравнивание `criteriaEvaluations` при импорте/восстановлении) не имел прямого теста; политика «orphan-оценки отбрасываются, отсутствующие → 0» не была закреплена. | Добавлен unit-тест, фиксирующий политику (orphan drop, default zero, eval-набор ровно по активным критериям, no-mutation). | [stateImportApplier.test.js](../tests/unit/controllers/stateImportApplier.test.js) |
+| 5 | **P3 (docs/UX)** | Поле ссылки на задачу было жёстко подписано «Ссылка JIRA» без обоснования обязательности и создавало впечатление JIRA-only. | Нейтральная подпись «Ссылка на задачу», tracker-agnostic placeholder/title, абзац-обоснование в UserManual (подойдёт любой трекер; зачем поле обязательно). | [index.html](../index.html), [UserManual.md](UserManual.md) |
+| 6 | **P3 (docs)** | UserManual не объяснял разницу «порог алерта» (красная подсветка) vs «перегрузка» (условие запуска алгоритмов). | Добавлен явный блок: красная подсветка ≠ перегрузка для алгоритма. | [UserManual.md](UserManual.md) |
+
+### Рассмотрено в ревью, НЕ менялось (с обоснованием)
+
+- **Симметризация границы квадрантов (`effort >` → `>=`)** — отклонено: асимметрия намеренная (задача ровно на медиане / единственная задача → Q1 «лёгкая победа»), закреплена тестами quadrants/matrix. Симметризация ломала это поведение без реальной пользы.
+- **Двойной `querySelector` в criteria-stepper** — отклонено как ложная находка: `_syncCriteriaScoreControls` вызывается только на редком `change`-commit, а не на каждом keydown (keydown/click идут напрямую через `_dispatchCriteriaScore`). Оптимизировать нечего.
+
+### Новые тесты / guard
+
+- `matrix/hybrid/valueDensity.test.js` — инвариант «медиана игнорирует excluded-outlier» (+ excluded по-прежнему репортится).
+- `modalManager.test.js` — LIFO-стек: `getTopmostOpenModal()` возвращает верхнее открытое окно.
+- `stateImportApplier.test.js` — политика `alignTasksToCriteria`.
+
+Unit-тесты: `1919 → 1933` (+14), suites `156 → 157` (+1).
+
+### 1.1 Стабильность редактирования (по запросу пользователя)
+
+Подтверждено e2e (`user-incidents.spec.js` 6/6) и живой инструментованной проверкой в браузере: при правке Effort и Priority-Score полей — конечное число ре-рендеров (2 за секунду, без мерцания/бесконечного цикла), фокус остаётся на редактируемом control'е, scroll не прыгает (delta 0px). Изменения этого релиза находятся в domain-слое отбора и UI-подсказках и не затрагивают путь inline-редактирования карточки.
+
+### Финальные exit-коды (последний реальный запуск)
+
+| Команда | Результат | Wrapper exit | Child exit | Override |
+|---|---|---:|---:|---|
+| `npm run lint` | ESLint clean | **0** | n/a | — |
+| `npm run test:coverage -- --maxWorkers=50%` | 1933/1933 PASS; lines 96.19%, branches 86.56% | **0** | n/a | — |
+| `npm run docs:manual-check` | 27/27 PASS | **0** | n/a | — |
+| `npm run test:e2e:smoke` | 18/18 PASS, mobile-webkit workers=2 | **0** | **1** | yes |
+| `npm run test:e2e` | 260/260 PASS (chromium 220, mobile-chromium 18, webkit 4, mobile-webkit 18) | **0** | **0** | no |
+| `npm run release:metrics -- --smoke-summary=e2e-smoke-summary.tmp.json` | metrics JSON записан; coverage/e2e/CSS budget PASS, CSS `90/90` | **0** | n/a | — |
+| `node scripts/report-css-important.mjs --check` | CSS important report up to date, budget `90/90` | **0** | n/a | — |
+| `npm audit` | 0 vulnerabilities | **0** | n/a | — |
+| `npm outdated` | no outdated packages (dompurify→3.4.7, eslint→10.4.1 обновлены) | **0** | n/a | — |
+
+**Честный отчёт по e2e:**
+- Smoke: mobile-webkit `18/18 PASS`, wrapper exit 0, **child exit 1 — override yes** (worker-shutdown race на Node22/Windows, force-kill после всех `ok` строк; известный flaky-класс, см. `e2e-runner`).
+- Full e2e: `260/260 PASS` (Chromium 220, mobile Chromium 18, WebKit 4, mobile WebKit 18); все 4 проекта clean child exit 0, override no.
+
 ## Версия: май 2026 (обновление 8.30.67) — Effort input focus stability
 
 > Исправлен пользовательский сценарий массовой корректировки трудозатрат:

@@ -38,9 +38,12 @@ export function selectTasksValueDensity(tasks, capacityByRole) {
     // Жадный отбор в порядке убывания плотности ценности
     const selectionResult = selectTasksUniform(prepared, capacityByRole);
 
-    // Квадранты вычисляются для визуализации в отчёте (не влияют на отбор)
-    const medians = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
+    // Квадранты вычисляются для визуализации в отчёте (не влияют на отбор).
+    // v8.30.68: медиана/квадранты — только по не-исключённым задачам (см. matrix.js),
+    // иначе excluded-outlier'ы перекашивают отчётную классификацию активных задач.
+    const active = prepared.filter(t => !t.excluded);
+    const medians = calculateMedians(active);
+    const quadrants = categorizeIntoQuadrants(active, medians.medianPriority, medians.medianEffort);
 
     return buildSelectionResult(selectionResult, quadrants, medians, 'value-density');
 }

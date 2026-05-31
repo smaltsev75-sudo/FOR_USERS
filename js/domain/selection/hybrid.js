@@ -36,8 +36,11 @@ import {
  */
 export function selectTasksHybrid(tasks, capacityByRole) {
     const prepared = prepareTasks(tasks);
-    const medians = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
+    // v8.30.68: медиана/квадранты — только по не-исключённым задачам (см. matrix.js).
+    const active = prepared.filter(t => !t.excluded);
+    const excluded = prepared.filter(t => t.excluded);
+    const medians = calculateMedians(active);
+    const quadrants = categorizeIntoQuadrants(active, medians.medianPriority, medians.medianEffort);
 
     // Q1: лёгкие победы — по valueDensity для максимальной эффективности
     const q1 = [...quadrants.q1].sort(compareByValueDensity);
@@ -48,7 +51,8 @@ export function selectTasksHybrid(tasks, capacityByRole) {
     // Q4: кандидаты на перенос — по приоритету
     const q4 = [...quadrants.q4].sort(compareByPriority);
 
-    const sortedTasks = [...q1, ...q2, ...q3, ...q4];
+    // Исключённые — в конец (помечаются «Исключена вручную», ёмкость не занимают).
+    const sortedTasks = [...q1, ...q2, ...q3, ...q4, ...excluded];
     const selectionResult = selectTasksUniform(sortedTasks, capacityByRole);
 
     return buildSelectionResult(selectionResult, quadrants, medians, 'hybrid');

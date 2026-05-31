@@ -29,8 +29,16 @@ import {
  */
 export function selectTasksMatrix(tasks, capacityByRole) {
     const prepared = prepareTasks(tasks);
-    const medians = calculateMedians(prepared);
-    const quadrants = categorizeIntoQuadrants(prepared, medians.medianPriority, medians.medianEffort);
+    // v8.30.68: медиана и квадранты считаются ТОЛЬКО по не-исключённым задачам.
+    // Исключённые вручную — не кандидаты на отбор; их priority/effort-outlier'ы
+    // перекашивали бы медиану и порядок жадного отбора активных задач. Тот же
+    // инвариант, что и в ui/selection/quadrants.js (v8.29.1). Исключённые всё
+    // равно передаются в selectTasksUniform (в конце sortedTasks), чтобы попасть
+    // в excludedTasks с причиной «Исключена вручную».
+    const active = prepared.filter(t => !t.excluded);
+    const excluded = prepared.filter(t => t.excluded);
+    const medians = calculateMedians(active);
+    const quadrants = categorizeIntoQuadrants(active, medians.medianPriority, medians.medianEffort);
 
     // Q1: сортировка по убыванию приоритета (самые ценные и лёгкие — первыми)
     const q1 = [...quadrants.q1].sort(compareByPriority);
@@ -45,8 +53,10 @@ export function selectTasksMatrix(tasks, capacityByRole) {
     // Q4: наименее приоритетные — тоже по приоритету
     const q4 = [...quadrants.q4].sort(compareByPriority);
 
-    // Объединяем в порядке приоритета квадрантов и заполняем спринт жадным алгоритмом
-    const sortedTasks = [...q1, ...q2, ...q3, ...q4];
+    // Объединяем в порядке приоритета квадрантов и заполняем спринт жадным алгоритмом.
+    // Исключённые добавляем в конец — selectTasksUniform пометит их «Исключена вручную»
+    // (позиция не влияет на отбор: они никогда не коммитятся и не занимают ёмкость).
+    const sortedTasks = [...q1, ...q2, ...q3, ...q4, ...excluded];
     const selectionResult = selectTasksUniform(sortedTasks, capacityByRole);
 
     return buildSelectionResult(selectionResult, quadrants, medians, 'matrix');

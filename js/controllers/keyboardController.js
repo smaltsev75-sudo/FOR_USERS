@@ -1,6 +1,6 @@
 // js/controllers/keyboardController.js
 
-import { hideModal } from '../ui/modalManager.js';
+import { hideModal, getTopmostOpenModal } from '../ui/modalManager.js';
 import { findCommandByHotkey } from '../config/commands.js';
 
 export class KeyboardController {
@@ -79,8 +79,19 @@ export class KeyboardController {
             }
         }
 
-        // Esc – Закрыть модальное окно
+        // Esc – Закрыть модальное окно.
+        // v8.30.68: сначала закрываем ВЕРХНЕЕ открытое окно (LIFO-стек открытия из
+        // modalManager) — иначе при двух одновременно открытых модалях Escape
+        // закрывал первое по фиксированному индексу массива, а не видимое верхнее.
         if (e.key === 'Escape') {
+            const topModal = getTopmostOpenModal();
+            if (topModal) {
+                stopEvent();
+                hideModal(topModal);
+                return false;
+            }
+            // Fallback: модали, не прошедшие через modalManager.showModal
+            // (не попадают в стек). Сохраняем прежнее поведение для них.
             const modals = [
                 'editModal',
                 'editCriteriaModal',

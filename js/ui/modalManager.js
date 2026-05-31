@@ -40,6 +40,36 @@ function getFocusableElements(modal) {
     });
 }
 
+// v8.30.68: стек открытых модальных окон в порядке открытия (LIFO).
+// Нужен, чтобы Escape (keyboardController) закрывал ВЕРХНЕЕ открытое окно,
+// а не первое по фиксированному индексу массива. Все модали имеют одинаковый
+// z-index, поэтому «верхнее» определяется именно порядком открытия.
+const openModalStack = [];
+
+function pushModalToStack(modal) {
+    const idx = openModalStack.indexOf(modal);
+    if (idx !== -1) openModalStack.splice(idx, 1);
+    openModalStack.push(modal);
+}
+
+function removeModalFromStack(modal) {
+    const idx = openModalStack.indexOf(modal);
+    if (idx !== -1) openModalStack.splice(idx, 1);
+}
+
+/**
+ * Возвращает последнее (верхнее) реально открытое модальное окно из стека
+ * открытия, либо null. Закрытые/удалённые элементы пропускаются.
+ * @returns {HTMLElement|null}
+ */
+export function getTopmostOpenModal() {
+    for (let i = openModalStack.length - 1; i >= 0; i--) {
+        const modal = openModalStack[i];
+        if (modal && isModalOpen(modal) && document.contains(modal)) return modal;
+    }
+    return null;
+}
+
 function handleTabKey(modal, ev) {
     if (ev.key !== 'Tab') return;
     const focusable = getFocusableElements(modal);
@@ -76,6 +106,7 @@ export function showModal(modal) {
 
     modal.style.display = 'flex';
     modal.classList.add('is-open');
+    pushModalToStack(modal);
 
     // Tab-trap handler — связан с конкретным modal через .bind замыкание,
     // чтобы removeEventListener на close сработал корректно.
@@ -107,6 +138,7 @@ export function hideModal(modal) {
 
     modal.style.display = 'none';
     modal.classList.remove('is-open');
+    removeModalFromStack(modal);
 
     if (modal._trapHandler) {
         modal.removeEventListener('keydown', modal._trapHandler);

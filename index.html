@@ -22,36 +22,36 @@
             document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
-    <link rel="stylesheet" href="css/base.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/layout.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/forms.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/modals.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/components.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/animations.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/progress.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/help.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/responsive.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card-states.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/density.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.67">
-    <link rel="stylesheet" href="css/print.css?v=v8.30.67" media="print">
-    <link rel="manifest" href="manifest.json?v=8.30.67">
+    <link rel="stylesheet" href="css/base.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/layout.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/forms.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/modals.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/components.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/animations.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/progress.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/help.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/responsive.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card-states.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/density.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.68">
+    <link rel="stylesheet" href="css/print.css?v=v8.30.68" media="print">
+    <link rel="manifest" href="manifest.json?v=8.30.68">
     <meta name="theme-color" content="#00d9ff">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -257,8 +257,11 @@
                 <div class="panel panel--team-cap">
                     <h3 class="panel-title-sm panel-title-sm--with-hint">
                         Загрузка команды
-                        <span class="info-hint"
-                              title="Расчет: (Спринт - Отпуск (д)) × 8 ч. × FTE % × Коэфф.доступности % - Саморазвитие (9%) - Встречи (7 ч.)">ⓘ</span>
+                        <button type="button" class="info-hint"
+                                title="Расчет: (Спринт - Отпуск (д)) × 8 ч. × FTE % × Коэфф.доступности % - Саморазвитие (9%) - Встречи (7 ч.)"
+                                aria-label="Пояснение: ёмкость команды рассчитывается как (дни спринта минус отпуск) × 8 часов × FTE % × коэффициент доступности %, минус 9% на саморазвитие и 7 часов на встречи">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
                     </h3>
                     <!-- Team Capacity Dashboard (v8.21):
                          объединяет header (общая загрузка + gauge) и 5 карточек ролей.
@@ -269,8 +272,11 @@
                 <div class="panel panel--matrix">
                     <h3 class="panel-title-sm panel-title-sm--with-hint">
                         Распределение работ по типам задач (ч)
-                        <span class="info-hint"
-                              title="Тепловая карта: насыщенность фона ячейки = объём часов">ⓘ</span>
+                        <button type="button" class="info-hint"
+                                title="Тепловая карта: насыщенность фона ячейки = объём часов"
+                                aria-label="Пояснение: тепловая карта — чем насыщеннее фон ячейки, тем больше объём часов по этой роли и типу задачи">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
                     </h3>
                     <table class="table-dash table-dash--heatmap">
                         <thead>
@@ -484,10 +490,11 @@
 
                         <div class="cf-field cf-field--jira">
                             <label class="cf-label" for="newJira">
-                                Ссылка JIRA <span class="cf-required" aria-hidden="true">*</span>
+                                Ссылка на задачу <span class="cf-required" aria-hidden="true">*</span>
                             </label>
                             <input type="url" id="newJira" class="cf-input" required
-                                   placeholder="https://jira/..." autocomplete="off">
+                                   placeholder="https://tracker/TASK-123" autocomplete="off"
+                                   title="Ссылка на задачу в любом трекере (Jira, GitHub Issues, GitLab, Azure DevOps и т.д.). Обязательна и уникальна.">
                         </div>
                     </div>
                 </fieldset>
@@ -750,7 +757,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.30.67"></script>
+    <script type="module" src="js/app.js?v=v8.30.68"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

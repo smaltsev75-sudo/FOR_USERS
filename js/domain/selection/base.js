@@ -102,6 +102,12 @@ function getMedian(sortedArray) {
 export function categorizeIntoQuadrants(tasks, medianPriority, medianEffort) {
     const quadrants = { q1: [], q2: [], q3: [], q4: [] };
     tasks.forEach(task => {
+        // Асимметрия границ намеренная: задача РОВНО на медиане относится к
+        // «высокому приоритету» (`>=`), но к «низким трудозатратам» (`> medianEffort`
+        // → false). Это даёт сенсибельный default для вырожденного/граничного
+        // случая (единственная задача или задача на медиане → Q1 «лёгкая победа»),
+        // что закреплено тестами quadrants/matrix. (Рассмотрено в ревью v8.30.68:
+        // симметризация `>=` ломала бы это поведение без реальной пользы.)
         const highPriority = task.priorityScore >= medianPriority;
         const highEffort = task.effort > medianEffort;
         if (highPriority && !highEffort) quadrants.q1.push(task);      // Q1: важное и лёгкое
