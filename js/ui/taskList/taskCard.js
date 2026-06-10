@@ -1,7 +1,6 @@
 import { createTaskRowVM, getPriorityLabel, getPriorityLevel } from '../createTaskRowVM.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { icon } from '../../utils/icons.js';
-import { buildCriteriaHtml } from './criteriaSection.js';
 import { buildEstimatesHtml } from './estimatesSection.js';
 
 function buildTypeBadgeHtml(vm) {
@@ -12,13 +11,40 @@ function buildTypeBadgeHtml(vm) {
 
 function buildStatusBadgeHtml(vm) {
     if (vm.excluded) {
-        return '<span class="task-status-badge status-excluded" title="Задача исключена из спринта">Исключена</span>';
+        return `<span class="task-status-badge status-excluded" title="Задача исключена из спринта" aria-label="Задача исключена из спринта">${icon('eyeOff')}<span class="task-status-badge-text">Исключена</span></span>`;
     }
-    return '<span class="task-status-badge status-active" title="В работе">В работе</span>';
+    return `<span class="task-status-badge status-active" title="Задача в работе (в спринте)" aria-label="Задача в работе">${icon('check')}<span class="task-status-badge-text">В работе</span></span>`;
 }
 
 function buildPriorityBadgeHtml(level, label, score) {
-    return `<span class="task-priority-badge priority-${level}" title="Приоритет: ${escapeHtml(label)} (${score})" aria-label="Приоритет ${escapeHtml(label)}">${icon('alertCircle')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
+    return `<span class="task-priority-badge priority-${level}" title="Приоритет: ${escapeHtml(label)} (${score})" aria-label="Приоритет ${escapeHtml(label)}">${icon('gauge')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
+}
+
+/**
+ * v2 redesign (owner feedback #6): единый бейдж-карточка Priority Score + Effort
+ * справа в шапке карточки. Одна bordered-карточка `.task-metrics` с двумя рядами
+ * `.task-metric-row` (label слева приглушённый, value справа акцентный). Заменяет
+ * строку criteria-степперов в теле — оценка по критериям остаётся только в
+ * модалке. Значения форматируются через nfs, tabular-nums и акцентные токены
+ * (--priority-score-color / --effort-color) задаются в CSS.
+ * @param {string} priorityScoreText — уже отформатированный Priority Score
+ * @param {string} effortText — уже отформатированный суммарный Effort (часы)
+ * @param {string} priorityScoreTitle — title для Priority Score ряда
+ * @returns {string}
+ */
+function buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle) {
+    return `
+        <div class="task-metrics">
+            <span class="task-metric-row task-metric--priority" title="${escapeHtml(priorityScoreTitle)}">
+                <span class="task-metric-label">Priority Score</span>
+                <span class="task-metric-value task-metric-value--priority">${priorityScoreText}</span>
+            </span>
+            <span class="task-metric-row task-metric--effort" title="Суммарные трудозатраты: ${effortText} ч">
+                <span class="task-metric-label">Effort</span>
+                <span class="task-metric-value task-metric-value--effort">${effortText} ч</span>
+            </span>
+        </div>
+    `;
 }
 
 /**
@@ -26,7 +52,7 @@ function buildPriorityBadgeHtml(level, label, score) {
  * Exported for reuse by alternate views (e.g. quadrant-grouped view).
  */
 export function createTaskElement(
-    task, taskEvaluations, index, roles, criteria, config, nfs, taskTotal,
+    task, _taskEvaluations, index, roles, criteria, config, nfs, taskTotal,
     priorityScore, _availMap, _taskController, taskCount = 0
 ) {
     const vm = createTaskRowVM(task, criteria, roles);
@@ -39,7 +65,6 @@ export function createTaskElement(
     el.dataset.id = vm.id;
 
     const estimatesHtml = buildEstimatesHtml(task, roles, nfs, taskTotal);
-    const criteriaEvaluationHtml = buildCriteriaHtml(task, taskEvaluations, criteria, nfs, priorityScore);
 
     let excludeTitle = vm.excluded ? 'Включить задачу в спринт' : 'Исключить задачу из спринта';
     if (vm.excluded && vm.exclusionReason) excludeTitle = ` ${vm.exclusionReason}. Нажмите, чтобы включить`;
@@ -60,6 +85,18 @@ export function createTaskElement(
     const typeBadgeHtml = buildTypeBadgeHtml(vm);
     const statusBadgeHtml = buildStatusBadgeHtml(vm);
     const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel, nfs.formatNumber(priorityScore));
+    const priorityScoreText = nfs.formatNumber(priorityScore);
+    const effortText = nfs.formatNumber(taskTotal);
+    const priorityScoreTitle = `Приоритет: ${priorityLabel} (${priorityScoreText})`;
+    const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle);
+
+    // SM-комментарий: иконка в строке (filled-стиль если коммент есть), редактирование
+    // в модалке #noteModal. В печать попадает только заполненный (.task-note-print).
+    const noteFilled = !!(typeof task.note === 'string' && task.note.trim());
+    const noteBtnHtml = `<button class="task-note-btn${noteFilled ? ' task-note-btn--filled' : ''}" data-action="openNote" data-id="${vm.id}" title="${noteFilled ? 'Комментарий SM — открыть/редактировать' : 'Добавить комментарий SM'}" aria-label="${noteFilled ? 'Комментарий SM добавлен — открыть' : 'Добавить комментарий SM'}">${icon('messageSquare')}</button>`;
+    const notePrintHtml = noteFilled
+        ? `<div class="task-note-print"><span class="task-note-print-label">Комментарий SM:</span> ${escapeHtml(task.note)}</div>`
+        : '';
 
     if (vm.excluded) el.classList.add('excluded');
     el.classList.add(`priority-${priorityLevel}`);
@@ -69,10 +106,10 @@ export function createTaskElement(
             <div class="drag-handle" aria-hidden="true">${dragIconHtml}</div>
             <div class="task-order-number" title="Позиция задачи в текущем списке" aria-label="Позиция задачи в текущем списке">№${index + 1}</div>
             <div class="task-type-indicator type-${vm.type}" aria-hidden="true">${escapeHtml(vm.typeLetter)}</div>
-            <div class="task-meta-badges">
-                ${statusBadgeHtml}
+            <div class="task-meta-badges task-meta-badges--icons">
                 ${typeBadgeHtml}
                 ${priorityBadgeHtml}
+                ${statusBadgeHtml}
             </div>
             <div class="task-content">
                 <div class="task-title-row">
@@ -81,6 +118,7 @@ export function createTaskElement(
                 </div>
                 <div class="task-comment"></div>
             </div>
+            ${noteBtnHtml}
             <div class="task-btn-group">
                 <button class="task-action-btn btn-move-up" title="Переместить задачу выше" data-action="moveUp" data-id="${vm.id}" aria-label="Переместить выше"${moveUpDisabled}>${moveUpIconHtml}</button>
                 <button class="task-action-btn btn-move-down" title="Переместить задачу ниже" data-action="moveDown" data-id="${vm.id}" aria-label="Переместить ниже"${moveDownDisabled}>${moveDownIconHtml}</button>
@@ -88,9 +126,10 @@ export function createTaskElement(
                 <button class="${excludeClass}" title="${escapeHtml(excludeTitle)}" data-action="toggleExclude" data-id="${vm.id}" aria-label="Включить или исключить">${excludeIconHtml}</button>
                 <button class="task-action-btn btn-delete" title="Удалить задачу спринта" data-action="delete" data-id="${vm.id}" aria-label="Удалить">${deleteIconHtml}</button>
             </div>
+            ${taskMetricsHtml}
         </div>
         <div class="task-estimates">${estimatesHtml}</div>
-        ${criteriaEvaluationHtml}
+        ${notePrintHtml}
     `;
 
     // Use textContent for XSS safety

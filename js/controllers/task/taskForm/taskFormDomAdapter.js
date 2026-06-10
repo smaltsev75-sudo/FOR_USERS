@@ -3,8 +3,7 @@ import { ROLES } from '../../../utils/constants.js';
 import { escapeHtml } from '../../../utils/escapeHtml.js';
 import {
     calculateCreateFormTotal,
-    collectCriteriaEvaluations,
-    readCreateTaskEstimates
+    collectCriteriaEvaluations
 } from '../formHelpers.js';
 
 export class TaskFormDomAdapter {
@@ -95,6 +94,14 @@ export class TaskFormDomAdapter {
         });
     }
 
+    /**
+     * Рендерит критерии как шкалы-полосы (1 клик к любому значению 0..10).
+     * На каждый критерий: label (вес + аббревиатура), кликабельная шкала
+     * (role="slider", 11 делений 0..10, заливка sage до значения, keyboard
+     * ←/→/Home/End) и hidden-input #criteria_<id>.criteria-score-select —
+     * через него читается значение (collectCriteriaEvaluations) и триггерится
+     * пересчёт Priority Score (общий change-listener на контейнере).
+     */
     populateCriteriaSelects(criteria = []) {
         const container = this.document.getElementById('createCriteriaContainer');
         if (!container) return;
@@ -103,37 +110,60 @@ export class TaskFormDomAdapter {
             return;
         }
 
-        const n = criteria.length;
-        let labelsHtml = '';
-        let selectsHtml = '';
+        let rowsHtml = '';
         criteria.forEach(criterion => {
             const safeName = escapeHtml(criterion.name);
             const safeAbbr = escapeHtml(criterion.abbreviation);
             const safeId = parseStrictIntegerInRange(criterion.id, 1, Infinity) ?? 0;
             const safeWeight = parseStrictIntegerInRange(criterion.weight, 0, 100) ?? 0;
-            labelsHtml += `
-                <div class="create-criteria-label" title="${safeName}">
-                    <span class="create-criteria-weight-badge">${safeWeight}%</span>
-                    ${safeAbbr}
-                </div>
-            `;
-            selectsHtml += `
-                <div>
-                    <select id="criteria_${safeId}" class="criteria-score-select" data-criterion-id="${safeId}" aria-label="${safeName} оценка">
-                        ${Array.from({ length: 11 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
-                    </select>
+            const ticks = Array.from({ length: 11 }, (_, i) =>
+                `<span class="cf-scale__tick" data-value="${i}"></span>`
+            ).join('');
+            rowsHtml += `
+                <div class="cf-criteria-row">
+                    <span class="cf-criteria-label" title="${safeName}">
+                        <span class="cf-criteria-weight">${safeWeight}%</span>${safeAbbr}
+                    </span>
+                    <span class="cf-scale__end" aria-hidden="true">0</span>
+                    <span class="cf-scale" role="slider" tabindex="0"
+                          aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"
+                          aria-label="${safeName}: оценка от 0 до 10" data-criterion-id="${safeId}">
+                        <span class="cf-scale__track" aria-hidden="true">${ticks}</span>
+                    </span>
+                    <span class="cf-scale__end" aria-hidden="true">10</span>
+                    <span class="cf-scale__value" data-criterion-id="${safeId}" aria-hidden="true">0</span>
+                    <input type="hidden" id="criteria_${safeId}" class="criteria-score-select" data-criterion-id="${safeId}" value="0">
                 </div>
             `;
         });
 
-        container.innerHTML = `
-            <div class="create-criteria-grid create-criteria-grid--labels" style="--n: ${n};">
-                ${labelsHtml}
-            </div>
-            <div class="create-criteria-grid create-criteria-grid--selects" style="--n: ${n};">
-                ${selectsHtml}
-            </div>
-        `;
+        container.innerHTML = `<div class="cf-criteria-scales">${rowsHtml}</div>`;
+    }
+
+    /**
+     * Устанавливает значение шкалы критерия: hidden-input + aria-valuenow +
+     * подпись + заливка делений. dispatch=true → диспатчит change на hidden-input
+     * (триггерит пересчёт Priority Score). dispatch=false — для программной
+     * предзаливки (writeDraft/clear), где Priority Score обновляется отдельно.
+     */
+    setCriteriaScaleValue(criterionId, value, { dispatch = true } = {}) {
+        const v = Math.max(0, Math.min(10, Math.round(Number(value) || 0)));
+        const hidden = this.document.getElementById(`criteria_${criterionId}`);
+        if (!hidden) return;
+        hidden.value = String(v);
+
+        const scale = this.document.querySelector(`.cf-scale[data-criterion-id="${criterionId}"]`);
+        if (scale) {
+            scale.setAttribute('aria-valuenow', String(v));
+            scale.querySelectorAll('.cf-scale__tick').forEach(tick => {
+                const tv = Number(tick.dataset.value);
+                tick.classList.toggle('cf-scale__tick--on', tv >= 1 && tv <= v);
+            });
+        }
+        const valueEl = this.document.querySelector(`.cf-scale__value[data-criterion-id="${criterionId}"]`);
+        if (valueEl) valueEl.textContent = String(v);
+
+        if (dispatch) hidden.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     clear(criteria = []) {
@@ -147,8 +177,7 @@ export class TaskFormDomAdapter {
         });
         this.setTypeSegment('us');
         criteria.forEach(criterion => {
-            const select = this.document.getElementById(`criteria_${criterion.id}`);
-            if (select) select.value = '0';
+            this.setCriteriaScaleValue(criterion.id, 0, { dispatch: false });
         });
         this.updateCommentCounter(0, 255);
     }
@@ -163,7 +192,9 @@ export class TaskFormDomAdapter {
             jira,
             type,
             comment,
-            estimates: readCreateTaskEstimates(this.nfs),
+            // Эффорт-секция удалена из модалки (owner): не читаем часы из формы.
+            // create → новая задача стартует с est=0 (normalizeEstimates(undefined));
+            // edit → патч не содержит est, существующие часы сохраняются.
             criteriaEvaluations: collectCriteriaEvaluations(criteria)
         };
     }
@@ -186,10 +217,8 @@ export class TaskFormDomAdapter {
 
         const evaluations = draft.criteriaEvaluations || {};
         criteria.forEach(criterion => {
-            const select = this.document.getElementById(`criteria_${criterion.id}`);
-            if (!select) return;
             const score = evaluations[criterion.id]?.score;
-            select.value = String(Number.isFinite(score) ? score : 0);
+            this.setCriteriaScaleValue(criterion.id, Number.isFinite(score) ? score : 0, { dispatch: false });
         });
     }
 

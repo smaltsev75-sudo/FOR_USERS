@@ -3,7 +3,7 @@
 // js/ui/taskList/* so rendering, card sections, focus restore and overload
 // indicators can be tested independently.
 
-export { buildCriteriaHtml, buildCriteriaScoreOptions, getCriteriaScoreLevel } from './taskList/criteriaSection.js';
+export { buildCriteriaScoreOptions, getCriteriaScoreLevel } from './taskList/criteriaSection.js';
 export { buildEstimatesHtml } from './taskList/estimatesSection.js';
 export { captureCriteriaScoreFocus, restoreCriteriaScoreFocus } from './taskList/focus.js';
 export { createOverloadIndicatorModel, updateOverloadIndicators } from './taskList/overloadIndicators.js';

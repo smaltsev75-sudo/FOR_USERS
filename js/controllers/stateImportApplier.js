@@ -1,4 +1,6 @@
 import { migratePersistedState } from '../state/persistence.js';
+import { alignTasksToCriteria, calculatePriorityScore } from '../domain/criteria.js';
+import { sortTasksByPriority } from './task/taskOrderingActions.js';
 
 export function createRuntimeSnapshot({ store, criteriaManager, nfs }) {
     return {
@@ -31,7 +33,14 @@ export function applyImportedState(rawState, { store, criteriaManager, nfs }) {
     }
 
     const criteria = criteriaManager.getCriteria();
-    const tasks = alignTasksToCriteria(migratedState.tasks, criteria);
+    // v2 auto-sort (owner): импортированные задачи попадают в store УЖЕ
+    // отсортированными DESC по Priority Score (excluded — в конец). Сортировка
+    // ДО loadState → один store.update → один кадр рендера (нет мерцания).
+    const tasks = sortTasksByPriority(
+        alignTasksToCriteria(migratedState.tasks, criteria),
+        criteria,
+        (task, taskCriteria) => calculatePriorityScore(taskCriteria, task.criteriaEvaluations)
+    );
     store.loadState({
         ...migratedState,
         criteria,
@@ -46,13 +55,6 @@ export function applyImportedState(rawState, { store, criteriaManager, nfs }) {
     };
 }
 
-export function alignTasksToCriteria(tasks, criteria) {
-    return tasks.map(task => {
-        const sourceEvals = task.criteriaEvaluations || {};
-        const evaluations = {};
-        for (const c of criteria) {
-            evaluations[c.id] = sourceEvals[c.id] || { score: 0, value: 0 };
-        }
-        return { ...task, criteriaEvaluations: evaluations };
-    });
-}
+// alignTasksToCriteria перенесён в domain/criteria.js (cohesion); ре-экспорт для
+// существующих потребителей stateImportApplier (импорт-флоу + тесты).
+export { alignTasksToCriteria };

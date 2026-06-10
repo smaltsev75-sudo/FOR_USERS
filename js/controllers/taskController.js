@@ -2,6 +2,7 @@
 
 import { ROLES } from '../utils/constants.js';
 import { parseCriteriaScore } from '../domain/criteria.js';
+import { showModal, hideModal } from '../ui/modalManager.js';
 import { TaskCacheService } from './task/taskCacheService.js';
 import { TaskFormController } from './task/taskFormController.js';
 import { TaskDragController } from './task/taskDragController.js';
@@ -44,7 +45,15 @@ export class TaskController {
             () => this.invalidateCaches()
         );
 
-        this._drag = new TaskDragController(store, () => this.invalidateCaches());
+        // W37: drag держит рендер (re-render рвёт перетаскивание). Канал
+        // мутабельный — RenderScheduler создаётся в App ПОСЛЕ контроллера и
+        // подключается через setRenderHoldCallback.
+        this._renderHold = () => {};
+        this._drag = new TaskDragController(
+            store,
+            () => this.invalidateCaches(),
+            (held) => this._renderHold(held)
+        );
 
         this._list = new TaskListHandler(
             store, numberFormatService, this._cache,
@@ -55,6 +64,14 @@ export class TaskController {
 
     init() {
         this.attachEvents();
+    }
+
+    /**
+     * W37: подключает hold-канал рендера (RenderScheduler.setHold) к drag'у.
+     * @param {(held: boolean) => void} fn
+     */
+    setRenderHoldCallback(fn) {
+        if (typeof fn === 'function') this._renderHold = fn;
     }
 
     attachEvents() {
@@ -120,6 +137,30 @@ export class TaskController {
                 if (e.target.classList.contains('criteria-score-select')) {
                     this._form.updateCreateFormPriorityScore();
                 }
+            });
+
+            // Шкала-полоса критериев: 1 клик по делению → значение.
+            criteriaContainer.addEventListener('click', (e) => {
+                const tick = e.target.closest('.cf-scale__tick');
+                if (!tick) return;
+                const scale = tick.closest('.cf-scale');
+                if (!scale) return;
+                this._form.setCriteriaScaleValue(scale.dataset.criterionId, Number(tick.dataset.value), { dispatch: true });
+            });
+
+            // Клавиатура на шкале (role="slider"): ←/↓ −1, →/↑ +1, Home 0, End 10.
+            criteriaContainer.addEventListener('keydown', (e) => {
+                const scale = e.target.closest && e.target.closest('.cf-scale');
+                if (!scale) return;
+                const cur = Number(scale.getAttribute('aria-valuenow')) || 0;
+                let next;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = cur + 1;
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = cur - 1;
+                else if (e.key === 'Home') next = 0;
+                else if (e.key === 'End') next = 10;
+                else return;
+                e.preventDefault();
+                this._form.setCriteriaScaleValue(scale.dataset.criterionId, next, { dispatch: true });
             });
         }
 
@@ -226,8 +267,18 @@ export class TaskController {
                 else if (action === 'moveDown') this.handleMoveTask(id, 'down');
                 else if (action === 'toggleExclude') this.handleToggleExclude(id);
                 else if (action === 'delete') this.handleDeleteTask(id);
+                else if (action === 'openNote') this.handleOpenNote(id);
             });
+        }
 
+        // Модалка комментария SM (#noteModal): открытие из иконки строки задачи.
+        const saveNoteBtn = document.getElementById('saveNoteBtn');
+        if (saveNoteBtn) saveNoteBtn.addEventListener('click', () => this._saveNote());
+        const closeNote = () => { const m = document.getElementById('noteModal'); if (m) hideModal(m); };
+        document.getElementById('cancelNoteBtn')?.addEventListener('click', closeNote);
+        document.getElementById('closeNoteModalBtn')?.addEventListener('click', closeNote);
+        document.getElementById('noteModalInput')?.addEventListener('input', () => this._updateNoteCounter());
+        if (taskList) {
             this._drag.attachTo(taskList);
         }
 
@@ -330,6 +381,39 @@ export class TaskController {
      * @param {Event} e
      */
     handleUpdateEst(e) { this._list.handleUpdateEst(e); }
+
+    /**
+     * Открывает модалку комментария SM (#noteModal) для задачи id, заполняя
+     * текущим значением task.note. Сохранение — _saveNote (кнопка «Сохранить»).
+     */
+    handleOpenNote(id) {
+        const task = (this.store.getState().tasks || []).find(t => t.id === id);
+        if (!task) return;
+        this._noteTaskId = id;
+        const input = document.getElementById('noteModalInput');
+        if (input) { input.value = typeof task.note === 'string' ? task.note : ''; }
+        this._updateNoteCounter();
+        const modal = document.getElementById('noteModal');
+        if (modal) showModal(modal);
+    }
+
+    /** Сохраняет комментарий SM из модалки в задачу (до 500 симв) и закрывает окно. */
+    _saveNote() {
+        const input = document.getElementById('noteModalInput');
+        const id = this._noteTaskId;
+        if (Number.isFinite(id) && input) {
+            this.store.updateTask(id, { note: String(input.value || '').slice(0, 500) });
+        }
+        const modal = document.getElementById('noteModal');
+        if (modal) hideModal(modal);
+    }
+
+    /** Обновляет счётчик оставшихся символов в модалке комментария. */
+    _updateNoteCounter() {
+        const input = document.getElementById('noteModalInput');
+        const counter = document.getElementById('noteModalCounter');
+        if (input && counter) counter.textContent = `Осталось: ${Math.max(0, 500 - input.value.length)}`;
+    }
 
     /**
      * Обрабатывает изменение оценки по критерию (legacy — был для <select>).

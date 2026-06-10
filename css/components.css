@@ -2,13 +2,36 @@
 /* Переменные темы определены в base.css */
 
 /* ---------- Общие элементы ---------- */
+/* Shared panel surface (sage-green shadcn): тонкая рамка var(--border),
+   единый radius var(--radius), мягкая тень. Один и тот же визуальный контракт
+   используют cfg-panel, dash-grid panels и team-cap header → блоки выровнены
+   по сетке как в sprint-planner-cloud (.team-load-panel / .work-type-panel). */
 .panel {
     background: var(--bg-card);
-    padding: 10px 12px;
-    border-radius: 10px;
+    padding: 14px 16px;
+    border-radius: var(--radius);
     margin-bottom: 12px;
     border: 1px solid var(--border);
-    box-shadow: 0 4px 6px var(--shadow-sm);
+    box-shadow: 0 2px 8px var(--shadow-sm);
+}
+
+/* dash-grid panels делят одну сетку: равная ширина (1fr 1fr из layout.css),
+   одинаковый внутренний gap между заголовком и телом, выровненные верхние
+   края. Обе панели — flex-колонки, чтобы тело (team-cap / table-dash)
+   тянулось на одну высоту, а заголовки лежали на общей базовой линии. */
+.dash-grid > .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+/* Заголовок секции внутри dash-grid panel прижат к телу единым ритмом:
+   panel-title-sm base (a11y.css) даёт font-size/типографику, здесь только
+   снимаем нижний margin — расстояние задаёт panel gap, одинаковое в обеих. */
+.dash-grid > .panel > .panel-title-sm {
+    margin-bottom: 0;
+    flex: 0 0 auto;
 }
 
 .header-title {
@@ -99,30 +122,10 @@
     border-bottom: 2px solid var(--accent);
 }
 
-/* Header counter color classes — used by createTaskRowVM/legacy markup
-   for accessibility-compatible color styling. (Toolbar status indicators
-   moved to css/toolbar.css.) */
-.header-color-accent { color: var(--accent); }
-.header-color-excluded { color: var(--excluded); }
-.header-color-us { color: var(--us-color); }
-.header-color-bug { color: var(--bug-color); }
-.header-color-tech { color: var(--tech-color); }
-
 /* v8.27.1: legacy .res-grid-header / .role-res-row / .role-total-row /
    .role-load-numbers / .role-name-cell / .role-inline-stats / .role-input-cell
    / .role-total-numbers удалены — заменены на team-cap__card (Stream A v8.21).
-   .progress-bg / .progress-fill сохранены — используются в других компонентах. */
-.progress-bg {
-    height: 8px;
-    background: var(--progress-track);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    transition: width 0.3s;
-}
+   v8.30.69: .progress-bg / .progress-fill удалены — без живых потребителей. */
 
 /* ---------- Таблица распределения работ (Data Grid стиль, v8.24) ---------- */
 .panel--matrix {
@@ -160,11 +163,22 @@
     overflow: hidden;
     /* Tabular figures: цифры выравниваются по разрядам строго друг под другом. */
     font-variant-numeric: tabular-nums;
-    /* v8.27.3: ранее `height: 1px; flex: 1 1 auto` вместе с `tbody tr { height: 100% }`
-       пытались растянуть таблицу на всю высоту panel'а. Связка триггерила
-       Chrome/WebKit-баг — лишняя высота уходила в ПЕРВУЮ tbody-строку (UI/UX),
-       а не распределялась поровну. Высота таблицы теперь равна сумме строк +
-       padding'ов; пустое пространство в panel'е заполняется через flex-grid выше. */
+    /* Bottom-alignment: таблица — flex-item в колоночном .panel--matrix, тянется
+       на всю свободную высоту panel'а, который stretch'ится под высоту соседней
+       «Загрузка команды». Нижний край таблицы совпадает с низом соседней панели.
+       v8.27.3 запрещал растяжение из-за `tbody tr { height: 100% }`, который
+       сбрасывал лишнюю высоту в ПЕРВУЮ строку. Этого правила больше нет, поэтому
+       распределение по строкам через row-group ниже безопасно. */
+    flex: 1 1 auto;
+}
+
+/* Свободную высоту таблицы поглощает tbody (а не отдельная строка): строки
+   tbody делят лишнее пространство равномерно, ИТОГО-строка остаётся прижата к
+   низу. Высота задаётся на row-group, не на конкретной <tr>, поэтому Chrome/
+   WebKit не сбрасывают остаток в первую строку (баг v8.27.3 был именно от
+   `tbody tr { height: 100% }`). */
+.panel--matrix > .table-dash > tbody {
+    height: 100%;
 }
 
 .table-dash th,
@@ -363,10 +377,12 @@
 }
 
 /* v8.27.1: усиленные цвета для соблюдения WCAG AA 4.5:1 на .total-row фоне.
-   Базовые --matrix-bug/--matrix-tech дают 2.85–4.26 (axe-core fail). */
+   Базовые --matrix-bug/--matrix-tech дают 2.85–4.26 (axe-core fail).
+   redesign v2: us тоже переведён на -strong — #5b9df0 на total-row glass в
+   тёмной теме давал 4.24 (axe serious). */
 .matrix-total[data-type="bug"] { --type-color: var(--bug-color-strong); }
 .matrix-total[data-type="tech"] { --type-color: var(--tech-color-strong); }
-.matrix-total[data-type="us"] { --type-color: var(--matrix-us); }
+.matrix-total[data-type="us"] { --type-color: var(--us-color-strong); }
 
 /* v8.26: визуальный приоритет на доле от ёмкости (что важнее для
    принятия решений о балансе спринта) — крупный, жирный, в цвете типа.

@@ -291,6 +291,10 @@ export class Store {
     setDensity(density) {
         const valid = ['compact', 'comfortable'];
         const normalized = valid.includes(density) ? density : 'comfortable';
+        // No-op, если значение не меняется: повторный клик по уже активной кнопке
+        // не должен дёргать notify→re-render списка задач (owner). Сравниваем с
+        // raw-значением, чтобы первый явный переход с дефолта всё же отрисовался.
+        if ((this.getState().ui || {}).density === normalized) return;
         this.update(state => ({
             ...state,
             ui: { ...(state.ui || {}), density: normalized }
@@ -304,6 +308,9 @@ export class Store {
      */
     setViewMode(mode) {
         const safeMode = VALID_VIEW_MODES.includes(mode) ? mode : 'list';
+        // No-op при неизменном raw-значении (см. setDensity): повторный клик по
+        // уже активной кнопке режима не должен перерисовывать список задач.
+        if ((this.getState().ui || {}).viewMode === safeMode) return;
         this.update(state => ({
             ...state,
             ui: { ...(state.ui || {}), viewMode: safeMode }

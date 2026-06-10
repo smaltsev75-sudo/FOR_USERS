@@ -6,7 +6,14 @@ export class ConfigFormAdapter {
     }
 
     attachEvents(handlers) {
-        this.byId('cfgProduct')?.addEventListener('blur', handlers.onProductChange);
+        const productEl = this.byId('cfgProduct');
+        if (productEl) {
+            productEl.addEventListener('blur', handlers.onProductChange);
+            // Tooltip с полным названием продукта при наведении (если не умещается).
+            const syncProductTitle = () => { productEl.title = productEl.value; };
+            productEl.addEventListener('input', syncProductTitle);
+            syncProductTitle();
+        }
         this.byId('cfgDays')?.addEventListener('input', handlers.onDaysInput);
         this.byId('cfgDays')?.addEventListener('blur', handlers.onDaysChange);
         this.byId('cfgStartDate')?.addEventListener('change', handlers.onStartDateChange);
@@ -41,6 +48,8 @@ export class ConfigFormAdapter {
         } = config;
 
         this.syncInputValue(this.byId('cfgProduct'), product);
+        const productEl = this.byId('cfgProduct');
+        if (productEl) productEl.title = product;  // tooltip = полное название
         this.syncInputValue(this.byId('cfgDays'), String(days));
         this.syncInputValue(this.byId('cfgHolidays'), String(holidays));
         this.syncInputValue(this.byId('cfgStartDate'), startDate);

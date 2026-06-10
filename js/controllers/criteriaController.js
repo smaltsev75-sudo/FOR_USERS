@@ -9,9 +9,11 @@
 //   - SVG-иконки edit/delete (через делегирование data-action — без изменений)
 
 import { messageService } from '../services/message.js';
+import { showModal, hideModal } from '../ui/modalManager.js';
 import { CriteriaFormController } from './criteria/criteriaFormController.js';
 import { updateSumBar } from '../ui/criteriaList.js';
 import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
+import { initializeCriteriaEvaluations } from '../domain/criteria.js';
 
 export class CriteriaController {
     constructor(store, criteriaManager) {
@@ -28,11 +30,20 @@ export class CriteriaController {
     }
 
     attachEvents() {
-        const addBtn = document.getElementById('addCriteriaBtn');
-        if (addBtn) addBtn.addEventListener('click', () => this._form.openEditCriteria());
+        // v2: критерии — отдельное окно (#criteriaModal). Открытие из шапки/rail,
+        // закрытие крестиком/кнопкой/Esc (Esc — общий обработчик modalManager).
+        const criteriaModal = document.getElementById('criteriaModal');
+        const openBtn = document.getElementById('openCriteriaBtn');
+        if (openBtn && criteriaModal) openBtn.addEventListener('click', () => showModal(criteriaModal));
+        const closeModalBtn = document.getElementById('closeCriteriaModalBtn');
+        if (closeModalBtn && criteriaModal) closeModalBtn.addEventListener('click', () => hideModal(criteriaModal));
+        const closeBtn = document.getElementById('closeCriteriaBtn');
+        if (closeBtn && criteriaModal) closeBtn.addEventListener('click', () => hideModal(criteriaModal));
 
-        const resetBtn = document.getElementById('resetCriteriaBtn');
-        if (resetBtn) resetBtn.addEventListener('click', () => this.resetCriteria());
+        // «Сбросить»/«Добавить» теперь рендерятся внутри #criteriaList (sum-bar)
+        // и пересоздаются при каждом re-render — поэтому обрабатываются
+        // делегированно в _handleListClick (как #criteriaAutoBalanceBtn), а не
+        // прямым listener'ом по id (он бы отвалился после первого re-render).
 
         const closeEditModalBtn = document.getElementById('closeEditCriteriaModalBtn');
         if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', () => this._form.closeEditCriteria());
@@ -71,9 +82,17 @@ export class CriteriaController {
     // ──────────────────────────────────────────────────────────────────────────
 
     _handleListClick(e) {
-        // Auto-balance кнопка — отдельно (не имеет data-action)
+        // Кнопки sum-bar (без data-action) — делегированно, переживают re-render.
         if (e.target.closest('#criteriaAutoBalanceBtn')) {
             this.autoBalanceWeights();
+            return;
+        }
+        if (e.target.closest('#addCriteriaBtn')) {
+            this._form.openEditCriteria();
+            return;
+        }
+        if (e.target.closest('#resetCriteriaBtn')) {
+            this.resetCriteria();
             return;
         }
 
@@ -334,13 +353,10 @@ export class CriteriaController {
                 cmgr.loadDefaultCriteria();
                 store.setCriteria(cmgr.getCriteria());
                 const criteria = cmgr.getCriteria();
-                const tasks = store.getState().tasks.map(task => {
-                    const criteriaEvaluations = {};
-                    criteria.forEach(criterion => {
-                        criteriaEvaluations[criterion.id] = { score: 0, value: 0 };
-                    });
-                    return { ...task, criteriaEvaluations };
-                });
+                const tasks = store.getState().tasks.map(task => ({
+                    ...task,
+                    criteriaEvaluations: initializeCriteriaEvaluations(criteria)
+                }));
                 store.setTasks(tasks);
                 messageService.showMessage('Критерии сброшены к значениям по умолчанию');
             }

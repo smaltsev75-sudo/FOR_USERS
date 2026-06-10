@@ -53,7 +53,7 @@ export class CriteriaFormController {
         const cmgr = this.criteriaManager;
         if (!cmgr) return;
 
-        const modalTitle = document.getElementById('criteriaModalTitle');
+        const modalTitle = document.getElementById('editCriteriaModalTitle');
         const nameInput = document.getElementById('editCriteriaName');
         const abbreviationInput = document.getElementById('editCriteriaAbbreviation');
         const weightInput = document.getElementById('editCriteriaWeight');

@@ -6,7 +6,7 @@ import { showSnackbar } from '../../ui/snackbar.js';
 import { buildCriteriaEvaluationUpdate } from './criteriaScoreMutations.js';
 import { buildEstimateUpdate } from './taskEstimateMutations.js';
 import { buildToggleExcludeUpdate } from './taskExcludeMutations.js';
-import { moveTaskByDirection, normalizeTaskOrder, sortTasksByPriority } from './taskOrderingActions.js';
+import { moveTaskByDirection, resortTasksByPriority, sortTasksByPriority } from './taskOrderingActions.js';
 import { restoreDeletedTask, restoreDeletedTasks } from './undoDeleteService.js';
 
 /**
@@ -34,6 +34,22 @@ export class TaskListHandler {
         this._cache = cache;
         this._getSelectedTaskId = getSelectedTaskId;
         this._setSelectedTaskId = setSelectedTaskId;
+    }
+
+    /**
+     * Авто-сортировка (owner, v2): список всегда пересортируется DESC по
+     * Priority Score после правки оценок / исключения / удаления / undo.
+     * Кэш-калькулятор используется когда готов; иначе тихий fallback на
+     * доменный расчёт (без user-message — это не ручная команда сортировки).
+     * Вызов в одном синхронном флоу с мутацией → один rAF-кадр, нет мерцания.
+     */
+    _resortByPriority() {
+        resortTasksByPriority(
+            this.store,
+            this._cache.isReady()
+                ? (task, criteria) => this._cache.getCachedPriorityScore(task, criteria)
+                : null
+        );
     }
 
     /**
@@ -70,6 +86,7 @@ export class TaskListHandler {
         if (!update) return;
         this.store.updateTask(taskId, update);
         this._cache.invalidate();
+        this._resortByPriority();
     }
 
     /**
@@ -85,7 +102,9 @@ export class TaskListHandler {
         const applyExclusion = () => {
             this.store.updateTask(taskId, updates);
             this._cache.invalidate();
-            this.store.setTasks(normalizeTaskOrder(this.store.getState().tasks));
+            // v2 auto-sort: вместо только excluded-в-конец — полная пересортировка
+            // DESC по score (включает fixTaskOrder).
+            this._resortByPriority();
         };
         const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
         if (taskElement) {
@@ -134,6 +153,7 @@ export class TaskListHandler {
             this.store.deleteTask(taskId);
             if (this._getSelectedTaskId() === taskId) this._setSelectedTaskId(null);
             this._cache.invalidate();
+            this._resortByPriority();
         };
 
         const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
@@ -166,6 +186,8 @@ export class TaskListHandler {
                 const restored = restoreDeletedTask(currentTasks, deletedTask, originalIndex);
                 if (restored) this.store.setTasks(restored);
                 this._cache.invalidate();
+                // v2 auto-sort: восстановленная задача занимает позицию по score.
+                this._resortByPriority();
             }
         });
     }
@@ -196,6 +218,8 @@ export class TaskListHandler {
                     const currentTasks = this.store.getState().tasks;
                     this.store.setTasks(restoreDeletedTasks(currentTasks, deletedTasks));
                     this._cache.invalidate();
+                    // v2 auto-sort: восстановленный список — DESC по score.
+                    this._resortByPriority();
                 }
             });
         });

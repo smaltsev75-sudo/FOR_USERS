@@ -11,8 +11,6 @@ import { TaskController } from './controllers/taskController.js';
 import { CriteriaController } from './controllers/criteriaController.js';
 import { SelectionController } from './controllers/selectionController.js';
 import { FileController } from './controllers/fileController.js';
-import { RecoveryController } from './controllers/recoveryController.js';
-import { TabController } from './controllers/tabController.js';
 import { ViewModeController } from './controllers/viewModeController.js';
 import { renderApp } from './ui/index.js';
 import { calculatePriorityScore } from './domain/criteria.js';
@@ -20,6 +18,7 @@ import { createDefaultConfig } from './domain/config.js';
 import { createDefaultRoles } from './domain/role.js';
 import { HelpController } from './controllers/helpController.js';
 import { KeyboardController } from './controllers/keyboardController.js';
+import { PrintController } from './controllers/printController.js';
 import { migratePersistedState, serializeStateForStorage } from './state/persistence.js';
 import { ThemeController } from './controllers/themeController.js';
 import { DensityController } from './controllers/densityController.js';
@@ -59,11 +58,11 @@ export class App {
         this.criteriaController = new CriteriaController(this.store, this.criteriaManager);
         this.selectionController = new SelectionController(this.store, this.criteriaManager, this.nfs);
         this.fileController = new FileController(this.store, this.nfs, this.criteriaManager);
-        this.recoveryController = new RecoveryController(this.store, this.nfs, this.criteriaManager);
-        this.tabController = new TabController(this.store);
         this.viewModeController = new ViewModeController(this.store);
         this.helpController = new HelpController();
-        this.keyboardController = new KeyboardController(this.taskController, this.fileController);
+        this.printController = new PrintController();
+        // Печать проходит через диалог параметров (исключённые задачи) → requestPrint.
+        this.keyboardController = new KeyboardController(this.taskController, this.fileController, this.printController.requestPrint);
         this.themeController = new ThemeController();
         this.densityController = new DensityController(this.store);
         this.renderScheduler = new RenderScheduler(() => this.render());
@@ -76,6 +75,8 @@ export class App {
             showSnackbar
         });
         this.requestRender = this.renderScheduler.requestRender;
+        // W37: на время drag рендер откладывается (re-render рвёт перетаскивание).
+        this.taskController.setRenderHoldCallback(this.renderScheduler.setHold);
         this.schedulePersist = this.persistenceCoordinator.schedulePersist;
         this.saveToLS = this.persistenceCoordinator.saveNow.bind(this.persistenceCoordinator);
 
@@ -113,8 +114,6 @@ export class App {
         this.criteriaController.init();
         this.selectionController.init();
         this.fileController.init();
-        this.recoveryController.init();
-        this.tabController.init();
         this.viewModeController.init();
         this.helpController.init();
         this.store.subscribe(() => {
@@ -124,6 +123,7 @@ export class App {
         window.addEventListener('beforeunload', () => {
             this.persistenceCoordinator.flush();
         });
+        this.printController.init();
         this.keyboardController.init();
         this.requestRender();
     }
@@ -215,8 +215,9 @@ export async function bootstrapApp() {
         // нормализовала state и при первом save перештамповывала raw →
         // исходное состояние терялось. Теперь backup срабатывает на любой
         // нетекущей версии (включая NaN — fromVersion=0 как legacy-marker).
-        // Также corrupt JSON бэкапим — пользователь может захотеть посмотреть
-        // raw для recovery.
+        // Также corrupt JSON бэкапим. W36: Recovery Center UI удалён (owner),
+        // но backup в `sprintPlannerData.backup` сохраняем как data-safety
+        // страховку миграции (ручной разбор через DevTools/поддержку).
         const needsBackup = (parsed === null)
             || (!Number.isFinite(savedVersion))
             || (savedVersion !== APP_CONFIG.STORAGE_VERSION);

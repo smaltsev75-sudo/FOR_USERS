@@ -42,8 +42,27 @@
     .est-box-bar-fill,
     .criteria-eval-bar,
     .criteria-eval-bar-fill,
-    .criteria-eval-step {
+    .criteria-eval-step,
+    .quadrant-group--empty,
+    .task-note-btn {
         display: none !important;
+    }
+
+    /* Sticky-заголовки в печати ведут себя как «прилипшие» к странице и
+       перекрывают карточки (owner-баг: плашка квадранта поверх задачи).
+       В print весь контент — статический поток. */
+    .quadrant-group-header,
+    .toolbar {
+        position: static;
+    }
+
+    /* Исключённые из спринта задачи печатаются только если в диалоге печати
+       включён чек-бокс. Атрибут data-print-excluded='hide' ставит PrintController
+       на <html>. Без !important: специфичность (0,2,0)/(0,3,0) + print.css загружен
+       последним → перебивает screen-правила. */
+    [data-print-excluded="hide"] .task-item.excluded,
+    [data-print-excluded="hide"] .quadrant-group--excluded {
+        display: none;
     }
 
     /* v8.30.6: print-only timestamp рядом с версией приложения. По умолчанию
@@ -68,6 +87,14 @@
     body {
         margin: 0.5in;
         padding: 0;
+    }
+
+    /* В печати app-rail скрыт (см. app-rail.css) — снимаем зарезервированный под
+       него padding-left:72px у .container, иначе контент сужается и обрезается
+       справа (матрица/бейджи уезжают за край листа A4). */
+    .container {
+        padding: 0;
+        max-width: none;
     }
 
     /* ---------- ПАНЕЛЬ ПАРАМЕТРОВ СПРИНТА ---------- */
@@ -145,17 +172,6 @@
     /* v8.27.1: legacy print-стили для .res-grid-header / .role-res-row /
        .role-total-row удалены — print rendering для team-cap__card живёт ниже. */
 
-    .progress-bg {
-        background: #eee !important;
-        border: 1px solid #000;
-        height: 8px;
-    }
-    
-    .progress-fill {
-        background: #000 !important;
-        opacity: 0.5;
-    }
-
     /* ---------- Таблица распределения работ ---------- */
     .table-dash {
         border-collapse: collapse;
@@ -164,7 +180,9 @@
     
     .table-dash th,
     .table-dash td {
-        border: 1px solid #000;
+        /* #4 (owner): не выводить линии сетки для ролей — только разделитель
+           заголовка (th border-bottom ниже) и итоговой строки (.total-row). */
+        border: none;
         padding: 6px;
         text-align: right;
     }
@@ -184,6 +202,51 @@
         font-weight: bold;
         border-top: 2px solid #000;
         background: #f5f5f5 !important;
+    }
+
+    /* #1 (owner): параметры спринта — все поля в ОДНУ строку (на A4 экранный
+       nowrap-брейкпоинт ≥1280px не срабатывает, поэтому форсируем здесь). */
+    .cfg-fields {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        align-items: flex-end;
+    }
+    .cfg-field {
+        min-width: 0;
+        flex: 0 1 auto;
+    }
+    .cfg-field--product {
+        flex: 1 1 auto;
+    }
+    .cfg-input {
+        min-width: 0;
+        width: 100%;
+    }
+    .cfg-label,
+    .cfg-input,
+    .cfg-section-title {
+        font-size: 8pt;
+    }
+
+    /* #2 / #3 (owner): надписи капасити-карт — в одну строку (без переноса). */
+    .team-cap__card-numbers,
+    .team-cap__card-control-label {
+        white-space: nowrap;
+    }
+
+    /* Комментарий SM: в строке — иконка (в печать не идёт), а сам текст
+       рендерится в .task-note-print ТОЛЬКО если коммент заполнен (taskCard.js). */
+    .task-note-print {
+        display: block;
+        white-space: pre-wrap;
+        font-size: 9pt;
+        margin-top: 6px;
+        padding-top: 5px;
+        border-top: 1px dashed #999;
+    }
+    .task-note-print-label {
+        font-weight: bold;
     }
 
     /* ---------- КАРТОЧКА ЗАДАЧИ ---------- */

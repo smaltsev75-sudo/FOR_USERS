@@ -70,7 +70,4 @@
    border-color: var(--accent);
 }
 
-.recovery-btn:hover {
-   color: var(--warning);
-   border-color: var(--warning);
-}
+/* .recovery-btn удалён вместе с Recovery Center (owner, W36). */

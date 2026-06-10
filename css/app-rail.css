@@ -1,0 +1,125 @@
+/* ---------- app-rail.css ---------- */
+/* Вертикальный icon-rail слева (redesign v2, desktop-only).
+   Образец — sprint-planner-cloud .app-rail / .rail-button (там rail слева 76px).
+   Узкий вертикальный столбец icon-only кнопок, тонкие границы, rounded,
+   hover/active, sage-green акцент на active.
+   Все цвета через var(--*) из css/base.css. Без media-queries — desktop-only. */
+
+.app-rail {
+    position: fixed;
+    top: 0;
+    left: 0;                     /* rail СЛЕВА (owner, как в sprint-planner-cloud) */
+    z-index: 50;                 /* ниже модалок (1000+), выше контента */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 60px;
+    height: 100vh;
+    padding: 10px 8px;
+    /* Приподнятая поверхность с мягким верхним хайлайтом — премиальная глубина,
+       когерентно в обеих темах через полупрозрачный overlay поверх --bg-card. */
+    background: linear-gradient(180deg, var(--overlay-faint), transparent 36%), var(--bg-card);
+    border-right: 1px solid var(--border);
+    box-shadow: 4px 0 16px var(--shadow-md);
+}
+
+.app-rail__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ===== icon-кнопки внутри rail =====
+   Перекрывают базовый .export-btn (padding/inline-flex/gap из buttons.css):
+   квадратные icon-only кнопки, прозрачный фон, иконка currentColor. */
+.app-rail .rail-btn,
+.app-rail .export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    box-sizing: border-box;
+    width: 44px;                 /* tap-target >= 44px */
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-muted-strong);    /* #7: контрастнее, чем бледный --text-muted */
+    cursor: pointer;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease;
+    white-space: nowrap;
+}
+
+.app-rail .rail-btn .icon,
+.app-rail .rail-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* hover: лёгкий sage-подсвеченный фон, иконка к акценту */
+.app-rail .rail-btn:hover {
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+    border-color: var(--accent-border-faint);
+    transform: none;             /* гасим translateY из .export-btn:hover */
+    box-shadow: none;
+}
+
+/* active / aria-pressed: сплошной sage-акцент */
+.app-rail .rail-btn:active,
+.app-rail .rail-btn[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+}
+
+/* focus-visible: видимый ring (WCAG 2.4.7), без подавления outline */
+.app-rail .rail-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+/* ===== скрытые текст-лейблы =====
+   Текст остаётся в DOM (screen-reader + существующие textContent-тесты),
+   но визуально не виден. Тот же sr-only паттерн, что .visually-hidden. */
+.app-rail .rail-label,
+.app-rail .theme-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Иконка темы остаётся видимой (JS подставляет sun/moon SVG). */
+.app-rail .theme-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-rail .theme-toggle-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Rail не печатается. Без !important — это единственное `display`-правило для
+   .app-rail; print.css грузится позже, но его `* { background/color }` не трогает
+   display, поэтому переопределения нет (и !important-budget не растёт). */
+@media print {
+    .app-rail {
+        display: none;
+    }
+}

@@ -1,5 +1,6 @@
 import { APP_VERSION } from '../version.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
+import { byteLength, finiteOrNull } from '../utils/measure.js';
 
 const STORAGE_KEY = 'sprintPlannerData';
 const BACKUP_KEY = 'sprintPlannerData.backup';
@@ -121,16 +122,6 @@ function parseJson(raw) {
     } catch {
         return null;
     }
-}
-
-function byteLength(value) {
-    if (typeof value !== 'string') return 0;
-    return new Blob([value]).size;
-}
-
-function finiteOrNull(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
 }
 
 function safeTimeZone(env) {

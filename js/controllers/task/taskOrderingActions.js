@@ -2,6 +2,7 @@
 // js/controllers/task/taskOrderingActions.js
 
 import { fixTaskOrder } from '../../domain/task.js';
+import { calculatePriorityScore } from '../../domain/criteria.js';
 
 /**
  * Нормализует order-поля без изменения пользовательского порядка.
@@ -28,6 +29,28 @@ export function sortTasksByPriority(tasks, criteria, getPriorityScore) {
         return scoreB - scoreA;
     });
     return fixTaskOrder(sorted);
+}
+
+/**
+ * Авто-сортировка (owner, v2): пересортирует задачи store по убыванию
+ * Priority Score (excluded — в конец) и коммитит через store.reorderTasks.
+ *
+ * Единая точка для всех триггеров авто-сортировки: импорт JSON / recovery,
+ * создание задачи, правка оценок критериев, удаление/undo, исключение.
+ * ВАЖНО: вызывать в ОДНОМ синхронном флоу с мутацией-триггером — несколько
+ * синхронных store.update сливаются rAF-батчингом RenderScheduler в один
+ * кадр (см. tests/unit/app/renderScheduler.test.js), экран не мерцает.
+ *
+ * @param {{ getState: Function, reorderTasks: Function }} store
+ * @param {((task: object, criteria: Array<object>) => number)|null} [getPriorityScore]
+ *        — опциональный калькулятор (например, кэшированный); по умолчанию
+ *        доменный calculatePriorityScore.
+ */
+export function resortTasksByPriority(store, getPriorityScore = null) {
+    const state = store.getState();
+    const calc = getPriorityScore
+        || ((task, criteria) => calculatePriorityScore(criteria || [], task.criteriaEvaluations));
+    store.reorderTasks(sortTasksByPriority(state.tasks, state.criteria || [], calc));
 }
 
 /**

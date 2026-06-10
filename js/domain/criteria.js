@@ -31,6 +31,27 @@ export function initializeCriteriaEvaluations(criteria) {
     return evaluations;
 }
 
+/**
+ * Strict-align eval-карты задачи к набору критериев: только ключи criteria,
+ * существующие значения сохраняются, отсутствующие → {score:0,value:0},
+ * orphan-ключи (нет в criteria) отбрасываются. Используется при импорте/восстановлении.
+ */
+export function alignCriteriaEvaluations(sourceEvaluations, criteria) {
+    const source = sourceEvaluations || {};
+    const evaluations = {};
+    for (const criterion of criteria) {
+        evaluations[criterion.id] = source[criterion.id] || { score: 0, value: 0 };
+    }
+    return evaluations;
+}
+
+export function alignTasksToCriteria(tasks, criteria) {
+    return tasks.map(task => ({
+        ...task,
+        criteriaEvaluations: alignCriteriaEvaluations(task.criteriaEvaluations, criteria)
+    }));
+}
+
 export function calculateCriteriaValue(score, weight) {
     return (score * weight) / 10;
 }

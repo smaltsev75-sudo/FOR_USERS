@@ -1,0 +1,15 @@
+{
+  "_comment": "Source of truth for vendored libraries (DELIVERY-1 drift guard). Updating a js/vendor/*.min.js REQUIRES bumping its version/source here; tests/unit/architecture/vendored-libs-drift.test.js fails on any mismatch. npmPin entries are cross-checked against package.json so a vendored file cannot drift away from its npm pin (or vice versa). Not a runtime asset.",
+  "marked.min.js": {
+    "name": "marked",
+    "version": "15.0.12",
+    "source": "github.com/markedjs/marked",
+    "npmPin": null
+  },
+  "purify.min.js": {
+    "name": "DOMPurify",
+    "version": "3.4.9",
+    "source": "github.com/cure53/DOMPurify",
+    "npmPin": "dompurify"
+  }
+}

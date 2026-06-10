@@ -64,12 +64,6 @@ export const COMMANDS = Object.freeze({
         }),
         manualAction: 'Скачать диагностический пакет без текстов задач'
     }),
-    recovery: Object.freeze({
-        id: 'recovery',
-        buttonId: 'recoveryCenterBtn',
-        label: 'Резерв',
-        title: 'Открыть центр восстановления из локальной резервной копии'
-    }),
     help: Object.freeze({
         id: 'help',
         buttonId: 'helpBtn',
@@ -129,17 +123,18 @@ export const COMMANDS = Object.freeze({
     })
 });
 
+// Кнопка «Диагностика» убрана из rail (owner) → нет в HEADER; хоткей
+// Ctrl+Alt+D сохранён (вызывает downloadDiagnostics напрямую). Recovery Center
+// удалён целиком в W36 (owner) — команды «recovery» больше не существует.
 export const HEADER_COMMAND_IDS = Object.freeze([
     'theme',
     'print',
     'load',
     'save',
-    'diagnostics',
-    'recovery',
     'help'
 ]);
 
-export const KEYBOARD_COMMAND_IDS = Object.freeze([
+const KEYBOARD_COMMAND_IDS = Object.freeze([
     'save',
     'load',
     'createTask',
@@ -148,7 +143,7 @@ export const KEYBOARD_COMMAND_IDS = Object.freeze([
     'diagnostics'
 ]);
 
-export const MANUAL_HOTKEY_COMMAND_IDS = Object.freeze([
+const MANUAL_HOTKEY_COMMAND_IDS = Object.freeze([
     'save',
     'load',
     'createTask',
@@ -176,7 +171,7 @@ export function getManualHotkeys() {
     });
 }
 
-export function matchesHotkey(event, hotkey) {
+function matchesHotkey(event, hotkey) {
     const hasPrimary = Boolean(event.ctrlKey || event.metaKey);
     if (Boolean(hotkey.primary) !== hasPrimary) return false;
     if (Boolean(hotkey.alt) !== Boolean(event.altKey)) return false;

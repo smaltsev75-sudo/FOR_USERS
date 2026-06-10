@@ -1,40 +1,8 @@
 /* ---------- animations.css ---------- */
 /* Анимации и состояния drag-and-drop */
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    to {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-}
-
-.task-item.dragging {
-    opacity: 0.5;
-    transform: scale(1.02);
-    box-shadow: 0 10px 20px var(--shadow-lg);
-    transition: all 0.2s ease;
-}
-
-.task-item.drag-over {
-    border: 2px dashed var(--accent);
-    transform: scale(1.01);
-    transition: all 0.2s ease;
-}
+/* fadeIn/slideOut + .task-item.dragging/.drag-over живут в task-card-states.css
+   (вместе со своими consumer'ами); здесь оставлена только подсветка новой задачи. */
 
 /* ---------- Подсветка новой задачи ---------- */
 @keyframes highlightPulse {

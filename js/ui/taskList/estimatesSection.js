@@ -17,7 +17,7 @@ const ROLE_ICON_MAP = {
  * @param {number} taskTotal
  * @returns {string}
  */
-export function buildEstimatesHtml(task, roles, nfs, taskTotal) {
+export function buildEstimatesHtml(task, roles, nfs, _taskTotal) {
     const maxVal = Math.max(1, ...roles.map(r => Number(task.est[r.id]) || 0));
     let chips = '';
     roles.forEach(role => {
@@ -44,19 +44,12 @@ export function buildEstimatesHtml(task, roles, nfs, taskTotal) {
             </div>
         `;
     });
-    const totalHtml = `
-        <div class="est-box est-box-total" data-effort="${nfs.formatNumber(taskTotal)}">
-            <span class="est-box-total-icon" aria-hidden="true">${icon('gauge')}</span>
-            <span class="est-box-total-label">Σ Effort</span>
-            <span class="task-effort-value">${nfs.formatNumber(taskTotal)} ч</span>
-            <div class="overload-placeholder" data-role="total"></div>
-        </div>
-    `;
+    // SM-комментарий рендерится НЕ здесь: в строке — иконка (taskCard.js),
+    // редактирование — в модалке #noteModal. Σ Effort total тоже убран (в бейдже).
     return `
         <div class="task-estimates-label">Оценка трудозатрат</div>
         <div class="task-estimates-grid">
             <div class="task-estimates-roles">${chips}</div>
-            ${totalHtml}
         </div>
     `;
 }

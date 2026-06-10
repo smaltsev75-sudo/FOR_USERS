@@ -27,7 +27,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--accent-bg-faint);
     border: 1px solid var(--border);
     min-height: 56px;
@@ -211,7 +211,7 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--accent-bg-subtle);
     border: 1px solid var(--accent-border-faint);
     font-size: 0.85rem;

@@ -4,7 +4,7 @@
 /* Цветовые варианты Priority Score */
 .priority-score-container.priority-score-critical {
     border-color: var(--danger-bg-light);
-    background: linear-gradient(135deg, var(--danger-bg-subtle), var(--danger-bg-light));
+    background: var(--danger-bg-subtle);
 }
 .priority-score-critical .priority-score-icon {
     background: var(--danger-bg-light);
@@ -16,7 +16,7 @@
 
 .priority-score-container.priority-score-high {
     border-color: var(--warning-bg-light);
-    background: linear-gradient(135deg, var(--warning-bg-subtle), var(--warning-bg-light));
+    background: var(--warning-bg-subtle);
 }
 .priority-score-high .priority-score-icon {
     background: var(--warning-bg-light);
@@ -28,7 +28,7 @@
 
 .priority-score-container.priority-score-medium {
     border-color: var(--accent-border-faint);
-    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    background: var(--accent-bg-subtle);
 }
 .priority-score-medium .priority-score-value {
     color: var(--accent);
@@ -145,8 +145,8 @@
 
 .task-item.dragging {
     opacity: 0.5;
-    transform: scale(1.02);
-    box-shadow: 0 10px 20px var(--shadow-lg);
+    transform: scale(1.01);
+    box-shadow: 0 8px 18px var(--shadow-lg);
     transition: all 0.2s ease;
 }
 

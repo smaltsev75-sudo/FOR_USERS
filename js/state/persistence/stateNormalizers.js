@@ -1,4 +1,6 @@
 import { normalizeRoleFieldForPersistence } from '../../domain/roleFieldContract.js';
+import { calculateSprintEndDate } from '../../domain/sprintSchedule.js';
+import { parseDate } from '../../utils/date.js';
 import {
     DEFAULT_NUMBER_FORMAT_SETTINGS,
     DEFAULT_TASK_FILTER,
@@ -13,7 +15,7 @@ import { normalizeInteger, normalizeNumber, safePlainObject } from './primitiveN
 
 export function normalizeConfig(config, defaults) {
     const safe = safePlainObject(config);
-    return {
+    const normalized = {
         ...defaults,
         ...safe,
         days: normalizeInteger(safe.days, defaults.days, 1),
@@ -24,6 +26,19 @@ export function normalizeConfig(config, defaults) {
         startDate: String(safe.startDate ?? defaults.startDate ?? ''),
         endDate: String(safe.endDate ?? defaults.endDate ?? '')
     };
+    // W40 (owner): инвариант «окончание не раньше начала» на импорт-входе —
+    // UI-guard в configController этот entry point не покрывает (§3.quat,
+    // симметричные guard'ы). Невалидный порядок → endDate пересчитывается
+    // из startDate + days + holidays (как делает createStartDatePatch).
+    const parsedStart = parseDate(normalized.startDate);
+    const parsedEnd = parseDate(normalized.endDate);
+    if (parsedStart && parsedEnd && parsedEnd < parsedStart) {
+        normalized.endDate = calculateSprintEndDate(
+            normalized.startDate,
+            normalized.days + normalized.holidays
+        );
+    }
+    return normalized;
 }
 
 export function normalizeRoles(roles, defaults) {

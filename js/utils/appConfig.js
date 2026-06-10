@@ -1,7 +1,7 @@
 // js/utils/appConfig.js
 export const APP_CONFIG = {
     // Версия хранилища (используется для миграций)
-    STORAGE_VERSION: 12,
+    STORAGE_VERSION: 13,
 
     // Настройки спринта по умолчанию
     SPRINT: {

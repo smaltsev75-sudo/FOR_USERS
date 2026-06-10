@@ -7,26 +7,30 @@
 .team-cap {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     padding: 0;
 }
 
 /* ── Header: общая загрузка команды ───────────────────────────────────── */
+/* Header-band и карточки делят panel-контракт: рамка var(--border),
+   radius var(--radius-lg), мягкая тень через токен var(--shadow-sm).
+   Это выравнивает «Загрузка команды» по той же сетке, что и cfg-panel
+   и соседняя matrix-панель. */
 .team-cap__header {
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
-    gap: 18px;
-    padding: 16px 20px;
+    gap: 16px;
+    padding: 16px 18px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(45, 36, 25, 0.04);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px var(--shadow-sm);
     transition: background 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
 }
 
 .team-cap__header:hover {
-    box-shadow: 0 4px 14px rgba(45, 36, 25, 0.08);
+    box-shadow: 0 4px 14px var(--shadow-md);
 }
 
 .team-cap__header-text {
@@ -191,6 +195,9 @@
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
+/* Карточки ролей: равная ширина в ряду (grid repeat(5, minmax(0,1fr))),
+   единый radius var(--radius-lg) и рамка var(--border) — как .role-load-card
+   в sprint-planner-cloud. Тень через токен var(--shadow-sm). */
 .team-cap__card {
     display: flex;
     flex-direction: column;
@@ -198,7 +205,7 @@
     padding: 12px 11px 10px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
     position: relative;
     overflow: hidden;
@@ -219,7 +226,7 @@
 .team-cap__card:hover,
 .team-cap__card:focus-within {
     transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(45, 36, 25, 0.10);
+    box-shadow: 0 10px 22px var(--shadow-md);
     border-color: var(--border-light);
 }
 

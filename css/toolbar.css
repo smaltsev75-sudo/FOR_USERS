@@ -39,15 +39,21 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.72rem;
-    color: var(--text-muted);
+    /* #4 (owner): больше акцента на информации о задачах спринта. */
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted-strong);
     white-space: nowrap;
 }
 
 .toolbar-status--main {
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--accent);
+}
+
+.toolbar-status--main .toolbar-status__label {
+    color: var(--text);
 }
 
 .toolbar-status__icon-wrap {
@@ -75,17 +81,18 @@
 .toolbar-status__breakdown {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    margin-left: 2px;
-    font-size: 0.65rem;
-    font-weight: 500;
+    gap: 5px;
+    margin-left: 4px;
+    font-size: 0.74rem;
+    font-weight: 700;
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
 }
 
 .toolbar-status__chip {
-    padding: 0 4px;
-    border-radius: 3px;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--overlay-light);
 }
 
 .toolbar-status__chip[data-type="us"] { color: var(--us-color); }

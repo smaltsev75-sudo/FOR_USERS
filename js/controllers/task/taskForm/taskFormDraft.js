@@ -52,12 +52,13 @@ export function taskFormDraftToCreateTaskInput(draft) {
 }
 
 export function taskFormDraftToTaskPatch(draft) {
+    // Эффорт-секция удалена из модалки (owner): патч НЕ содержит est, поэтому
+    // updateTask сохраняет существующие часы задачи (правятся инлайн в строке).
     return {
         title: draft.title,
         jira: draft.jira,
         type: draft.type || 'us',
         comment: draft.comment || '',
-        est: normalizeEstimates(draft.estimates),
         criteriaEvaluations: draft.criteriaEvaluations || {}
     };
 }

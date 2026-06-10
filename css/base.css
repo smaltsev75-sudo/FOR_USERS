@@ -9,35 +9,47 @@
 
 /* ===== ТЁМНАЯ ТЕМА (по умолчанию) ===== */
 :root {
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --accent: #00d9ff;
-    --accent-hover: #00c4e8;
-    --accent-text: #0f172a;
-    --danger: #ff8080;
-    --danger-hover: #ff6060;
-    --success: #00ff9d;
-    --success-hover: #00e68a;
-    --warning: #fbbf24;
-    --warning-hover: #f59e0b;
-    --tech: #a855f7;
-    --text: #f1f5f9;
-    --text-muted: #94a3b8;
-    --border: #334155;
-    --border-light: #475569;
-    --print: #ff9800;
-    --excluded: #94a3b8;
-    --us-color: #00ff9d;
-    --bug-color: #ff4d4d;
-    --tech-color: #a855f7;
-    /* v8.27.1: усиленные варианты для матрицы (контраст ≥4.5:1 над .total-row) */
-    --bug-color-strong: #ff8a8a;
-    --tech-color-strong: #cba8ff;
-    --text-muted-strong: #b0becd;
-    --priority-score-color: #00d9ff;
-    --effort-color: #c174f8;
-    --button-bg: #2d3748;
-    --button-hover: #3d4758;
+    /* ===== sage-green shadcn redesign (v2, desktop-only) — на базе sprint-planner-cloud ===== */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --role-bar: #f59e0b;          /* amber role-load бары (бренд-элемент референса) */
+    /* Когерентная иерархия высот (owner: «выдающийся UI», dark cohesion):
+       окно — глубокий navy с присутствием; карточки/дашборды/rail — приподнятая
+       поверхность СВЕТЛЕЕ окна (нормальная elevation, не инверсия). */
+    --bg-main: #141d33;           /* окно — глубокий насыщенный navy */
+    --bg-card: #1f2b49;           /* карточки/дашборды/rail — приподнятая поверхность */
+    --accent: #5b9df0;            /* синий */
+    --accent-hover: #82b6f5;
+    --accent-text: #0b1220;
+    --danger: #f4868a;
+    --danger-hover: #e06b70;
+    --success: #4fc99a;
+    --success-hover: #3bb588;
+    --warning: #f0b66d;
+    --warning-hover: #e0a050;
+    --tech: #b69dff;
+    --text: #e7eefb;
+    --text-muted: #94a6c4;
+    --border: #2e3d5e;
+    --border-light: #46598a;
+    --print: #f0b66d;
+    --excluded: #94a6c4;
+    --us-color: #5b9df0;
+    --bug-color: #f4868a;
+    --tech-color: #b69dff;
+    /* усиленные варианты для матрицы (ИТОГО-строка на подсвеченном фоне).
+       us-strong добавлен по axe: #5b9df0 на total-row glass = 4.24 < 4.5. */
+    --bug-color-strong: #f7a0a4;
+    --tech-color-strong: #c9b6ff;
+    --us-color-strong: #82b6f5;
+    --text-muted-strong: #b7c5de;
+    --priority-score-color: #5b9df0;
+    --effort-color: #b69dff;
+    --button-bg: #243152;
+    --button-hover: #2e3d63;
 
     /* Семантические переменные для замены хардкод-rgba */
     --overlay-dark: rgba(0, 0, 0, 0.8);
@@ -58,23 +70,23 @@
     --inset-shadow: rgba(0, 0, 0, 0.1);
 
     /* Акцентные полупрозрачные */
-    --accent-bg-faint: rgba(0, 217, 255, 0.05);
-    --accent-bg-subtle: rgba(0, 217, 255, 0.1);
-    --accent-bg-light: rgba(0, 217, 255, 0.12);
-    --accent-bg-medium: rgba(0, 217, 255, 0.15);
-    --accent-bg-strong: rgba(0, 217, 255, 0.2);
-    --accent-bg-highlight: rgba(0, 217, 255, 0.25);
-    --accent-border-faint: rgba(0, 217, 255, 0.3);
-    --accent-border: rgba(0, 217, 255, 0.4);
-    --accent-glow: rgba(0, 217, 255, 0.6);
-    --accent-spinner: rgba(0, 217, 255, 0.3);
-    --accent-shadow: rgba(0, 217, 255, 0.1);
+    --accent-bg-faint: rgba(91, 157, 240, 0.07);
+    --accent-bg-subtle: rgba(91, 157, 240, 0.12);
+    --accent-bg-light: rgba(91, 157, 240, 0.15);
+    --accent-bg-medium: rgba(91, 157, 240, 0.18);
+    --accent-bg-strong: rgba(91, 157, 240, 0.24);
+    --accent-bg-highlight: rgba(91, 157, 240, 0.3);
+    --accent-border-faint: rgba(91, 157, 240, 0.3);
+    --accent-border: rgba(91, 157, 240, 0.45);
+    --accent-glow: rgba(91, 157, 240, 0.5);
+    --accent-spinner: rgba(91, 157, 240, 0.3);
+    --accent-shadow: rgba(91, 157, 240, 0.12);
 
     /* Успех полупрозрачные */
-    --success-bg-faint: rgba(0, 255, 157, 0.08);
-    --success-bg-subtle: rgba(0, 255, 157, 0.1);
-    --success-bg-light: rgba(0, 255, 157, 0.15);
-    --success-border-faint: rgba(0, 255, 157, 0.3);
+    --success-bg-faint: rgba(125, 223, 184, 0.1);
+    --success-bg-subtle: rgba(125, 223, 184, 0.12);
+    --success-bg-light: rgba(125, 223, 184, 0.16);
+    --success-border-faint: rgba(125, 223, 184, 0.3);
 
     /* Опасность полупрозрачные */
     --danger-bg-subtle: rgba(255, 77, 77, 0.1);
@@ -110,36 +122,41 @@
    Декоративный --border (1.54:1) применяется только для
    тонких разделительных линий, что допускается WCAG. */
 [data-theme="light"] {
-    --bg-main: #ede4ce;          /* тёплый песочный (было #f1f5f9) */
-    --bg-card: #faf6ec;          /* кремовый, не чистый белый (было #ffffff) */
-    --accent: #03568a;           /* затемнено для AA на песочных подложках
-                                    (включая overlay-light effective #e5dcc7) */
-    --accent-hover: #024976;
-    --accent-text: #fdfaf2;      /* кремово-белый, не #ffffff */
-    --danger: #b91c1c;
-    --danger-hover: #991b1b;
-    --success: #0d6258;          /* затемнено для AA на песке */
-    --success-hover: #0a4f47;
-    --warning: #955100;          /* затемнено для AA */
-    --warning-hover: #7a4200;
+    /* Смягчённая light-палитра (owner: «очень яркая/контрастная»):
+       фон глубже и теплее, карточки кремовее (не чисто-белые), текст мягче
+       графита. Контраст пересчитан: text/bg-main 10.0:1, text-muted/bg-main
+       4.8:1, accent/bg-main 5.4:1 — WCAG AA с запасом. */
+    --bg-main: #eceee7;          /* мягкий тёплый sage-grey (был #f5f7f3) */
+    --bg-card: #faf8f1;          /* мягкий cream (был #fffdf9) */
+    --accent: #246b59;           /* sage-green */
+    --accent-hover: #174e41;
+    --accent-text: #fdfaf2;
+    --danger: #b33939;
+    --danger-hover: #962f2f;
+    /* axe: #0f7a5b на success-pill подложке (#d7e5db) = 4.07 < 4.5 → затемнено. */
+    --success: #0d6a4f;
+    --success-hover: #0a5740;
+    --warning: #96510f;          /* затемнён под смягчённый фон (4.23→5.2:1) */
+    --warning-hover: #8a4c12;
     --tech: #7c3aed;
-    --text: #2d2419;             /* тёмный шоколад (было #0f172a) */
-    --text-muted: #6b5b47;       /* серо-коричневый (было #475569) */
-    --border: #c9b896;           /* песочный border (декоративный) */
-    --border-light: #8a7858;     /* medium tan для focus/active (≥3:1) */
-    --print: #9a3408;            /* затемнено для AA */
-    --excluded: #6b5b47;
-    --us-color: #0d6258;
-    --bug-color: #b91c1c;
+    --text: #2c3a42;             /* мягкий тёмный slate (был #172026) */
+    --text-muted: #5a6a74;       /* чуть глубже для AA на новом фоне */
+    --border: #d9d2c3;
+    --border-light: #788b82;     /* sage-gray, ≥3:1 на bg-main для focus/active */
+    --print: #a85d16;
+    --excluded: #60717c;
+    --us-color: #246b59;
+    --bug-color: #b33939;
     --tech-color: #7c3aed;
-    /* v8.27.1: усиленные варианты для матрицы (контраст ≥4.5:1 над .total-row #ddd1b3) */
-    --bug-color-strong: #8b0000;
+    /* усиленные варианты для матрицы */
+    --bug-color-strong: #962f2f;
     --tech-color-strong: #5b21b6;
-    --text-muted-strong: #54462f;
-    --priority-score-color: #03568a;
+    --us-color-strong: #1d5a4a;
+    --text-muted-strong: #44525a;
+    --priority-score-color: #246b59;
     --effort-color: #7c3aed;
-    --button-bg: #e7dcc4;        /* бежевый (было #e2e8f0) */
-    --button-hover: #d9cdb6;     /* tan hover */
+    --button-bg: #e7eadf;
+    --button-hover: #dde2d4;
 
     /* Семантические переменные для светлой темы. Базируются на тёплом
        коричневом тоне rgba(45, 36, 25, X), чтобы подтоны overlays/shadows
@@ -164,37 +181,37 @@
     /* Акцентные полупрозрачные. Холодные #f0f9ff/#e0f2fe выглядели «грязными»
        на песке — заменены на нейтральные песочные fill'ы того же светлого
        уровня (контраст к --text сохраняется ≥ 11:1). */
-    --accent-bg-faint: #f3eedb;
-    --accent-bg-subtle: #ebe2c8;
-    --accent-bg-light: #ddd1b3;
-    --accent-bg-medium: #c8b894;
-    --accent-bg-strong: rgba(3, 86, 138, 0.15);
-    --accent-bg-highlight: rgba(3, 86, 138, 0.15);
-    --accent-border-faint: rgba(3, 86, 138, 0.3);
-    --accent-border: rgba(3, 86, 138, 0.4);
-    --accent-glow: rgba(3, 86, 138, 0.4);
-    --accent-spinner: rgba(3, 86, 138, 0.3);
-    --accent-shadow: rgba(3, 86, 138, 0.1);
+    --accent-bg-faint: #eef4f1;
+    --accent-bg-subtle: #e7f3ee;
+    --accent-bg-light: #d6e9e1;
+    --accent-bg-medium: #bcdccf;
+    --accent-bg-strong: rgba(36, 107, 89, 0.14);
+    --accent-bg-highlight: rgba(36, 107, 89, 0.16);
+    --accent-border-faint: rgba(36, 107, 89, 0.3);
+    --accent-border: rgba(36, 107, 89, 0.42);
+    --accent-glow: rgba(36, 107, 89, 0.35);
+    --accent-spinner: rgba(36, 107, 89, 0.3);
+    --accent-shadow: rgba(36, 107, 89, 0.1);
 
     /* Успех полупрозрачные */
-    --success-bg-faint: rgba(13, 98, 88, 0.08);
-    --success-bg-subtle: rgba(13, 98, 88, 0.1);
-    --success-bg-light: rgba(13, 98, 88, 0.15);
-    --success-border-faint: rgba(13, 98, 88, 0.3);
+    --success-bg-faint: rgba(15, 122, 91, 0.08);
+    --success-bg-subtle: rgba(15, 122, 91, 0.1);
+    --success-bg-light: rgba(15, 122, 91, 0.15);
+    --success-border-faint: rgba(15, 122, 91, 0.3);
 
     /* Опасность полупрозрачные */
-    --danger-bg-subtle: rgba(185, 28, 28, 0.1);
-    --danger-bg-light: rgba(185, 28, 28, 0.15);
-    --danger-shadow: rgba(185, 28, 28, 0.25);
-    --danger-glow: rgba(185, 28, 28, 0.2);
+    --danger-bg-subtle: rgba(179, 57, 57, 0.1);
+    --danger-bg-light: rgba(179, 57, 57, 0.15);
+    --danger-shadow: rgba(179, 57, 57, 0.25);
+    --danger-glow: rgba(179, 57, 57, 0.2);
 
     /* Предупреждение полупрозрачные */
-    --warning-bg-subtle: rgba(149, 81, 0, 0.1);
-    --warning-bg-light: rgba(149, 81, 0, 0.15);
+    --warning-bg-subtle: rgba(168, 93, 22, 0.1);
+    --warning-bg-light: rgba(168, 93, 22, 0.15);
 
-    /* Серые полупрозрачные (теплее, согласованы с песочным фоном) */
-    --excluded-bg: rgba(107, 91, 71, 0.1);
-    --excluded-border: rgba(107, 91, 71, 0.3);
+    /* Серые полупрозрачные */
+    --excluded-bg: rgba(96, 113, 124, 0.1);
+    --excluded-border: rgba(96, 113, 124, 0.3);
 
     /* Подсветка новой задачи — медово-янтарная */
     --highlight-pulse-start: rgba(234, 179, 8, 0.5);
@@ -202,7 +219,7 @@
     --highlight-glow: rgba(234, 179, 8, 0.6);
 
     /* Лучшее значение в таблице */
-    --best-value-bg: rgba(13, 98, 88, 0.2);
+    --best-value-bg: rgba(15, 122, 91, 0.18);
 }
 
 /* v8.30.6: print-only timestamp скрыт в обычном UI. Виден только при печати —
@@ -226,11 +243,45 @@
    прилипают к viewport — доказано tests/e2e/sticky.spec.js (Chromium)
    и tests/e2e/webkit.spec.js (WebKit). */
 body {
+    /* Градиентная заливка фона (owner) — мягкие акцентные «свечения» сверху
+       поверх базового фона. Работает в обеих темах через токены: light → sage,
+       dark → синий. background-color оставлен fallback'ом для печати/@supports. */
     background-color: var(--bg-main);
+    background-image:
+        radial-gradient(1100px 560px at 10% -12%, var(--accent-bg-light), transparent 55%),
+        radial-gradient(900px 460px at 100% -4%, var(--accent-bg-faint), transparent 50%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text);
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-sans);
     margin: 0;
     padding: 8px;
     font-size: 0.75rem;
     min-height: 100vh;
+}
+
+/* Тёмная тема: атмосферный dual-tone glow — синее «свечение» слева-сверху и
+   мягкий фиолетовый (tech-акцент) справа, создают глубину поверх глубокого navy.
+   Калибровано приглушённо, чтобы фон оставался когерентным, не «кислотным». */
+[data-theme="dark"] body {
+    background-image:
+        radial-gradient(1200px 600px at 6% -16%, rgba(91, 157, 240, 0.20), transparent 60%),
+        radial-gradient(1000px 520px at 102% 2%, rgba(124, 92, 255, 0.12), transparent 58%);
+}
+
+/* Тёмная тема: полупрозрачные «стеклянные» карточки дашборда (owner) — фоновый
+   градиент просвечивает сквозь панели. rgba(31,43,73)=#1f2b49 (--bg-card).
+   backdrop-filter даёт frosted-glass; @supports-фолбэк делает фон плотнее, если
+   blur не поддержан (читаемость текста сохраняется). Только dark. */
+[data-theme="dark"] .cfg-panel,
+[data-theme="dark"] .panel {
+    background: rgba(31, 43, 73, 0.6);
+    backdrop-filter: blur(10px) saturate(1.1);
+    -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    [data-theme="dark"] .cfg-panel,
+    [data-theme="dark"] .panel {
+        background: rgba(31, 43, 73, 0.86);
+    }
 }

@@ -4,109 +4,34 @@
    из base.css → автоматически работает в обеих темах (dark/sandy light).
 */
 
+/* Тот же panel-контракт, что и dash-grid panels (components.css .panel):
+   radius var(--radius), рамка var(--border), мягкая тень 0 2px 8px.
+   Это привязывает «Параметры спринта» к дэшборд-сетке ниже. */
 .cfg-panel {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius);
     margin-bottom: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-sm);
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* v8.30.33 mobile UI pass: compact disclosure через <details>.
-   - Desktop (≥601px): summary скрыт, секция «Коэффициенты» видна всегда (как раньше).
-   - Mobile (≤600px): summary показывается как кнопка-аккордеон, секция collapse'ится
-     по умолчанию (configController removes [open] attribute via JS на mobile).
-   Это решает audit-feedback «нельзя display:none без альтернативного доступа»: на
-   mobile ключевые поля cfgAvailCoef / cfgAlert доступны в 1 клик, не скрыты. */
-.cfg-advanced {
-    /* details сам по себе block-уровня, нужен margin-сброс */
-    margin: 0;
-    padding: 0;
-}
-
-.cfg-advanced-summary {
-    display: none;  /* по умолчанию (desktop) скрыт; mobile media query показывает */
-    list-style: none;  /* убираем нативный треугольник */
-    cursor: pointer;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--overlay-faint);
-    color: var(--text-muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-    user-select: none;
-    align-items: center;
-    gap: 8px;
-}
-
-.cfg-advanced-summary::-webkit-details-marker {
-    display: none;
-}
-
-.cfg-advanced-summary::before {
-    content: '▸';
-    display: inline-block;
-    font-size: 0.7rem;
-    transition: transform 0.2s ease;
-    transform-origin: center;
-    color: var(--accent);
-}
-
-.cfg-advanced[open] > .cfg-advanced-summary::before {
-    transform: rotate(90deg);
-}
-
-.cfg-advanced-summary:hover {
-    background: var(--overlay-light);
-    color: var(--text);
-}
-
-.cfg-advanced-summary:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-}
-
-.cfg-advanced-summary-hint {
-    font-weight: 400;
-    color: var(--text-muted);
-    font-size: 0.72rem;
-}
-
-@media (max-width: 600px) {
-    .cfg-advanced-summary {
-        display: flex;
-        min-height: 44px;
-    }
-    .cfg-panel {
-        margin-bottom: 8px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cfg-advanced-summary::before {
-        transition: none;
-    }
-}
+/* Redesign v2: блок «Параметры спринта» теперь один ряд, без compact-disclosure
+   <details> (mobile retired — экран desktop-only). Бывшие .cfg-advanced* /
+   .cfg-section--coef стили удалены; #cfgAdvanced остался как обычный <div>-обёртка
+   ряда полей (ссылка byId сохранена, removeAttribute('open') — no-op). */
 
 .cfg-panel:hover {
-    box-shadow: 0 4px 12px var(--shadow-md);
+    box-shadow: 0 4px 14px var(--shadow-md);
     border-color: var(--border-light);
 }
 
 /* ── Section ───────────────────────────────────────────────────── */
+/* Тот же inset, что и .panel (14px 16px) → cfg-panel и dash-grid panels
+   делят единый внутренний отступ. */
 .cfg-section {
-    padding: 12px 16px;
-}
-
-/* Вторая секция «Коэффициенты»: тонкий горизонтальный разделитель
-   + чуть приглушённая подложка → визуально отделена от основной
-   секции без необходимости рисовать рамку. */
-.cfg-section--coef {
-    border-top: 1px solid var(--border);
-    background: var(--overlay-faint);
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding: 14px 16px;
 }
 
 .cfg-section-title {
@@ -124,6 +49,22 @@
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 10px 18px;
+}
+
+/* Redesign v2: все 7 полей в ОДНУ горизонтальную строку. На широком десктопе
+   (≥1280px) ряд не переносится; на более узких — gracefully wrap'ится через
+   базовый flex-wrap выше. Лейблы + инпуты выровнены по нижнему краю
+   (align-items: flex-end → baseline инпутов на одной линии). Гэп чуть плотнее,
+   чтобы 7 контролов уместились в ряд (shadcn: тонкие границы, underline-инпуты). */
+.cfg-fields--single-row {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
+@media (min-width: 1280px) {
+    .cfg-fields--single-row {
+        flex-wrap: nowrap;
+    }
 }
 
 .cfg-field {
@@ -324,9 +265,6 @@
         border: 1px solid #ccc !important;
         box-shadow: none !important;
         border-radius: 4px !important;
-    }
-    .cfg-section--coef {
-        background: #f7f7f7 !important;
     }
     .cfg-info-btn {
         display: none !important;

@@ -7,9 +7,9 @@
 .task-estimates {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 0 0;
-    border-top: 1px dashed var(--border);
+    gap: 6px;
+    padding: 5px 0 0;
+    border-top: 1px solid var(--border);
     margin: 0;
     flex-wrap: wrap;
 }
@@ -45,18 +45,57 @@
     min-width: 0;
 }
 
+/* Поле «Комментарии» (SM, до 500 симв) — крайнее слева, шире ролевых чипов. */
+.est-box--note {
+    flex: 0 0 200px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 2px 6px;
+}
+.est-box--note .est-box-header {
+    display: flex;
+}
+.est-box--note .est-role-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.est-note-input {
+    width: 100%;
+    min-height: 30px;
+    resize: vertical;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    padding: 3px 6px;
+}
+.est-note-input:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-border);
+}
+.est-note-print {
+    display: none;
+}
+
 /* Compact chip: иконка + label + input в ОДНОЙ строке.
    Bar и многострочный header удалены — экономим вертикаль. */
 .est-box {
     background: var(--overlay-faint);
     border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
     display: flex;
     align-items: center;
     gap: 4px;
     min-width: 0;
-    min-height: 26px;
+    min-height: 24px;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
@@ -119,11 +158,11 @@
     gap: 2px;
     background: var(--bg-main);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 0 4px;
     flex: 1 1 auto;
-    min-width: 36px;
-    min-height: 22px;
+    min-width: 34px;
+    min-height: 20px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -172,16 +211,16 @@
 
 /* Итоговый бейдж Effort = sum(est). Компактный inline-pill. */
 .est-box-total {
-    background: linear-gradient(135deg, var(--accent-bg-subtle), var(--accent-bg-faint));
+    background: var(--accent-bg-subtle);
     border: 1px solid var(--accent-border-faint);
-    border-radius: 7px;
-    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    padding: 2px 9px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     min-width: 0;
     flex-shrink: 0;
-    min-height: 26px;
+    min-height: 24px;
 }
 
 .est-box-total-icon {
@@ -190,8 +229,8 @@
 }
 
 .est-box-total-icon .icon {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
 }
 
 .est-box-total-label {
@@ -203,7 +242,7 @@
 }
 
 .task-effort-value {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: var(--accent);
     white-space: nowrap;

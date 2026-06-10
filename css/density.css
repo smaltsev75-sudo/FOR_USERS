@@ -3,32 +3,32 @@
    Базовые компоненты остаются density-agnostic, режим выбирает #taskList. */
 
 #taskList {
-    --task-row-padding-y: 10px;
-    --task-row-padding-x: 14px;
-    --task-row-margin: 8px;
-    --task-row-gap: 12px;
-    --task-row-title-size: 1rem;
-    --task-row-section-gap: 10px;
+    --task-row-padding-y: 8px;
+    --task-row-padding-x: 12px;
+    --task-row-margin: 6px;
+    --task-row-gap: 10px;
+    --task-row-title-size: 0.95rem;
+    --task-row-section-gap: 8px;
     --task-row-comment-display: block;
 }
 
 #taskList[data-density="compact"] {
-    --task-row-padding-y: 6px;
-    --task-row-padding-x: 10px;
+    --task-row-padding-y: 5px;
+    --task-row-padding-x: 9px;
     --task-row-margin: 4px;
-    --task-row-gap: 8px;
-    --task-row-title-size: 0.9rem;
-    --task-row-section-gap: 6px;
+    --task-row-gap: 7px;
+    --task-row-title-size: 0.85rem;
+    --task-row-section-gap: 5px;
     --task-row-comment-display: none;
 }
 
 #taskList[data-density="comfortable"] {
-    --task-row-padding-y: 10px;
-    --task-row-padding-x: 14px;
-    --task-row-margin: 8px;
-    --task-row-gap: 12px;
-    --task-row-title-size: 1rem;
-    --task-row-section-gap: 10px;
+    --task-row-padding-y: 8px;
+    --task-row-padding-x: 12px;
+    --task-row-margin: 6px;
+    --task-row-gap: 10px;
+    --task-row-title-size: 0.95rem;
+    --task-row-section-gap: 8px;
     --task-row-comment-display: block;
 }
 
@@ -45,15 +45,15 @@
 }
 
 #taskList[data-density="compact"] .est-input-container {
-    min-height: 22px;
+    min-height: 19px;
 }
 
 #taskList[data-density="compact"] .est-input-container input {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 
 #taskList[data-density="compact"] .task-title {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 #taskList[data-density="compact"] .task-estimates,
@@ -62,21 +62,23 @@
 }
 
 #taskList[data-density="compact"] .priority-score-container {
-    padding: 4px 10px;
-    min-width: 70px;
+    padding: 2px 8px;
+    min-width: 64px;
+    min-height: 22px;
 }
 
 #taskList[data-density="compact"] .priority-score-value {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
 }
 
 #taskList[data-density="compact"] .est-box-total {
-    padding: 4px 10px;
-    min-width: 80px;
+    padding: 2px 8px;
+    min-width: 72px;
+    min-height: 22px;
 }
 
 #taskList[data-density="compact"] .task-effort-value {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 #taskList[data-density="compact"] .criteria-row {
@@ -86,9 +88,9 @@
 }
 
 #taskList[data-density="compact"] .criteria-eval-item {
-    padding: 3px 6px;
-    min-width: 110px;
-    min-height: 24px;
+    padding: 2px 6px;
+    min-width: 104px;
+    min-height: 22px;
     flex-direction: row;
     align-items: center;
     gap: 6px;
@@ -107,9 +109,9 @@
 }
 
 #taskList[data-density="compact"] .criteria-eval-step {
-    width: 20px;
-    height: 20px;
-    font-size: 0.85rem;
+    width: 19px;
+    height: 19px;
+    font-size: 0.82rem;
 }
 
 #taskList[data-density="compact"] .criteria-eval-score {
@@ -118,12 +120,12 @@
 }
 
 #taskList[data-density="compact"] .criteria-score-input {
-    height: 20px;
-    min-width: 28px;
+    height: 19px;
+    min-width: 26px;
 }
 
 #taskList[data-density="compact"] .criteria-score-dropdown {
-    height: 20px;
-    width: 18px;
-    min-width: 18px;
+    height: 19px;
+    width: 17px;
+    min-width: 17px;
 }

@@ -10,10 +10,14 @@ export class TaskDragController {
     /**
      * @param {import('../../state/store.js').Store} store
      * @param {Function} invalidateCaches - callback to invalidate parent caches
+     * @param {(held: boolean) => void} [setRenderHold] — W37: держит рендер на
+     *        время drag (RenderScheduler.setHold); re-render посреди drag
+     *        уничтожает перетаскиваемую карточку (replaceChildren) и рвёт drag.
      */
-    constructor(store, invalidateCaches) {
+    constructor(store, invalidateCaches, setRenderHold = () => {}) {
         this.store = store;
         this._invalidateCaches = invalidateCaches;
+        this._setRenderHold = setRenderHold;
         this.dragSrc = null;
         this.pointerDrag = null;
         this._handlePointerMove = this.handlePointerMove.bind(this);
@@ -44,6 +48,11 @@ export class TaskDragController {
                     startY: e.clientY,
                     active: false
                 };
+                // W37: hold с САМОГО mousedown (потенциальный drag) — re-render
+                // между mousedown и dragstart заменяет узел (replaceChildren),
+                // и native drag не стартует. Снятие гарантировано: mouseup на
+                // document (handlePointerUp) или dragend → clearDragClasses.
+                if (this.pointerDrag) this._setRenderHold(true);
             }
         });
 
@@ -63,6 +72,7 @@ export class TaskDragController {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', item.dataset.id);
         item.classList.add('dragging');
+        this._setRenderHold(true);
     }
 
     handleDragOver(e) {
@@ -98,6 +108,7 @@ export class TaskDragController {
 
         this.pointerDrag.active = true;
         this.pointerDrag.item.classList.add('dragging');
+        this._setRenderHold(true);
         const overItem = this.getTaskItemAtPoint(e.clientX, e.clientY, this.pointerDrag.item);
         document.querySelectorAll('.task-item').forEach(i => i.classList.remove('drag-over'));
         if (overItem && overItem !== this.pointerDrag.item) {
@@ -147,6 +158,10 @@ export class TaskDragController {
 
     clearDragClasses() {
         document.querySelectorAll('.task-item').forEach(i => i.classList.remove('dragging', 'drag-over'));
+        // Единая точка снятия hold: вызывается из handleDragEnd (native, в т.ч.
+        // отменённый drag) и handlePointerUp (mouse-fallback). Отложенный во
+        // время drag рендер выполнится сразу после release.
+        this._setRenderHold(false);
     }
 
     reorderByIds(draggedId, targetId) {

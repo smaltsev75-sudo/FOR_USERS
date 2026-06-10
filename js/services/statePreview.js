@@ -1,6 +1,7 @@
 import { summarizeState } from './diagnostics.js';
 import { analyzeImportIssues, migratePersistedState } from '../state/persistence.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
+import { finiteOrNull } from '../utils/measure.js';
 
 const COUNT_KEYS = ['tasks', 'includedTasks', 'excludedTasks', 'criteria', 'roles'];
 
@@ -63,9 +64,4 @@ function normalizeIssues(issues) {
 
 function count(summary, key) {
     return Number(summary?.counts?.[key] || 0);
-}
-
-function finiteOrNull(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
 }

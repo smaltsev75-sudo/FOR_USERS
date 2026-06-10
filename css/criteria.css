@@ -235,13 +235,57 @@
    font-style: italic;
 }
 
-/* v8.30.0: editor-вариант для <textarea> в edit-modal — раньше inline-style */
+/* Owner redesign: edit-форма критерия.
+   Поля Сокращение/Название/Вес в одну строку. */
+.cf-criterion-row {
+   display: flex;
+   gap: 12px;
+   align-items: flex-end;
+}
+.cf-criterion-row .form-group {
+   margin-bottom: 0;
+}
+.cf-col--abbr { flex: 0 0 110px; }
+.cf-col--name { flex: 1 1 auto; min-width: 0; }
+.cf-col--weight { flex: 0 0 90px; }
+
+/* Шкала оценки в edit-modal — 2-колоночная сетка нумерованных полей. */
+.scale-editor {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 8px 12px;
+}
+.scale-item--editor {
+   align-items: center;
+   gap: 8px;
+}
+/* Нумерованный circular-badge для editor-варианта. */
+.scale-item--editor .scale-score {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 24px;
+   height: 24px;
+   min-width: 24px;
+   padding: 0;
+   border-radius: 50%;
+}
+/* single-line input описания значения шкалы. */
 .scale-description--editor {
    font-size: 0.75rem;
-   padding: 6px;
-   height: 40px;
+   padding: 6px 8px;
+   height: 32px;
    width: 100%;
    box-sizing: border-box;
+   border: 1px solid var(--border-light);
+   border-radius: 6px;
+   background: var(--bg-card);
+   color: var(--text);
+}
+.scale-description--editor:focus-visible {
+   outline: none;
+   border-color: var(--accent);
+   box-shadow: 0 0 0 2px var(--accent-border);
 }
 
 .total-weight {

@@ -92,7 +92,6 @@ actions, hotkeys и таблицы горячих клавиш в UserManual. И
 |---|---|
 | `KeyboardController` | `findCommandByHotkey()` вместо локального списка `Ctrl+Alt+...` |
 | `FileController` | button ids для save/load/diagnostics берутся из registry |
-| `RecoveryController` | button id центра восстановления берётся из registry |
 | `ThemeController` | видимая метка темы берётся из `theme` command |
 | `applyCommandMetadata()` | начальные `title`/`aria-label` header-кнопок применяются из registry |
 | `generate-manual-contract.mjs` | таблица hotkeys генерируется из `getManualHotkeys()` |
@@ -347,35 +346,16 @@ diagnostics должны проходить redaction review и unit-тесты
 [diagnostics.test.js](../tests/unit/services/diagnostics.test.js), чтобы support
 bundle оставался полезным для разбора проблем, но не утекал содержимым backlog.
 
-#### Recovery Center / Storage Health (v8.30.56 → v8.30.57)
+#### Recovery Center удалён (redesign v2, W36)
 
-`RecoveryController` даёт пользовательский доступ к pre-migration backup
-`sprintPlannerData.backup`, который bootstrap создаёт до разрушительной миграции.
-С v8.30.57 это же окно показывает Storage Health: состояние текущего
-`localStorage['sprintPlannerData']`, future-schema guard, число fallback issues
-и recoverable backup без product/task titles.
-Runtime-границы:
-
-| Модуль | Ответственность |
-|---|---|
-| [statePreview.js](../js/services/statePreview.js) | общий preview для JSON import и recovery: future schema, import issues, migrated summary, count deltas |
-| [storageHealth.js](../js/services/storageHealth.js) | redacted Project Doctor для текущего localStorage и backup metadata |
-| [recovery.js](../js/services/recovery.js) | безопасно читает backup metadata/data, строит redacted summary/comparison через общий preview, делегирует durable save |
-| [recoveryController.js](../js/controllers/recoveryController.js) | открывает модалку, показывает Storage Health и сравнение «сейчас → backup», скачивает backup, подтверждает восстановление |
-| [stateImportApplier.js](../js/controllers/stateImportApplier.js) | общий apply-path для `FileController` и `RecoveryController`: migrate → number format → criteria → task criteria alignment → Store |
-
-Recovery UI не выводит product/task titles. Он показывает только counts,
-версию схемы, timestamp и размер backup. Восстановление сначала проверяет
-future-storage guard (`backup.version > APP_CONFIG.STORAGE_VERSION`), затем
-идёт через тот же migration/apply path, что и загрузка JSON. Если durable save
-в `localStorage` возвращает `!ok`, controller откатывает runtime snapshot и
-показывает ошибку.
-
-Guard/test: [recovery.test.js](../tests/unit/services/recovery.test.js),
-[storageHealth.test.js](../tests/unit/services/storageHealth.test.js),
-[statePreview.test.js](../tests/unit/services/statePreview.test.js),
-[recoveryController.test.js](../tests/unit/controllers/recoveryController.test.js)
-и e2e-сценарий `Recovery Center` в [planner.spec.js](../tests/e2e/planner.spec.js).
+Recovery Center, Storage Health и сервисы `recovery.js`/`storageHealth.js`
+удалены целиком (owner). Сохранено: pre-migration backup
+`sprintPlannerData.backup`, который bootstrap создаёт до разрушительной
+миграции (data-safety; разбор вручную через DevTools), и
+[statePreview.js](../js/services/statePreview.js) — общий preview для
+JSON-импорта ([stateImportApplier.js](../js/controllers/stateImportApplier.js):
+migrate → number format → criteria → task criteria alignment → авто-сортировка
+по Priority Score → Store).
 
 ### 2.8 TaskListHandler boundary (v8.30.48)
 
@@ -538,9 +518,12 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
 | `base.css` | CSS-переменные тем (включая sandy light с v8.14), reset, типографика, `@layer` декларация |
 | `a11y.css` | A11y-overrides: `:focus-visible`, touch-target ≥44px, `prefers-reduced-motion`, `aria-invalid`, `clamp()` typography, `@container` (v8.13) |
 | `layout.css` | Сетки и компоновка |
+| `toolbar.css` | Тулбар и статус-индикаторы операций (перенесены из `components.css`) |
 | `buttons.css` | Стили кнопок |
 | `forms.css` | Стили полей ввода |
+| `config-panel.css` | Панель конфигурации спринта |
 | `modals.css` | Стили модальных окон |
+| `blocked-screen.css` | Экран блокировки при множественных вкладках (instance lock) |
 | `components.css` | Общие компоненты, кнопки критериев, density-toggle (v8.14); task-card selectors запрещены с v8.30.62 |
 | `criteria.css` | Критерии оценки: sticky sum-pill, inline weight input, hover-actions, collapsed-by-default body, drag-and-drop reorder (v8.29) |
 | `selection-report.css` | Отчёт автоотбора: 3 алгоритм-карточки с кнопками применения, выровненные ряды метрик и metric bars, блок «Рекомендации», аккордеоны описаний/детализации |
@@ -575,7 +558,7 @@ Priority Score рассчитывается как `Σ(score × weight) / Σ(wei
   manifest слоёв, порядок `<link rel="stylesheet">` в `index.html` остаётся
   явным, `print.css` грузится последним с `media="print"`, task-card subfiles
   грузятся в исходном порядке до `density.css`, а текущий бюджет
-  `!important` не может расти без осознанного review (`90` всего, `61` в
+  `!important` не может расти без осознанного review (`88` всего, `59` в
   `print.css`). v8.30.52 снял лишние print-override'ы с типографики/отступов
   после `print-verify.spec.js` и visual baseline `print A4 task card`; v8.30.55
   убрал дублированный overload-блок из `task-card.css` и заменил modal-form
@@ -614,7 +597,7 @@ npm run test:coverage -- --maxWorkers=50%  # unit + coverage (parallel release g
 npm run test:smoke           # быстрая проверка unit-подмножества
 npm run docs:manual-check    # generated manual contract + guard от дрейфа справки
 npm run css:important-report # обновить docs/css-important-report.md
-npm run test:e2e:smoke       # mobile-webkit smoke gate (быстрый indicator)
+npm run test:e2e:smoke       # webkit smoke gate (быстрый indicator)
 npm run test:e2e             # полный E2E (4 Playwright projects)
 npm run release:metrics-history -- --metrics test-results/release-metrics-v<X.Y.Z>.json
 npm run docs:modules         # обновить docs/MODULE_MAP.md
@@ -628,7 +611,7 @@ npm run docs:modules         # обновить docs/MODULE_MAP.md
 | Docs drift | generator check + Jest architecture guards | `npm run docs:manual-check` | **yes** при изменении UI-copy/UserManual |
 | CSS debt report | Node scanner + budget JSON | `npm run css:important-report`, `node scripts/report-css-important.mjs --check` | **yes** при release/docs gate |
 | Архитектурные | Jest (`tests/unit/architecture/`) | в составе unit | **yes** |
-| E2E smoke | Playwright (mobile-webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
+| E2E smoke | Playwright (webkit) | `npm run test:e2e:smoke` | **yes** (быстрый pre-release indicator) |
 | E2E полный | Playwright (4 projects) | `npm run test:e2e` | **yes** |
 | Accessibility | @axe-core/playwright | в составе e2e (`tests/e2e/accessibility.spec.js`) | в составе e2e |
 | `npm audit` | npm | `npm audit --audit-level=moderate` | **yes** (0 moderate+) |
@@ -674,14 +657,12 @@ FOR_USERS, синхронизируется установленная public-sh
 | project | viewport / engine | testMatch | Назначение |
 |---|---|---|---|
 | `chromium` | Desktop Chrome 1280×720 | все .spec.js, кроме mobile/webkit | основной desktop suite |
-| `mobile-chromium` | Pixel 5 (393×851), Chromium | `mobile.spec.js` | mobile responsive invariants |
 | `webkit` | Desktop Safari 1280×720 | `webkit.spec.js` | engine-specific smoke (sticky, focus-trap) |
-| `mobile-webkit` | iPhone 13 (390×844), WebKit | `mobile.spec.js` | iOS Safari + mobile-webkit specific |
 
 `visual.spec.js` (v8.30.49 → v8.30.50) запускается в desktop `chromium` project
 и хранит 10 baseline-снимков: light/dark planning shell, compact task list,
-capacity overload, create-task modal, criteria tab, criteria modal, selection
-report, mobile burger menu и print A4 task card. Состояния сидируются через
+capacity overload, create-task modal, criteria window, criteria modal, selection
+report и print A4 task card. Состояния сидируются через
 `localStorage`, version/timestamp скрыты CSS-маской, transitions/animations
 выключены. Обновлять snapshots только после осознанного UI-изменения:
 `npx playwright test tests/e2e/visual.spec.js --project=chromium --update-snapshots`.
@@ -752,10 +733,9 @@ release metrics: guard запрещает рост budget, а report показ�
 
 | Script | Назначение |
 |---|---|
-| `npm run test:e2e:critical` | Chromium path: startup, diagnostics, Recovery Center, create task, persistence |
+| `npm run test:e2e:critical` | Chromium path: startup, diagnostics, create task, persistence |
 | `npm run test:e2e:visual` | Chromium visual baselines |
 | `npm run test:e2e:a11y` | axe-core/focus accessibility specs |
-| `npm run test:e2e:mobile` | mobile-webkit smoke через parallel runner |
 | `npm run test:e2e:perf` | Chromium large-backlog gate: 300 задач, render + search filter |
 | `npm run test:e2e:actionability` | Chromium click path: видимые команды должны выполнить действие или показать feedback |
 
@@ -799,7 +779,7 @@ diagnostics JSON. Подробная операционная памятка —
 
 - Spawn'ит Playwright с `--reporter=list,json`. Ground truth для обычного exit-кода — per-process JSON-файл (`test-results/e2e-runner-results-${process.pid}.json`, `stats.unexpected`), не stdout-парсинг.
 - Stdout-monitor — секундарный watchdog, force-kill child tree после `N passed (M total)` summary + 3s, если child сам не завершился (WebKit hang race).
-- Windows `mobile-webkit` имеет дополнительный узкий all-ok watchdog: если list reporter уже напечатал все ожидаемые `ok N` строки, failures не было, а child не завершился за 3s, runner делает tree-kill до внутреннего 300s Playwright timeout. Этот путь всегда пишет `[OVERRIDE]` и `child exit=1`, чтобы release notes не называли его clean child exit.
+- Windows `webkit` имеет дополнительный узкий all-ok watchdog: если list reporter уже напечатал все ожидаемые `ok N` строки, failures не было, а child не завершился за 3s, runner делает tree-kill до внутреннего 300s Playwright timeout. Этот путь всегда пишет `[OVERRIDE]` и `child exit=1`, чтобы release notes не называли его clean child exit.
 - **Port 8123 own-server detection (v8.30.33+):** если порт занят, runner делает HTTP GET на `/index.html` и ищет `<title>Sprint Planner` сигнатуру. Свой сервер — info, продолжаем и ставим `PLAYWRIGHT_REUSE_EXISTING_SERVER=1`, чтобы Playwright не пытался поднять второй `webServer` в CI. Чужой listener — **fail fast** с явной ошибкой и инструкцией (taskkill/kill). Раньше: «reuseExistingServer всё подхватит» как fallback, давало мутную диагностику.
 - **Process-tree cleanup (v8.30.33+):** Playwright spawn'ит worker'ов, worker'ы — браузеры. Простой `child.kill()` оставлял grandchildren orphan. Теперь:
   - **Windows:** `taskkill /F /T /PID <pid>` (T = tree).
@@ -902,11 +882,11 @@ js/
     criteriaController.js          # управление критериями
     densityController.js           # density toggle (compact/comfortable, v8.14)
     fileController.js              # импорт/экспорт данных
+    stateImportApplier.js          # общий apply/rollback импорта state (snapshot/restore)
     helpController.js              # справка (DOMPurify-санитизация)
     keyboardController.js          # горячие клавиши
     roleController.js              # управление ролями
     selectionController.js         # автоматический отбор задач
-    tabController.js               # переключение вкладок
     taskController.js              # управление задачами (оркестратор)
     themeController.js             # переключение светлой/тёмной темы
     viewModeController.js          # List ↔ Quadrants toggle (Stream C, v8.14)
@@ -945,6 +925,11 @@ js/
     message.js                     # уведомления пользователю
     numberFormat.js                # форматирование чисел
     storage.js                     # localStorage-обёртка
+    diagnostics.js                 # redacted diagnostics bundle
+    instanceLock.js                # single-instance lock (Web Locks + heartbeat)
+    recovery.js                    # чтение/сохранение recovery backup
+    statePreview.js                # preview импортируемого/восстанавливаемого state
+    storageHealth.js               # проверка состояния localStorage
   state/
     store.js                       # единое хранилище (Object.freeze)
     persistence.js                 # публичный facade миграции и сериализации
@@ -975,7 +960,10 @@ js/
     debounce.js                    # debounce-обёртка
     escapeHtml.js                  # экранирование HTML (XSS)
     fileName.js                    # безопасные имена JSON-экспорта
+    icons.js                       # inline-SVG иконки (Lucide-набор)
     lruCache.js                    # LRU-кэш
+    percent.js                     # форматирование UI-процентов (целые, ≥0)
+    sanitize.js                    # URL/HTML sanitize (allow-list + DOMPurify fallback)
 tests/
   unit/                            # Jest unit тесты (актуальные счётчики — в docs/RELEASE_NOTES.md)
     controllers/

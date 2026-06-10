@@ -32,7 +32,8 @@
 }
 
 .cf-section--optional {
-    opacity: 0.92;
+    /* a11y: opacity 0.92 компонировала --text-muted в #67757e (4.46:1 < AA 4.5)
+       на светлой карточке — приглушение убрано (axe serious, reconcile W34). */
 }
 
 .cf-section-head {
@@ -317,10 +318,9 @@
     gap: 6px;
 }
 
-/* createCriteriaContainer рендерится из taskFormController как
-   labels-row + selects-row грид. Стиль легковеснее старого.
-   v8.30.2: inline-styles в JS перенесены сюда. Число колонок задаётся
-   через `--n` (динамика runtime, оправдано inline-style на element). */
+/* createCriteriaContainer: критерии как шкалы-полосы (1 клик к значению 0..10).
+   Каждый критерий — ряд: label (вес+аббревиатура) | «0» | кликабельная шкала |
+   «10» | значение. Значение хранит hidden-input .criteria-score-select. */
 #createCriteriaContainer {
     font-variant-numeric: tabular-nums;
 }
@@ -331,59 +331,95 @@
     padding: 8px;
 }
 
-.create-criteria-grid {
+.cf-criteria-scales {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.cf-criteria-row {
     display: grid;
-    grid-template-columns: repeat(var(--n, 1), 1fr);
-    gap: 8px;
+    grid-template-columns: 92px auto 1fr auto auto;
+    align-items: center;
+    gap: 10px;
 }
 
-.create-criteria-grid--selects {
-    margin-top: 4px;
-}
-
-.create-criteria-label {
-    text-align: left;
+.cf-criteria-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.82rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.create-criteria-weight-badge {
+.cf-criteria-weight {
     font-size: 0.7rem;
-    color: var(--text);
-    background-color: var(--bg-card);
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-right: 4px;
     font-weight: 700;
-    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+    border: 1px solid var(--accent-border-faint);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
 }
 
-#createCriteriaContainer .criteria-score-select {
-    width: 100%;
-    min-width: 50px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-    font-size: 0.78rem;
-    padding: 6px 4px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    text-align: center;
+.cf-scale__end {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+/* Кликабельная шкала-полоса 0..10 (role="slider"). */
+.cf-scale {
+    display: flex;
+    align-items: center;
     cursor: pointer;
-    box-sizing: border-box;
+    border-radius: var(--radius-sm);
+    padding: 4px 2px;
 }
 
-#createCriteriaContainer .criteria-score-select:hover {
+.cf-scale:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.cf-scale__track {
+    display: flex;
+    flex: 1;
+    gap: 3px;
+    align-items: center;
+}
+
+.cf-scale__tick {
+    flex: 1;
+    height: 12px;
+    border-radius: 3px;
+    /* Чёткие границы делений в обеих темах (в dark раньше сливались). */
+    background: var(--overlay-medium);
+    border: 1px solid var(--border-light);
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.cf-scale:hover .cf-scale__tick {
     border-color: var(--border-light);
 }
 
-#createCriteriaContainer .criteria-score-select:focus,
-#createCriteriaContainer .criteria-score-select:focus-visible {
-    outline: none;
+.cf-scale__tick:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-bg-strong);
+}
+
+.cf-scale__tick--on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.cf-scale__value {
+    min-width: 20px;
+    text-align: right;
+    font-weight: 800;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
 }
 
 /* ---------- Roles block: карточки ролей с пресетами ---------- */

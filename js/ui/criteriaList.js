@@ -18,17 +18,17 @@ import { icon } from '../utils/icons.js';
  * @returns {string}
  */
 export function generateScaleEditorHTML(scale = {}) {
-    // v8.30.0: inline-style на <textarea> перенесён в `.scale-description--editor`
-    // (см. css/criteria.css). Раньше дублировал параметры между JS-string и CSS.
+    // Owner redesign: нумерованный circular-badge + single-line <input> в
+    // 2-колоночной сетке (.scale-editor — grid). escapeHtml экранирует кавычки,
+    // поэтому value-атрибут безопасен. collectScaleFromEditor читает .value —
+    // работает и для input. Геометрия/вид — в `.scale-description--editor`.
     let html = '';
     for (let i = 1; i <= 10; i++) {
-        const description = scale[i] || '';
-        const escaped = escapeHtml(description);
-        html += '<div class="scale-item">' +
-            '<div class="scale-score">' + i + '</div>' +
-            '<textarea class="scale-description scale-description--editor" id="scale_' + i + '" ' +
-            'placeholder="Описание значения шкалы (опционально)">' +
-            escaped + '</textarea>' +
+        const escaped = escapeHtml(scale[i] || '');
+        html += '<div class="scale-item scale-item--editor">' +
+            '<span class="scale-score">' + i + '</span>' +
+            '<input type="text" class="scale-description scale-description--editor" id="scale_' + i + '" ' +
+            'placeholder="Описание значения (опционально)" value="' + escaped + '">' +
             '</div>';
     }
     return html;
@@ -69,9 +69,11 @@ function buildSumBarHtml(total) {
     </span>
     <div class="criteria-sum-actions">
         <button type="button" id="criteriaAutoBalanceBtn" class="criteria-auto-balance-btn"${showAutoBalance ? '' : ' hidden'} title="Распределить веса так, чтобы сумма равнялась 100%">
-            ${icon('rotateCcw')}
+            ${icon('scale')}
             Авто-баланс
         </button>
+        <button type="button" id="resetCriteriaBtn" class="btn-reset-criteria" title="Сбросить критерии к значениям по умолчанию" aria-label="Сбросить критерии к значениям по умолчанию">${icon('rotateCcw')}</button>
+        <button type="button" id="addCriteriaBtn" class="btn-add-criteria-small" title="Добавить новый критерий">${icon('plus')}<span>Добавить</span></button>
     </div>
 </div>`;
 }

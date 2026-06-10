@@ -172,7 +172,7 @@ ${cards}
 /**
  * Аккордеон детализации одного алгоритма.
  */
-export function buildSingleAlgorithmDetailHtml(algo, res, displayName) {
+function buildSingleAlgorithmDetailHtml(algo, res, displayName) {
     let inner = '';
 
     if (res.quadrants) {

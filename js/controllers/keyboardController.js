@@ -92,14 +92,14 @@ export class KeyboardController {
             }
             // Fallback: модали, не прошедшие через modalManager.showModal
             // (не попадают в стек). Сохраняем прежнее поведение для них.
+            // W36: recoveryModal удалён вместе с Recovery Center; editModal
+            // не существует с v8.27 (unified createTaskModal).
             const modals = [
-                'editModal',
                 'editCriteriaModal',
                 'selectionReportModal',
                 'messageModal',
                 'confirmModal',
                 'recommendationsModal',
-                'recoveryModal',
                 'helpModal',
                 'createTaskModal'
             ];

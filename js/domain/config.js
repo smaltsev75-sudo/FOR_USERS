@@ -2,10 +2,9 @@
 import { APP_CONFIG } from '../utils/appConfig.js';
 import { addWorkingDays, countWorkingDays, formatDate, parseDate } from '../utils/date.js';
 
-export function createDefaultConfig() {
-    const today = new Date();
-    const startDate = formatDate(today);
-    const endDate = formatDate(addWorkingDays(today, APP_CONFIG.SPRINT.DEFAULT_DAYS - 1));
+export function createDefaultConfig(now = new Date()) {
+    const startDate = formatDate(now);
+    const endDate = formatDate(addWorkingDays(now, APP_CONFIG.SPRINT.DEFAULT_DAYS - 1));
     return {
         product: APP_CONFIG.SPRINT.DEFAULT_PRODUCT,
         days: APP_CONFIG.SPRINT.DEFAULT_DAYS,

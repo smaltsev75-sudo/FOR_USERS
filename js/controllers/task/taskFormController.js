@@ -8,6 +8,7 @@ import {
     isJiraUrlUnique
 } from '../../domain/validation.js';
 import { createTask } from '../../domain/task.js';
+import { resortTasksByPriority } from './taskOrderingActions.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
 import { TaskFormDomAdapter } from './taskForm/taskFormDomAdapter.js';
 import {
@@ -99,6 +100,11 @@ export class TaskFormController {
         this.form.populateCriteriaSelects(this.store.getState().criteria || []);
     }
 
+    /** Passthrough к адаптеру: установить значение шкалы критерия (1-клик/клавиатура). */
+    setCriteriaScaleValue(criterionId, value, opts) {
+        this.form.setCriteriaScaleValue(criterionId, value, opts);
+    }
+
     updateCreateFormPriorityScore() {
         const criteria = this.store.getState().criteria;
         if (!criteria || criteria.length === 0) return;
@@ -132,6 +138,9 @@ export class TaskFormController {
         this.store.addTask(newTask);
         this.store.updateState({ lastAddedTaskId: newTask.id });
         this._invalidateCaches();
+        // v2 auto-sort: новая задача занимает позицию по Priority Score.
+        // Синхронно с addTask → rAF-батчинг даёт один кадр (нет мерцания).
+        resortTasksByPriority(this.store);
         this.clearAddForm();
 
         if (this._onTaskCreated) this._onTaskCreated(newTask);
@@ -303,6 +312,8 @@ export class TaskFormController {
         // edit-modal терялись после следующего persist'а. Контракт см. js/domain/task.js.
         this.store.updateTask(this.editId, patch);
         this._invalidateCaches();
+        // v2 auto-sort: правка оценок критериев меняет score → пересортировка.
+        resortTasksByPriority(this.store);
         const editedId = this.editId;
         this.closeEditModal();
 

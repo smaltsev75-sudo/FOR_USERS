@@ -1,6 +1,5 @@
 // @ts-check
 // js/domain/task.js
-import { ROLES } from '../utils/constants.js';
 
 /**
  * Monotonic ID counter. Seeded from Date.now() so IDs remain unique across
@@ -46,6 +45,7 @@ export function createTask({ title, jira, type, comment, estimates }) {
         jira: jira.trim(),
         type,
         comment: comment.trim(),
+        note: '',                 // SM-комментарий (инлайн в строке задачи, до 500 симв)
         excluded: 0,
         est: { ...estimates },
         exclusionReason: '',
@@ -79,28 +79,6 @@ export function fixTaskOrder(tasks) {
 }
 
 /**
- * Подготавливает задачу для алгоритмов отбора.
- * @param {Object} task - Исходная задача.
- * @param {Array} roles - Массив ролей.
- * @param {Function} priorityScoreFn - Функция расчёта Priority Score.
- * @returns {Object} Подготовленная задача.
- */
-export function prepareTaskForSelection(task, roles, priorityScoreFn) {
-    const effort = calculateTaskTotal(task, roles);
-    return {
-        id: task.id,
-        title: task.title,
-        priorityScore: task.priorityScore !== undefined ? task.priorityScore : priorityScoreFn(task),
-        effort,
-        roleEffort: Object.fromEntries(ROLES.map(r => [r.id, task.est?.[r.id] || 0])),
-        excluded: task.excluded || false,
-        type: task.type,
-        dependencies: task.dependencies || [],
-        rawTask: task
-    };
-}
-
-/**
  * Возвращает статистику по задачам (включённые/исключённые, типы).
  * @param {Array} tasks - Массив задач
  * @returns {Object} Статистика.
@@ -120,18 +98,4 @@ export function getTaskStats(tasks) {
         }
     });
     return stats;
-}
-
-/**
- * Сортирует задачи по убыванию Priority Score.
- * @param {Array} tasks - Массив задач
- * @param {Function} priorityScoreFn - Функция расчёта Priority Score.
- * @returns {Array} Отсортированный массив.
- */
-export function sortTasksByPriorityScore(tasks, priorityScoreFn) {
-    return [...tasks].sort((a, b) => {
-        const scoreA = priorityScoreFn(a);
-        const scoreB = priorityScoreFn(b);
-        return scoreB - scoreA;
-    });
 }

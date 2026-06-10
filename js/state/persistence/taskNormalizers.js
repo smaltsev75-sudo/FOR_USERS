@@ -42,6 +42,7 @@ export function normalizeTasks(tasks, opts = {}) {
             jira: sanitizeJiraUrl(task.jira),
             type: normalizeTaskType(task.type),
             comment: String(task.comment ?? '').trim(),
+            note: String(task.note ?? '').slice(0, 500),
             excluded: task.excluded ? 1 : 0,
             est: normalizeTaskEst(task.est),
             exclusionReason: String(task.exclusionReason ?? ''),

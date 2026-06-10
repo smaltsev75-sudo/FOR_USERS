@@ -152,7 +152,3 @@ export function createTaskRowVM(task, criteria = [], roles = []) {
         criteriaSummary
     };
 }
-
-export const VM_CONSTANTS = Object.freeze({
-    MAX_VISIBLE_ROLE_CHIPS
-});

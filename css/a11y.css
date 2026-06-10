@@ -221,11 +221,9 @@ a:focus-visible,
     line-height: 1.4;
 }
 
-.scale-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+/* Раскладка .scale-editor (2-колоночная сетка) живёт в criteria.css —
+   единственный источник. Раньше здесь дублировался flex-column и перебивал
+   criteria.css за счёт более позднего порядка загрузки (owner redesign). */
 
 .selection-loading-indicator {
     display: none;

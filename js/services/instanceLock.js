@@ -28,12 +28,7 @@ const LOCK_RESOURCE_NAME = 'planner-instance';
 const HEARTBEAT_MS = 2000;
 const STALE_TIMEOUT_MS = 8000;
 
-export {
-    INSTANCE_LOCK_STORAGE_KEY,
-    LOCK_RESOURCE_NAME,
-    HEARTBEAT_MS,
-    STALE_TIMEOUT_MS
-};
+export { INSTANCE_LOCK_STORAGE_KEY };
 
 function readRegistry() {
     try {

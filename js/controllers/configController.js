@@ -140,7 +140,19 @@ export class ConfigController {
     handleProductChange(e) {
         const newProduct = e.target.value.trim();
         const currentConfig = this.store.getState().config;
-        if (currentConfig.product === newProduct) return;
+        // W40 (owner): название продукта — обязательное текстовое поле,
+        // не менее 3 символов после trim. Невалидное → message + откат.
+        if (newProduct.length < 3) {
+            messageService.showMessage('Название продукта обязательно и должно содержать не менее 3 символов');
+            e.target.value = currentConfig?.product ?? '';
+            return;
+        }
+        if (currentConfig.product === newProduct) {
+            // Нормализуем отображение (убираем введённые пробелы по краям).
+            e.target.value = newProduct;
+            return;
+        }
+        e.target.value = newProduct;
         this.store.setConfig({ product: newProduct });
     }
 
@@ -208,6 +220,18 @@ export class ConfigController {
             messageService.showMessage('Дата окончания должна быть в формате дд.мм.гггг');
             e.target.value = currentEnd || '';
             return;
+        }
+        // W40 (owner): дата окончания не может быть раньше даты начала.
+        // Однодневный спринт (окончание == начало) валиден.
+        const { startDate: currentStart } = currentConfig;
+        if (newEndDate && currentStart) {
+            const parsedEnd = parseDate(newEndDate);
+            const parsedStart = parseDate(currentStart);
+            if (parsedEnd && parsedStart && parsedEnd < parsedStart) {
+                messageService.showMessage('Дата окончания не может быть раньше даты начала спринта');
+                e.target.value = currentEnd || '';
+                return;
+            }
         }
         this.store.setConfig(createEndDatePatch(currentConfig, newEndDate));
     }

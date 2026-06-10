@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.30.68-selection-a11y-fixes';
+const CACHE_VERSION = 'sp-v8.31.0-w41';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -30,7 +30,6 @@ const ASSETS_TO_CACHE = [
     './css/help.css',
     './css/snackbar.css',
     './css/create-task-modal.css',
-    './css/responsive.css',
     './css/criteria.css',
     './css/selection-report.css',
     './css/task-card.css',
@@ -46,6 +45,7 @@ const ASSETS_TO_CACHE = [
     './css/config-panel.css',
     './css/a11y.css',
     './css/blocked-screen.css',
+    './css/app-rail.css',
     './css/print.css',
     // JS — app entry
     './js/app.js',
@@ -66,11 +66,10 @@ const ASSETS_TO_CACHE = [
     './js/controllers/fileController.js',
     './js/controllers/helpController.js',
     './js/controllers/keyboardController.js',
-    './js/controllers/recoveryController.js',
+    './js/controllers/printController.js',
     './js/controllers/roleController.js',
     './js/controllers/selection/selectionHelpers.js',
     './js/controllers/selectionController.js',
-    './js/controllers/tabController.js',
     './js/controllers/task/formHelpers.js',
     './js/controllers/task/criteriaScoreMutations.js',
     './js/controllers/task/taskEstimateMutations.js',
@@ -111,10 +110,8 @@ const ASSETS_TO_CACHE = [
     './js/services/instanceLock.js',
     './js/services/message.js',
     './js/services/numberFormat.js',
-    './js/services/recovery.js',
     './js/services/statePreview.js',
     './js/services/storage.js',
-    './js/services/storageHealth.js',
     // JS — state
     './js/state/persistence.js',
     './js/state/persistence/constants.js',
@@ -174,6 +171,7 @@ const ASSETS_TO_CACHE = [
     './js/utils/fileName.js',
     './js/utils/icons.js',
     './js/utils/lruCache.js',
+    './js/utils/measure.js',
     './js/utils/percent.js',
     './js/utils/sanitize.js',
     // Документация (offline-справка F1 — v8.30.11)
@@ -246,23 +244,29 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Локальные ресурсы — Cache-First
-    // v8.30.6: { ignoreSearch: true } для same-origin static assets.
-    // index.html подключает CSS/JS с cache-bust query ?v=X.Y.Z, но precache
-    // хранит чистые пути './css/base.css'. Без ignoreSearch offline-запуск
-    // получает index.html из кэша, но промахивается по './css/base.css?v=...'
-    // и './js/app.js?v=...' → PWA offline без стилей и без логики.
+    // Локальные ресурсы — Network-First (redesign v2).
+    // РАНЬШЕ был Cache-First: после правок CSS/JS/HTML пользователь продолжал
+    // видеть устаревший билд, пока вручную не снёс Service Worker — это создавало
+    // ложное ощущение «изменения не применились». Теперь онлайн ВСЕГДА отдаёт
+    // свежее с сервера, а кэш — только offline-fallback.
+    //   - isCacheableResponse-guard сохраняет защиту от cache-poisoning (v8.30.3):
+    //     в кэш кладём только ok + basic/cors ответы.
+    //   - { cache: 'reload' }: ES-модули импортируются без cache-bust query
+    //     (bare relative import'ы), поэтому браузерный HTTP-cache мог отдавать
+    //     устаревший .js даже при network-first. reload обходит HTTP-cache и
+    //     всегда берёт свежее с сервера. Запрос по URL (а не event.request),
+    //     чтобы не падать на navigation-request с mode:'navigate'.
+    //   - { ignoreSearch: true } для offline-fallback: index.html подключает
+    //     CSS/JS с ?v=X.Y.Z, а precache хранит чистые пути './css/base.css'.
     event.respondWith(
-        caches.match(event.request, { ignoreSearch: true })
-            .then(cached => {
-                if (cached) return cached;
-                return fetch(event.request).then(response => {
-                    if (isCacheableResponse(response)) {
-                        const clone = response.clone();
-                        caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
-                    }
-                    return response;
-                });
+        fetch(event.request.url, { cache: 'reload', credentials: 'same-origin' })
+            .then(response => {
+                if (isCacheableResponse(response)) {
+                    const clone = response.clone();
+                    caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+                }
+                return response;
             })
+            .catch(() => caches.match(event.request, { ignoreSearch: true }))
     );
 });

@@ -22,8 +22,9 @@ export function renderAppVersionBadge(root = document) {
  * Заполняем актуальной датой/временем в `beforeprint` (Ctrl+P / window.print()).
  * Печатаемый отчёт получает строку «v8.30.6 (дата печати 17.05.2026 23:05)».
  * @param {Window} win — окружение (для тестов: окно с document и addEventListener)
+ * @param {() => Date} now — clock provider for deterministic tests.
  */
-export function bindPrintTimestamp(win = window) {
+export function bindPrintTimestamp(win = window, now = () => new Date()) {
     if (!win || typeof win.addEventListener !== 'function') return;
     const doc = win.document;
     const format = (d) => {
@@ -33,7 +34,7 @@ export function bindPrintTimestamp(win = window) {
     const update = () => {
         const el = doc.getElementById && doc.getElementById('printTimestamp');
         if (!el) return;
-        el.textContent = `(дата печати ${format(new Date())})`;
+        el.textContent = `(дата печати ${format(now())})`;
     };
     win.addEventListener('beforeprint', update);
     // Pre-fill для emulateMedia('print') в Playwright и для CSS-only print preview

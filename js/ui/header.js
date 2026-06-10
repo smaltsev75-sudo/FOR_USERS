@@ -23,6 +23,7 @@ const ICON_CHECK_CIRCLE =
  */
 function renderRow(el, iconHtml, mainLabel, counts) {
     el.replaceChildren();
+    el.removeAttribute('title');
 
     const iconWrap = document.createElement('span');
     iconWrap.className = 'toolbar-status__icon-wrap';
@@ -34,28 +35,15 @@ function renderRow(el, iconHtml, mainLabel, counts) {
     label.textContent = mainLabel;
     el.appendChild(label);
 
+    // Разбивка по типам (US/Bug/Tech) убрана из видимой строки в tooltip —
+    // owner: блок был перегружен информацией. Видимым остаётся акцентный тотал.
     const total = counts.us + counts.bug + counts.tech;
     if (total > 0) {
-        const breakdown = document.createElement('span');
-        breakdown.className = 'toolbar-status__breakdown';
-
         const parts = [];
-        if (counts.us > 0) parts.push(['us', `US:${counts.us}`]);
-        if (counts.bug > 0) parts.push(['bug', `Bug:${counts.bug}`]);
-        if (counts.tech > 0) parts.push(['tech', `Tech:${counts.tech}`]);
-
-        parts.forEach(([type, text], idx) => {
-            if (idx > 0) {
-                breakdown.appendChild(document.createTextNode(' '));
-            }
-            const chip = document.createElement('span');
-            chip.className = 'toolbar-status__chip';
-            chip.dataset.type = type;
-            chip.textContent = text;
-            breakdown.appendChild(chip);
-        });
-
-        el.appendChild(breakdown);
+        if (counts.us > 0) parts.push(`US: ${counts.us}`);
+        if (counts.bug > 0) parts.push(`Bug: ${counts.bug}`);
+        if (counts.tech > 0) parts.push(`Tech: ${counts.tech}`);
+        el.title = parts.join(' · ');
     }
 }
 

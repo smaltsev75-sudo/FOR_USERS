@@ -100,7 +100,13 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
 
     const fragment = document.createDocumentFragment();
     QUADRANT_KEYS_WITH_EXCLUDED.forEach((quadrantKey) => {
-        const tasksInGroup = grouped[quadrantKey] || [];
+        // Owner: внутри группы задачи отображаются по возрастанию номера задачи
+        // в спринте (№N = глобальный индекс в списке), а не по priority ↓ из
+        // домена. Домен (assignQuadrants) не трогаем — его порядок использует
+        // алгоритм отбора Matrix; пересортировка только на UI-слое.
+        const tasksInGroup = [...(grouped[quadrantKey] || [])].sort(
+            (a, b) => (orderById.get(a.id) ?? 0) - (orderById.get(b.id) ?? 0)
+        );
         // v8.29.1: пропускаем секцию excluded если в ней нет задач —
         // не показываем пустой блок «Исключённые из спринта» при чистом спринте.
         if (quadrantKey === 'excluded' && tasksInGroup.length === 0) return;
@@ -112,6 +118,12 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
         detailsEl.className = 'quadrant-group';
         if (quadrantKey === 'excluded') {
             detailsEl.classList.add('quadrant-group--excluded');
+        }
+        // Пустая группа (0 задач) остаётся на экране как drag-target, но
+        // помечается для скрытия в печати (print.css): пустые разделы без задач
+        // не нужны в PDF (owner).
+        if (tasksInGroup.length === 0) {
+            detailsEl.classList.add('quadrant-group--empty');
         }
         detailsEl.dataset.quadrant = quadrantKey;
         detailsEl.open = expandedSet.has(quadrantKey);

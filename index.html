@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Планирование спринта (Multi‑Algorithm)</title>
+    <!-- Favicon: sage-палитра редизайна v2 — синхронен с icons/icon-*.svg. -->
     <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231e293b'/%3E%3Crect x='20' y='25' width='60' height='50' rx='8' fill='%230f172a' stroke='%2300d9ff' stroke-width='4'/%3E%3Cline x1='20' y1='40' x2='80' y2='40' stroke='%23334155' stroke-width='2'/%3E%3Ccircle cx='40' cy='55' r='6' fill='%2300ff9d'/%3E%3Ccircle cx='60' cy='55' r='6' fill='%23ff4d4d'/%3E%3Cpolyline points='30,75 45,90 70,65' stroke='%23ff9800' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23246b59'/%3E%3Crect x='20' y='18' width='60' height='44' rx='8' fill='%23fdfaf2'/%3E%3Cline x1='26' y1='32' x2='74' y2='32' stroke='%23d9d2c3' stroke-width='2.5'/%3E%3Ccircle cx='40' cy='49' r='6' fill='%230f7a5b'/%3E%3Ccircle cx='60' cy='49' r='6' fill='%23b33939'/%3E%3Cpolyline points='30,78 45,92 70,68' stroke='%23fdfaf2' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
     <!-- Предотвращение FOUC: тема применяется до загрузки CSS.
          v8.30.3: try/catch вокруг localStorage.getItem — в Safari private mode
          и при заблокированном Storage Access getItem бросает SecurityError.
@@ -15,44 +16,47 @@
         (function () {
             var t = null;
             try { t = localStorage.getItem('sprintPlannerTheme'); } catch (e) { /* SecurityError — fallback ниже */ }
-            if (!t) {
-                try { t = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'; }
-                catch (e) { t = 'dark'; }
-            }
+            /* Редизайн v2: light (sage shadcn) — дефолт, как в эталоне sprint-planner-cloud. */
+            if (!t) { t = 'light'; }
             document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
-    <link rel="stylesheet" href="css/base.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/layout.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/forms.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/modals.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/components.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/animations.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/progress.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/help.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/responsive.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card-states.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/density.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.30.68">
-    <link rel="stylesheet" href="css/print.css?v=v8.30.68" media="print">
-    <link rel="manifest" href="manifest.json?v=8.30.68">
-    <meta name="theme-color" content="#00d9ff">
+    <!-- Inter (язык дизайна sprint-planner-cloud). TODO Wave 1.1: бандлить локально
+         (@fontsource) для offline-PWA вместо Google Fonts CDN. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="css/base.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/layout.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/forms.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/modals.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/components.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/animations.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/progress.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/help.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card-states.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/density.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/app-rail.css?v=v8.31.0">
+    <link rel="stylesheet" href="css/print.css?v=v8.31.0" media="print">
+    <link rel="manifest" href="manifest.json?v=8.31.0">
+    <meta name="theme-color" content="#246b59">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 
@@ -65,80 +69,33 @@
         <!-- ШАПКА -->
         <div class="header-container">
             <h1 class="header-title">
-                <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <!-- Бренд-знак (мини-версия favicon/PWA-иконки): sage-карточка
+                     со статус-точками и галочкой — единый стиль иконок (W30). -->
+                <svg class="icon" width="22" height="22" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><rect width="100" height="100" rx="16" fill="#246b59"/><rect x="20" y="18" width="60" height="44" rx="8" fill="#fdfaf2"/><line x1="26" y1="32" x2="74" y2="32" stroke="#d9d2c3" stroke-width="2.5"/><circle cx="40" cy="49" r="6" fill="#0f7a5b"/><circle cx="60" cy="49" r="6" fill="#b33939"/><polyline points="30,78 45,92 70,68" stroke="#fdfaf2" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
                 Планирование спринта
                 <span id="appVersion" class="app-version" aria-label="Версия приложения"></span>
                 <span id="printTimestamp" class="print-only-timestamp" aria-hidden="true"></span>
             </h1>
-            <div class="export-buttons">
-                <button class="export-btn theme-toggle-btn" id="themeToggleBtn"
-                    title="Переключить тему (светлая/тёмная)" aria-label="Переключить тему">
-                    <span class="theme-toggle-icon" aria-hidden="true"></span>
-                    <span class="theme-toggle-label">Тема</span>
-                </button>
-                <button class="export-btn print-btn" id="printBtn" type="button" title="Печать (Ctrl+Alt+P)">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                    Печать
-                </button>
-                <button class="export-btn load-btn" id="loadDataBtn"
-                    title="Загрузить данные из JSON-файла (Ctrl+Alt+O)">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 14l1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
-                    Загрузить
-                </button>
-                <button class="export-btn save-btn" id="saveDataBtn"
-                    title="Сохранить текущие данные в JSON-файл (Ctrl+Alt+S)">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Сохранить
-                </button>
-                <button class="export-btn diagnostics-btn" id="downloadDiagnosticsBtn"
-                    title="Скачать диагностический пакет без текстов задач (Ctrl+Alt+D)">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-                    Диагностика
-                </button>
-                <button class="export-btn recovery-btn" id="recoveryCenterBtn"
-                    title="Открыть центр восстановления из локальной резервной копии">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/><path d="m9 16 2 2 4-4"/></svg>
-                    Резерв
-                </button>
-                <button class="export-btn help-btn" id="helpBtn" title="Открыть справку">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    Справка
-                </button>
-            </div>
         </div>
 
-        <!-- Mobile burger toggle (показывается только на viewport ≤600px,
-             см. css/layout.css). Раскрывает .tabs-container, который иначе
-             display:none на mobile. v8.30.26: P1 fix — раньше HTML-элемент
-             отсутствовал, навигация между tabs была сломана на телефоне. -->
-        <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button"
-            aria-controls="tabsContainer" aria-expanded="false"
-            aria-label="Открыть меню вкладок">
-            <span>Меню вкладок</span>
-            <i aria-hidden="true">▸</i>
-        </button>
+        <!-- Редизайн v2 (desktop-only): вкладки убраны. Планирование — единственный
+             экран; «Критерии оценки» вынесены в отдельное окно (#criteriaModal),
+             открывается кнопкой в правом rail (см. .app-rail). -->
 
-        <!-- TABS -->
-        <div class="tabs-container" id="tabsContainer" role="tablist" aria-label="Разделы приложения">
-            <button class="tab-btn active" data-tab="planning" role="tab"
-                id="planningTabBtn" aria-selected="true" aria-controls="planningTabContent" tabindex="0">
-                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Планирование спринта
-            </button>
-            <button class="tab-btn" data-tab="criteria" role="tab"
-                id="criteriaTabBtn" aria-selected="false" aria-controls="criteriaTabContent" tabindex="-1">
-                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-                Критерии оценки
-            </button>
-        </div>
-
-        <!-- ВКЛАДКА ПЛАНИРОВАНИЯ -->
-        <div id="planningTabContent" class="tab-content" role="tabpanel" aria-labelledby="planningTabBtn">
-            <!-- Параметры спринта (cfg-panel v8.25): две секции с явной иерархией -->
+        <!-- ЭКРАН ПЛАНИРОВАНИЯ -->
+        <div id="planningTabContent" class="tab-content">
+            <!-- Параметры спринта (cfg-panel, redesign v2): все 7 полей в ОДНУ строку.
+                 Раньше блок делился на две секции (Параметры / Коэффициенты в
+                 <details>); по требованию владельца секции слиты в один ряд
+                 .cfg-fields. Все id инпутов, label/aria и .cfg-info-btn сохранены —
+                 контроллеры биндят по id. Desktop-only.
+                 #cfgAdvanced оставлен как обычный <div> (вместо <details>): ссылку
+                 byId('cfgAdvanced') в configFormAdapter сохраняем не-null,
+                 removeAttribute('open') на <div> — безопасный no-op. -->
             <div class="cfg-panel" role="form" aria-label="Параметры спринта и коэффициенты расчёта">
                 <section class="cfg-section" aria-labelledby="cfgSection1Title">
                     <h2 class="cfg-section-title" id="cfgSection1Title">Параметры спринта</h2>
-                    <div class="cfg-fields">
+                    <div class="cfg-fields cfg-fields--single-row" id="cfgAdvanced">
 
                         <div class="cfg-field cfg-field--product">
                             <label class="cfg-label" for="cfgProduct">Продукт</label>
@@ -194,21 +151,6 @@
                                 value="0" min="0" step="1">
                         </div>
 
-                    </div>
-                </section>
-
-                <!-- v8.30.33: на mobile (≤600px) обёрнуто в <details> для compact disclosure.
-                     На desktop summary скрыт (display:none), секция видна всегда.
-                     На mobile открывается тапом на summary без потери функциональности. -->
-                <details class="cfg-advanced" id="cfgAdvanced" open>
-                    <summary class="cfg-advanced-summary" aria-label="Дополнительные настройки: коэффициенты расчёта">
-                        <span class="cfg-advanced-summary-label">Коэффициенты расчёта</span>
-                        <span class="cfg-advanced-summary-hint">(коэфф. доступности, порог алерта)</span>
-                    </summary>
-                <section class="cfg-section cfg-section--coef" aria-labelledby="cfgSection2Title">
-                    <h2 class="cfg-section-title" id="cfgSection2Title">Коэффициенты расчёта</h2>
-                    <div class="cfg-fields">
-
                         <div class="cfg-field cfg-field--medium">
                             <label class="cfg-label" for="cfgAvailCoef">
                                 Коэфф. доступности %
@@ -249,7 +191,6 @@
 
                     </div>
                 </section>
-                </details>
             </div>
 
             <!-- Дэшборд: загрузка команды + распределение по типам -->
@@ -384,42 +325,71 @@
             <div id="taskList"></div>
         </div>
 
-        <!-- v8.30.34: mobile FAB (Floating Action Button) для primary action.
-             На viewport ≤600px пользователь долго скроллит config+capacity+criteria,
-             прежде чем доберётся до toolbar с «Новая задача». FAB position:fixed
-             даёт мгновенный доступ. На desktop скрыт (display:none).
-             Aria-label дублирует label оригинальной кнопки. -->
-        <button class="mobile-fab" id="mobileFab" type="button"
-                aria-label="Создать новую задачу"
-                title="Создать новую задачу">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                 aria-hidden="true" focusable="false">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-        </button>
+    </main>
 
-        <!-- ВКЛАДКА КРИТЕРИЕВ -->
-        <div id="criteriaTabContent" class="tab-content tab-content--hidden" role="tabpanel" aria-labelledby="criteriaTabBtn">
-            <div class="panel">
-                <div class="criteria-header-title">
-                    <h3 class="criteria-section-title">
-                        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-                        Управление критериями оценки задач
-                    </h3>
-                    <div class="criteria-header-buttons">
-                        <button class="btn-reset-criteria" id="resetCriteriaBtn"
-                            title="Сбросить критерии к значениям по умолчанию" aria-label="Сбросить критерии">
-                            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                        </button>
-                        <button class="btn-add-criteria-small" id="addCriteriaBtn" title="Добавить новый критерий">
-                            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Добавить
-                        </button>
-                    </div>
-                </div>
+    <!-- ВЕРТИКАЛЬНЫЙ RAIL (redesign v2): фиксированный icon-rail справа.
+         Все действия из старой шапки (.export-buttons) перенесены сюда как
+         icon-only кнопки. id / per-type class / SVG / title / aria-label
+         сохранены — контроллеры биндят по id, тесты проверяют textContent.
+         Видимый текст-лейбл каждой кнопки обёрнут в <span class="rail-label">
+         (sr-only внутри rail), у темы остаётся .theme-toggle-label. -->
+    <nav class="app-rail" id="appRail" aria-label="Панель действий" role="toolbar">
+        <div class="app-rail__group app-rail__group--actions">
+            <!-- Порядок (owner): Загрузить → Сохранить → Печать → Критерии →
+                 Диагностика → Резерв. Справка вынесена вниз (под кнопку темы). -->
+            <button class="export-btn rail-btn load-btn" id="loadDataBtn"
+                title="Загрузить данные из JSON-файла (Ctrl+Alt+O)" aria-label="Загрузить данные из JSON-файла">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 14l1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
+                <span class="rail-label">Загрузить</span>
+            </button>
+            <button class="export-btn rail-btn save-btn" id="saveDataBtn"
+                title="Сохранить текущие данные в JSON-файл (Ctrl+Alt+S)" aria-label="Сохранить текущие данные в JSON-файл">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span class="rail-label">Сохранить</span>
+            </button>
+            <button class="export-btn rail-btn print-btn" id="printBtn" type="button"
+                title="Печать (Ctrl+Alt+P)" aria-label="Печать">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span class="rail-label">Печать</span>
+            </button>
+            <button class="export-btn rail-btn criteria-open-btn" id="openCriteriaBtn"
+                title="Управление критериями оценки задач" aria-label="Управление критериями оценки задач">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                <span class="rail-label">Критерии</span>
+            </button>
+            <!-- Кнопки «Диагностика» и «Резерв» убраны из rail (owner). Сам
+                 функционал в коде остаётся (контроллеры guard'ят отсутствие кнопок). -->
+        </div>
+        <div class="app-rail__group app-rail__group--theme">
+            <button class="export-btn rail-btn theme-toggle-btn" id="themeToggleBtn"
+                title="Переключить тему (светлая/тёмная)" aria-label="Переключить тему">
+                <span class="theme-toggle-icon" aria-hidden="true"></span>
+                <span class="theme-toggle-label">Тема</span>
+            </button>
+            <!-- Справка под кнопкой темы (owner). -->
+            <button class="export-btn rail-btn help-btn" id="helpBtn"
+                title="Открыть справку" aria-label="Открыть справку">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="rail-label">Справка</span>
+            </button>
+        </div>
+    </nav>
 
+    <!-- КРИТЕРИИ ОЦЕНКИ — отдельное окно (v2: вынесено из вкладки в модалку,
+         открывается кнопкой «Критерии» в правом rail). -->
+    <div class="modal-overlay" id="criteriaModal" role="dialog" aria-modal="true" aria-labelledby="criteriaModalTitle">
+        <div class="modal-content modal-content--wide modal-content--column modal-content--padless">
+            <div class="modal-header modal-header--padded">
+                <h3 id="criteriaModalTitle" class="modal-title modal-title--icon">
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                    Управление критериями оценки задач
+                </h3>
+                <button id="closeCriteriaModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
+            </div>
+            <div class="modal-body modal-body--padded">
+                <!-- Кнопки «Сбросить»/«Добавить» перенесены в правую часть строки
+                     «Сумма весов» (рендерятся в buildSumBarHtml, обрабатываются
+                     делегированно в criteriaController). -->
                 <p class="section-description">
                     Настройте критерии оценки задач для расчета Priority Score. Вес каждого критерия определяет его
                     влияние на итоговый приоритет задачи.
@@ -429,8 +399,55 @@
 
                 <div class="criteria-list" id="criteriaList"></div>
             </div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="closeCriteriaBtn" class="export-btn export-btn--accent">Закрыть</button>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- КОММЕНТАРИЙ SM — отдельное окно (открывается иконкой в строке задачи). -->
+    <div class="modal-overlay" id="noteModal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
+        <div class="modal-content modal-content--column">
+            <div class="modal-header modal-header--padded">
+                <h3 id="noteModalTitle" class="modal-title modal-title--icon">Комментарий SM к задаче</h3>
+                <button id="closeNoteModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
+            </div>
+            <div class="modal-body modal-body--padded">
+                <div class="cf-field">
+                    <textarea id="noteModalInput" class="cf-input cf-textarea" rows="6" maxlength="500"
+                              placeholder="Дополнительная информация по задаче (до 500 символов)"
+                              aria-label="Комментарий SM"></textarea>
+                    <div class="cf-counter" aria-live="polite">
+                        <span class="cf-counter__text" id="noteModalCounter">Осталось: 500</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="cancelNoteBtn" class="export-btn">Отмена</button>
+                <button id="saveNoteBtn" class="export-btn export-btn--accent">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Параметры печати (owner): перед печатью спросить про исключённые задачи. -->
+    <div class="modal-overlay" id="printOptionsModal" role="dialog" aria-modal="true" aria-labelledby="printOptionsModalTitle">
+        <div class="modal-content modal-content--column">
+            <div class="modal-header modal-header--padded">
+                <h3 id="printOptionsModalTitle" class="modal-title">Параметры печати</h3>
+                <button id="closePrintOptionsModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
+            </div>
+            <div class="modal-body modal-body--padded">
+                <label class="print-option">
+                    <input type="checkbox" id="printIncludeExcluded">
+                    <span>Выводить на печать исключённые из спринта задачи?</span>
+                </label>
+            </div>
+            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
+                <button id="printCancelBtn" class="export-btn">Отмена</button>
+                <button id="printConfirmBtn" class="export-btn export-btn--accent">Печать</button>
+            </div>
+        </div>
+    </div>
 
     <!-- МОДАЛЬНЫЕ ОКНА -->
     <!-- v8.27: единый task-form modal — см. #createTaskModal выше.
@@ -510,72 +527,15 @@
                     <div id="createCriteriaContainer" class="cf-criteria"></div>
                 </fieldset>
 
-                <!-- Section 3: Effort estimates -->
-                <fieldset class="cf-section">
-                    <div class="cf-section-head">
-                        <legend class="cf-section-title">Оценка трудозатрат (часы)</legend>
-                        <span class="cf-metric cf-metric--effort" id="createEffortHeader" aria-live="polite">
-                            Effort: 0,0
-                        </span>
-                    </div>
-                    <div class="cf-roles">
-                        <div class="cf-role">
-                            <label class="cf-role__label" for="h_uiux">UI/UX</label>
-                            <input type="text" id="h_uiux" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
-                            <div class="cf-role__presets" data-target="h_uiux" aria-hidden="true">
-                                <button type="button" class="cf-preset" data-value="1">1</button>
-                                <button type="button" class="cf-preset" data-value="2">2</button>
-                                <button type="button" class="cf-preset" data-value="4">4</button>
-                                <button type="button" class="cf-preset" data-value="8">8</button>
-                            </div>
-                        </div>
-                        <div class="cf-role">
-                            <label class="cf-role__label" for="h_ca">CA</label>
-                            <input type="text" id="h_ca" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
-                            <div class="cf-role__presets" data-target="h_ca" aria-hidden="true">
-                                <button type="button" class="cf-preset" data-value="1">1</button>
-                                <button type="button" class="cf-preset" data-value="2">2</button>
-                                <button type="button" class="cf-preset" data-value="4">4</button>
-                                <button type="button" class="cf-preset" data-value="8">8</button>
-                            </div>
-                        </div>
-                        <div class="cf-role">
-                            <label class="cf-role__label" for="h_fe">FE</label>
-                            <input type="text" id="h_fe" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
-                            <div class="cf-role__presets" data-target="h_fe" aria-hidden="true">
-                                <button type="button" class="cf-preset" data-value="2">2</button>
-                                <button type="button" class="cf-preset" data-value="4">4</button>
-                                <button type="button" class="cf-preset" data-value="8">8</button>
-                                <button type="button" class="cf-preset" data-value="16">16</button>
-                            </div>
-                        </div>
-                        <div class="cf-role">
-                            <label class="cf-role__label" for="h_be">BE</label>
-                            <input type="text" id="h_be" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
-                            <div class="cf-role__presets" data-target="h_be" aria-hidden="true">
-                                <button type="button" class="cf-preset" data-value="2">2</button>
-                                <button type="button" class="cf-preset" data-value="4">4</button>
-                                <button type="button" class="cf-preset" data-value="8">8</button>
-                                <button type="button" class="cf-preset" data-value="16">16</button>
-                            </div>
-                        </div>
-                        <div class="cf-role">
-                            <label class="cf-role__label" for="h_qa">QA</label>
-                            <input type="text" id="h_qa" class="number-input cf-role__input" placeholder="0,0" inputmode="decimal">
-                            <div class="cf-role__presets" data-target="h_qa" aria-hidden="true">
-                                <button type="button" class="cf-preset" data-value="1">1</button>
-                                <button type="button" class="cf-preset" data-value="2">2</button>
-                                <button type="button" class="cf-preset" data-value="4">4</button>
-                                <button type="button" class="cf-preset" data-value="8">8</button>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
+                <!-- Section 3 (Оценка трудозатрат) УДАЛЕНА (owner): эффорт по ролям
+                     правится инлайн в строке задачи, а не в этой модалке.
+                     readDraft больше не читает эффорт, edit-патч не трогает task.est
+                     (существующие часы сохраняются), новая задача стартует с 0. -->
 
                 <!-- Section 4: Comment (optional, last) — textarea + char counter -->
                 <fieldset class="cf-section cf-section--optional">
                     <legend class="cf-section-title">
-                        Комментарий
+                        Краткое пояснение
                         <span class="cf-section-hint">опционально</span>
                     </legend>
                     <div class="cf-field">
@@ -609,29 +569,29 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="editCriteriaModal" role="dialog" aria-modal="true" aria-labelledby="criteriaModalTitle">
-        <div class="modal-content">
+    <div class="modal-overlay" id="editCriteriaModal" role="dialog" aria-modal="true" aria-labelledby="editCriteriaModalTitle">
+        <div class="modal-content modal-content--wide">
             <div class="modal-header">
-                <h3 id="criteriaModalTitle" class="modal-title">Добавить критерий</h3>
+                <h3 id="editCriteriaModalTitle" class="modal-title">Добавить критерий</h3>
                 <button id="closeEditCriteriaModalBtn" class="modal-close-btn" aria-label="Закрыть">&times;</button>
             </div>
             <div class="modal-form">
-                <div class="form-group">
-                    <label>Название критерия <span class="required-marker" aria-hidden="true">*</span></label>
-                    <input type="text" id="editCriteriaName" required>
-                </div>
-                <div class="form-group">
-                    <label>Аббревиатура (1-5 символов) <span class="required-marker" aria-hidden="true">*</span></label>
-                    <input type="text" id="editCriteriaAbbreviation" class="input-uppercase" maxlength="5" required>
-                    <div class="form-help">
-                        Будет отображаться в интерфейсе оценки задач. Разрешены любые символы кроме пробелов. Первый
-                        символ должен быть буквой или цифрой.
+                <!-- Owner: Сокращение / Название / Вес в одну строку. -->
+                <div class="cf-criterion-row">
+                    <div class="form-group cf-col cf-col--abbr">
+                        <label>Сокращение <span class="required-marker" aria-hidden="true">*</span></label>
+                        <input type="text" id="editCriteriaAbbreviation" class="input-uppercase" maxlength="5" required
+                            title="1–5 символов без пробелов, первый — буква или цифра">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Вес (%) <span class="required-marker" aria-hidden="true">*</span></label>
-                    <input type="number" id="editCriteriaWeight" min="1" max="100" step="1" required
-                        class="number-input">
+                    <div class="form-group cf-col cf-col--name">
+                        <label>Название критерия <span class="required-marker" aria-hidden="true">*</span></label>
+                        <input type="text" id="editCriteriaName" required>
+                    </div>
+                    <div class="form-group cf-col cf-col--weight">
+                        <label>Вес, % <span class="required-marker" aria-hidden="true">*</span></label>
+                        <input type="number" id="editCriteriaWeight" min="1" max="100" step="1" required
+                            class="number-input">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Обоснование веса <span class="required-marker" aria-hidden="true">*</span></label>
@@ -714,24 +674,9 @@
         </div>
     </div>
 
-    <!-- Центр восстановления из pre-migration backup -->
-    <div class="modal-overlay" id="recoveryModal" role="dialog" aria-modal="true" aria-labelledby="recoveryModalTitle">
-        <div class="modal-content modal-content--medium modal-content--column modal-content--padless">
-            <div class="modal-header modal-header--padded">
-                <h3 id="recoveryModalTitle" class="modal-title modal-title--icon">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/><path d="m9 16 2 2 4-4"/></svg>
-                    Центр восстановления
-                </h3>
-                <button id="closeRecoveryModalBtn" class="modal-close-btn" aria-label="Закрыть" title="Закрыть (Esc)">&times;</button>
-            </div>
-            <div id="recoveryContent" class="modal-body modal-body--padded"></div>
-            <div class="modal-buttons-center modal-buttons-center--padded modal-footer-divider">
-                <button id="downloadRecoveryBackupBtn" class="export-btn" title="Скачать резервную копию, созданную перед миграцией данных">Скачать копию до миграции</button>
-                <button id="restoreRecoveryBackupBtn" class="export-btn export-btn--accent" title="Восстановить данные из backup">Восстановить</button>
-                <button id="closeRecoveryBtn" class="export-btn">Закрыть</button>
-            </div>
-        </div>
-    </div>
+    <!-- Recovery Center удалён целиком (owner, W36). Pre-migration backup
+         (sprintPlannerData.backup) по-прежнему создаётся в bootstrapApp как
+         data-safety страховка миграции. -->
 
     <!-- Модальное окно справки -->
     <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
@@ -757,7 +702,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.30.68"></script>
+    <script type="module" src="js/app.js?v=v8.31.0"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->

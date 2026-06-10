@@ -87,7 +87,7 @@ export class NumberFormatService {
     formatNumber(value, decimals = 2, options = {}) {
         const trimTrailingZeros = options.trimTrailingZeros !== false; // default true
         if (value === undefined || value === null || !Number.isFinite(Number(value))) {
-            return trimTrailingZeros ? '0' : ('0' + this.decimalSeparator + '0').replace(this.decimalSeparator + '0', this.decimalSeparator + '0');
+            return trimTrailingZeros ? '0' : '0' + this.decimalSeparator + '0';
         }
         const cappedDecimals = clampDecimals(decimals);
         const num = parseFloat(value);

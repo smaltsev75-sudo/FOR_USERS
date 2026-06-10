@@ -19,6 +19,7 @@ import {
 import { renderSelectionReport } from '../ui/selectionReport.js';
 import { renderRecommendations } from '../ui/selectionRecommendations.js';
 import { hideModal } from '../ui/modalManager.js';
+import { showSnackbar } from '../ui/snackbar.js';
 
 /**
  * SelectionController — контроллер автоотбора задач в спринт.
@@ -208,10 +209,15 @@ export class SelectionController {
         this.invalidateAlgorithmsCache();
 
         this.closeReport();
-        const safetySuffix = droppedIds.size > 0
-            ? `. Защитная проверка дополнительно исключила задач: ${droppedIds.size}, чтобы не превысить ёмкость.`
-            : '';
-        messageService.showMessage(`Применён алгоритм: ${algoResult.algorithmName || algorithmKey}${safetySuffix}`);
+        // v2: модальное окно «Применён алгоритм…» убрано (owner) — результат виден
+        // в списке. Snackbar показываем ТОЛЬКО при защитном дропе задач (важное
+        // предупреждение), иначе тихо.
+        if (droppedIds.size > 0) {
+            showSnackbar(
+                `Применён ${algoResult.algorithmName || algorithmKey}. Защитная проверка исключила задач: ${droppedIds.size}, чтобы не превысить ёмкость.`,
+                { duration: 6000 }
+            );
+        }
     }
 
     closeReport() {

@@ -284,98 +284,7 @@
    text-align: center;
 }
 
-/* ----- Recovery Center ----- */
-.recovery-empty,
-.recovery-summary,
-.recovery-health {
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-}
-
-.recovery-title {
-   margin: 0;
-   font-size: 0.95rem;
-}
-
-.recovery-empty p,
-.recovery-note {
-   margin: 0;
-   color: var(--text-muted-strong);
-   line-height: 1.5;
-}
-
-.recovery-health {
-   padding-bottom: 14px;
-   border-bottom: 1px solid var(--border);
-}
-
-.recovery-health__details {
-   border: 1px solid var(--border);
-   border-radius: 8px;
-   background: var(--bg-main);
-}
-
-.recovery-health__details summary {
-   cursor: pointer;
-   padding: 9px 11px;
-   color: var(--accent);
-   font-weight: 700;
-}
-
-.recovery-health__messages {
-   margin: 0;
-   padding: 0 14px 12px 28px;
-   color: var(--text-muted-strong);
-   line-height: 1.45;
-}
-
-.recovery-meta-row {
-   display: flex;
-   justify-content: space-between;
-   gap: 16px;
-   padding: 8px 0;
-   border-bottom: 1px solid var(--border);
-}
-
-.recovery-grid {
-   display: grid;
-   grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 10px;
-}
-
-.recovery-metric {
-   border: 1px solid var(--border);
-   border-radius: 8px;
-   padding: 10px;
-   background: var(--bg-main);
-   min-width: 0;
-}
-
-.recovery-metric__label,
-.recovery-metric__delta {
-   display: block;
-   color: var(--text-muted-strong);
-   font-size: 0.78rem;
-}
-
-.recovery-metric__value {
-   display: block;
-   margin: 4px 0;
-   font-size: 1rem;
-}
-
-#downloadRecoveryBackupBtn[data-recovery-available="false"],
-#restoreRecoveryBackupBtn[data-recovery-available="false"] {
-   opacity: 0.72;
-   cursor: help;
-}
-
-@media (max-width: 700px) {
-   .recovery-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-   }
-}
+/* Recovery Center CSS удалён вместе с фичей (owner, W36). */
 
 /* ----- Утилиты для inline-styled элементов (выносим из HTML) ----- */
 .export-btn--accent {
@@ -405,4 +314,22 @@
    height: 1em;
    vertical-align: -0.15em;
    flex-shrink: 0;
+}
+
+/* Чек-бокс параметров печати (#printOptionsModal). */
+.print-option {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   cursor: pointer;
+   font-size: 0.85rem;
+   color: var(--text);
+}
+
+.print-option input[type="checkbox"] {
+   width: 18px;
+   height: 18px;
+   flex-shrink: 0;
+   cursor: pointer;
+   accent-color: var(--accent);
 }
