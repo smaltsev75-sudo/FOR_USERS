@@ -168,23 +168,10 @@ PLANNER/
 
 ## Документация
 
-Для пользователя (есть в этой папке/репозитории):
-
 | Файл | Назначение |
 |------|------------|
 | [README.md](README.md) | Обзор приложения, установка и запуск (этот файл) |
 | [docs/UserManual.md](docs/UserManual.md) | Справка пользователя (открывается из приложения кнопкой ❓) |
 | [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md) | История изменений |
 
-Для разработчиков (живут в репозитории разработки [PLANNER](https://github.com/smaltsev75-sudo/PLANNER)):
-
-| Файл | Назначение |
-|------|------------|
-| [HANDOFF.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/HANDOFF.md) | Памятка для передачи коллеге — что копировать |
-| [docs/ARCHITECTURE.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/ARCHITECTURE.md) | Техническая документация для разработчиков |
-| [docs/MODULE_MAP.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/MODULE_MAP.md) | Автогенерируемая карта JS-модулей |
-| [docs/css-important-report.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/css-important-report.md) | Автогенерируемый отчёт по CSS `!important` overrides |
-| [docs/USER_FEEDBACK_PACKAGE.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/USER_FEEDBACK_PACKAGE.md) | Пакет обратной связи: что просить у пользователя |
-| [docs/release-metrics-dashboard.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/release-metrics-dashboard.md) | Тренды coverage/e2e/CSS по релизам |
-| [docs/LESSONS_LOG.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/LESSONS_LOG.md) | Архив накопленных инженерных уроков |
-| [docs/CODE_REVIEW_GUIDELINES.md](https://github.com/smaltsev75-sudo/PLANNER/blob/main/docs/CODE_REVIEW_GUIDELINES.md) | Стандарты кода + pre-commit чек-лист |
+Техническая документация для разработчиков — в репозитории разработки (PLANNER), в пользовательскую поставку не входит.
