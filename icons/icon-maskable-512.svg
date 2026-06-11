@@ -1,16 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sprint Planner (maskable)">
   <!--
-    Maskable safe-zone: круг радиуса ~205 в центре (40% от 512).
-    Полезный контент сжат до 64% (scale 0.64, translate чтобы остаться в центре)
-    и помещается в безопасный круг с запасом. Фон занимает весь viewport,
-    чтобы маска ОС обрезала фон, а не контент.
+    Maskable safe-zone: контент сжат до 64% и помещается в безопасный круг
+    r~205 (углы карточки на расстоянии ~167 от центра). Фон — весь viewport,
+    маска ОС обрезает фон, не контент. Бренд v8.31.2 «Отбор бэклога».
   -->
   <rect width="512" height="512" fill="#246b59"/>
   <g transform="translate(92,92) scale(0.64)">
-    <rect x="102" y="96" width="308" height="216" rx="24" fill="#fdfaf2"/>
-    <line x1="126" y1="164" x2="386" y2="164" stroke="#d9d2c3" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="205" cy="246" r="24" fill="#0f7a5b"/>
-    <circle cx="307" cy="246" r="24" fill="#b33939"/>
-    <polyline points="154,384 230,452 358,332" fill="none" stroke="#fdfaf2" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="72" y="72" width="368" height="368" rx="46" fill="#fdfaf2"/>
+    <circle cx="150" cy="158" r="32" fill="#0f7a5b"/>
+    <polyline points="134,158 146,170 168,144" fill="none" stroke="#fdfaf2" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="212" y1="158" x2="396" y2="158" stroke="#3f5552" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="150" cy="256" r="32" fill="#0f7a5b"/>
+    <polyline points="134,256 146,268 168,242" fill="none" stroke="#fdfaf2" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="212" y1="256" x2="356" y2="256" stroke="#3f5552" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="150" cy="354" r="32" fill="none" stroke="#b33939" stroke-width="14"/>
+    <line x1="128" y1="376" x2="172" y2="332" stroke="#b33939" stroke-width="14" stroke-linecap="round"/>
+    <line x1="212" y1="354" x2="312" y2="354" stroke="#d9d2c3" stroke-width="24" stroke-linecap="round"/>
   </g>
 </svg>

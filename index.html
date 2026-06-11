@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Планирование спринта (Multi‑Algorithm)</title>
-    <!-- Favicon: sage-палитра редизайна v2 — синхронен с icons/icon-*.svg. -->
+    <!-- Favicon: бренд v8.31.2 «Отбор бэклога» — синхронен с icons/icon-*.svg. -->
     <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23246b59'/%3E%3Crect x='20' y='18' width='60' height='44' rx='8' fill='%23fdfaf2'/%3E%3Cline x1='26' y1='32' x2='74' y2='32' stroke='%23d9d2c3' stroke-width='2.5'/%3E%3Ccircle cx='40' cy='49' r='6' fill='%230f7a5b'/%3E%3Ccircle cx='60' cy='49' r='6' fill='%23b33939'/%3E%3Cpolyline points='30,78 45,92 70,68' stroke='%23fdfaf2' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23246b59'/%3E%3Crect x='14' y='14' width='72' height='72' rx='10' fill='%23fdfaf2'/%3E%3Ccircle cx='29' cy='31' r='7' fill='%230f7a5b'/%3E%3Cpolyline points='25.5,31 28,33.5 32.5,28.5' fill='none' stroke='%23fdfaf2' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cline x1='44' y1='31' x2='76' y2='31' stroke='%233f5552' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='29' cy='50' r='7' fill='%230f7a5b'/%3E%3Cpolyline points='25.5,50 28,52.5 32.5,47.5' fill='none' stroke='%23fdfaf2' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cline x1='44' y1='50' x2='69' y2='50' stroke='%233f5552' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='29' cy='69' r='7' fill='none' stroke='%23b33939' stroke-width='3'/%3E%3Cline x1='24' y1='74' x2='34' y2='64' stroke='%23b33939' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='44' y1='69' x2='61' y2='69' stroke='%23d9d2c3' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
     <!-- Предотвращение FOUC: тема применяется до загрузки CSS.
          v8.30.3: try/catch вокруг localStorage.getItem — в Safari private mode
          и при заблокированном Storage Access getItem бросает SecurityError.
@@ -26,36 +26,36 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="css/base.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/layout.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/buttons.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/forms.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/modals.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/components.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/animations.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/progress.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/accordion.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/help.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/snackbar.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/criteria.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/selection-report.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card-states.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/density.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/team-capacity.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/toolbar.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/config-panel.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/a11y.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/app-rail.css?v=v8.31.1">
-    <link rel="stylesheet" href="css/print.css?v=v8.31.1" media="print">
-    <link rel="manifest" href="manifest.json?v=8.31.1">
+    <link rel="stylesheet" href="css/base.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/layout.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/buttons.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/forms.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/modals.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/components.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/animations.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/progress.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/accordion.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/help.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/snackbar.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/create-task-modal.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/criteria.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/selection-report.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card-effort.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card-actions.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card-criteria.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card-states.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/task-card-quadrants.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/density.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/capacity-strip.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/team-capacity.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/toolbar.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/config-panel.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/a11y.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/blocked-screen.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/app-rail.css?v=v8.31.2">
+    <link rel="stylesheet" href="css/print.css?v=v8.31.2" media="print">
+    <link rel="manifest" href="manifest.json?v=8.31.2">
     <meta name="theme-color" content="#246b59">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -69,9 +69,9 @@
         <!-- ШАПКА -->
         <div class="header-container">
             <h1 class="header-title">
-                <!-- Бренд-знак (мини-версия favicon/PWA-иконки): sage-карточка
-                     со статус-точками и галочкой — единый стиль иконок (W30). -->
-                <svg class="icon" width="22" height="22" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><rect width="100" height="100" rx="16" fill="#246b59"/><rect x="20" y="18" width="60" height="44" rx="8" fill="#fdfaf2"/><line x1="26" y1="32" x2="74" y2="32" stroke="#d9d2c3" stroke-width="2.5"/><circle cx="40" cy="49" r="6" fill="#0f7a5b"/><circle cx="60" cy="49" r="6" fill="#b33939"/><polyline points="30,78 45,92 70,68" stroke="#fdfaf2" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+                <!-- Бренд-знак (мини-версия favicon/PWA-иконки): «Отбор бэклога» —
+                     строки задач с чеками и исключённой, единый стиль иконок (v8.31.2). -->
+                <svg class="icon" width="22" height="22" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><rect width="100" height="100" rx="16" fill="#246b59"/><rect x="14" y="14" width="72" height="72" rx="10" fill="#fdfaf2"/><circle cx="29" cy="31" r="7" fill="#0f7a5b"/><polyline points="25.5,31 28,33.5 32.5,28.5" fill="none" stroke="#fdfaf2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="44" y1="31" x2="76" y2="31" stroke="#3f5552" stroke-width="5" stroke-linecap="round"/><circle cx="29" cy="50" r="7" fill="#0f7a5b"/><polyline points="25.5,50 28,52.5 32.5,47.5" fill="none" stroke="#fdfaf2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="44" y1="50" x2="69" y2="50" stroke="#3f5552" stroke-width="5" stroke-linecap="round"/><circle cx="29" cy="69" r="7" fill="none" stroke="#b33939" stroke-width="3"/><line x1="24" y1="74" x2="34" y2="64" stroke="#b33939" stroke-width="3" stroke-linecap="round"/><line x1="44" y1="69" x2="61" y2="69" stroke="#d9d2c3" stroke-width="5" stroke-linecap="round"/></svg>
                 Планирование спринта
                 <span id="appVersion" class="app-version" aria-label="Версия приложения"></span>
                 <span id="printTimestamp" class="print-only-timestamp" aria-hidden="true"></span>
@@ -702,7 +702,7 @@
     </div>
 
     <!-- ГЛАВНЫЙ МОДУЛЬ ПРИЛОЖЕНИЯ -->
-    <script type="module" src="js/app.js?v=v8.31.1"></script>
+    <script type="module" src="js/app.js?v=v8.31.2"></script>
 
 
     <!-- Service Worker для офлайн-режима (PWA) -->
