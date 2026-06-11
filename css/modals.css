@@ -203,6 +203,13 @@
    max-width: 800px;
 }
 
+/* Окно справки (owner, 2026-06-11): ~50-60% экрана по горизонтали на desktop;
+   clamp удерживает читабельную строку на узких и сверхшироких мониторах. */
+.modal-content--help {
+   width: clamp(680px, 58vw, 1240px);
+   max-width: 95vw;
+}
+
 .modal-content--column {
    max-height: 90vh;
    display: flex;
@@ -270,9 +277,11 @@
    flex: 1;
 }
 
+/* Owner (2026-06-11): крупный читабельный текст справки; горизонтальный
+   скролл исключён (overflow-x: hidden на .modal-body--padded). */
 .modal-body--help {
-   font-size: 0.85rem;
-   line-height: 1.5;
+   font-size: 1rem;
+   line-height: 1.7;
 }
 
 .modal-buttons-center--padded {
