@@ -8,7 +8,7 @@
   },
   "purify.min.js": {
     "name": "DOMPurify",
-    "version": "3.4.9",
+    "version": "3.4.10",
     "source": "github.com/cure53/DOMPurify",
     "npmPin": "dompurify"
   }

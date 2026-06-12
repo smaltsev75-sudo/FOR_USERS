@@ -146,15 +146,17 @@ export function renderTaskList(state, nfs, taskController = null) {
     if (filteredTasks.length > BATCH_SIZE) {
         const remaining = filteredTasks.slice(BATCH_SIZE);
         let i = 0;
-        const renderNextBatch = (deadline) => {
+        const renderNextBatch = () => {
             if (myGeneration !== renderGeneration) return;
             const batchFragment = document.createDocumentFragment();
             const renderedIds = [];
-            while (i < remaining.length && (typeof deadline === 'undefined' || deadline.timeRemaining() > 5)) {
+            let renderedInBatch = 0;
+            while (i < remaining.length && renderedInBatch < BATCH_SIZE) {
                 const task = remaining[i];
                 batchFragment.appendChild(renderTask(task, BATCH_SIZE + i));
                 renderedIds.push(task.id);
                 i++;
+                renderedInBatch++;
             }
             taskListEl.appendChild(batchFragment);
             updateOverloadIndicators(state, nfs, {
