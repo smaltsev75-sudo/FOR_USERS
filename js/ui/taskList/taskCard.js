@@ -52,14 +52,11 @@ function buildWorkProfileHtml(effortRisk) {
     const severity = effortRisk.severity || 'low';
     const profileLabel = effortRisk.profile.label || 'Mixed';
     const summary = effortRisk.summary || '';
+    if (!summary) return '';
     const tooltip = effortRisk.tooltip || `Профиль работ: ${profileLabel}`;
-    const summaryHtml = summary
-        ? `<span class="task-role-risk-summary task-role-risk-summary--${severity}">${escapeHtml(summary)}</span>`
-        : '';
     return `
         <div class="task-work-profile task-work-profile--${severity}" tabindex="0" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}">
-            <span class="task-work-profile-badge">${escapeHtml(profileLabel)}</span>
-            ${summaryHtml}
+            <span class="task-role-risk-summary task-role-risk-summary--${severity}">${escapeHtml(summary)}</span>
         </div>
     `;
 }

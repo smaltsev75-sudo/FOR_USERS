@@ -281,7 +281,6 @@
     border-radius: var(--radius-sm);
 }
 
-.task-work-profile-badge,
 .task-role-risk-summary {
     display: inline-flex;
     align-items: center;
@@ -293,11 +292,6 @@
     line-height: 1.2;
     font-weight: 700;
     white-space: nowrap;
-}
-
-.task-work-profile-badge {
-    background: var(--overlay-faint);
-    color: var(--text-muted-strong);
 }
 
 .task-role-risk-summary {
