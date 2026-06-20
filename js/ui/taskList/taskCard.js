@@ -134,9 +134,9 @@ export function createTaskElement(
                     <a class="task-jira-link" target="_blank" rel="noopener noreferrer"></a>
                     <div class="task-title"></div>
                 </div>
-                ${workProfileHtml}
                 <div class="task-comment"></div>
             </div>
+            ${workProfileHtml}
             ${noteBtnHtml}
             <div class="task-btn-group">
                 <button class="task-action-btn btn-move-up" title="Переместить задачу выше" data-action="moveUp" data-id="${vm.id}" aria-label="Переместить выше"${moveUpDisabled}>${moveUpIconHtml}</button>
