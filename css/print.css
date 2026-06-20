@@ -293,6 +293,21 @@
         flex: 1;
     }
 
+    .task-work-profile {
+        display: flex;
+        gap: 4px;
+        margin-top: 2px;
+        color: black;
+    }
+
+    .task-work-profile-badge,
+    .task-role-risk-summary {
+        border: 1px solid #999;
+        background: transparent;
+        color: black;
+        box-shadow: none;
+    }
+
     /* Строка 2: URL (слева, с отступом) */
     .task-jira-link {
         display: block;

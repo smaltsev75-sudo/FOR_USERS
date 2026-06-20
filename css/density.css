@@ -56,6 +56,18 @@
     font-size: 0.85rem;
 }
 
+#taskList[data-density="compact"] .task-work-profile {
+    margin-top: 1px;
+    gap: 4px;
+}
+
+#taskList[data-density="compact"] .task-work-profile-badge,
+#taskList[data-density="compact"] .task-role-risk-summary {
+    min-height: 17px;
+    padding: 1px 5px;
+    font-size: 0.62rem;
+}
+
 #taskList[data-density="compact"] .task-estimates,
 #taskList[data-density="compact"] .criteria-row {
     padding-top: 4px;

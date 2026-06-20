@@ -262,6 +262,53 @@
     flex-wrap: wrap;
 }
 
+.task-work-profile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    min-height: 22px;
+    color: var(--text-muted);
+}
+
+.task-work-profile:focus-visible {
+    outline: 2px solid var(--border-light);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+.task-work-profile-badge,
+.task-role-risk-summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 0.68rem;
+    line-height: 1.2;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.task-work-profile-badge {
+    background: var(--overlay-faint);
+    color: var(--text-muted-strong);
+}
+
+.task-role-risk-summary {
+    background: var(--warning-bg-subtle);
+    color: var(--warning);
+    border-color: var(--warning-bg-light);
+}
+
+.task-role-risk-summary--high {
+    background: var(--danger-bg-subtle);
+    color: var(--danger);
+    border-color: var(--danger-bg-light);
+}
+
 .task-title {
     font-weight: 700;
     font-size: var(--task-row-title-size, 0.95rem);

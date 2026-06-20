@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.31.3-usermanual-pwa-update';
+const CACHE_VERSION = 'sp-v8.31.4-effort-risk';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -90,6 +90,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/config.js',
     './js/domain/criteria.js',
     './js/domain/criteriaManager.js',
+    './js/domain/effortRisk.js',
     './js/domain/role.js',
     './js/domain/roleFieldContract.js',
     './js/domain/sprintSchedule.js',

@@ -9,6 +9,7 @@
 // roleChipsVisible — top-3 ненулевых ролей по effort ↓
 // roleChipsHidden  — остальные ненулевые роли (для tooltip «+N»)
 // criteriaSummary  — массив { id, abbreviation, weight, score, value, name } по криьериям
+import { analyseEffortRisk } from '../domain/effortRisk.js';
 
 const TYPE_LETTER = { us: 'U', bug: 'B', tech: 'T' };
 const TYPE_LABEL = { us: 'User Story', bug: 'Bug', tech: 'Tech' };
@@ -81,6 +82,7 @@ export function getPriorityLabel(level) {
  * @property {string} roleChipsOverflowTooltip — tooltip для бейджа «+N»
  * @property {number} totalEffort
  * @property {CriterionSummary[]} criteriaSummary
+ * @property {Object} effortRisk
  */
 
 /**
@@ -112,6 +114,7 @@ export function createTaskRowVM(task, criteria = [], roles = []) {
         .join(', ');
 
     const totalEffort = roleAll.reduce((sum, c) => sum + c.value, 0);
+    const effortRisk = analyseEffortRisk(task, roles);
 
     const evaluations = (task && task.criteriaEvaluations) || {};
     const criteriaSummary = (criteria || []).map(crit => {
@@ -149,6 +152,7 @@ export function createTaskRowVM(task, criteria = [], roles = []) {
         roleChipsOverflow,
         roleChipsOverflowTooltip,
         totalEffort,
+        effortRisk,
         criteriaSummary
     };
 }

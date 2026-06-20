@@ -11,6 +11,32 @@
 
 const SAFE_URL_RE = /^(?:https?:|mailto:|tel:|\/|#|\?|[a-z0-9][a-z0-9._~+%-]*$)/i;
 
+// v8.31.x hardening (паттерн context7 cure53/dompurify demos/hooks-target-blank).
+// DOMPurify пропускает `target` (ADD_ATTR), но без `rel="noopener noreferrer"`
+// ссылка target="_blank" даёт reverse-tabnabbing (открытая страница получает
+// window.opener). Регистрируем afterSanitizeAttributes hook, который ставит rel
+// на элементы с атрибутом target. Источник справки доверенный (UserManual.md) +
+// современные браузеры сами добавляют noopener — это defense-in-depth.
+const SAFE_LINK_HOOK_FLAG = '__plannerSafeLinkHook';
+
+/**
+ * Идемпотентно регистрирует hook на конкретном инстансе DOMPurify.
+ * `addHook` НАКАПЛИВАЕТСЯ при повторных вызовах, поэтому маркер-property
+ * гарантирует ровно одну регистрацию на инстанс (а не на каждый sanitize).
+ * @param {Object} purify — объект DOMPurify (может быть без addHook у legacy-mock).
+ */
+function ensureSafeLinkHook(purify) {
+    if (!purify || purify[SAFE_LINK_HOOK_FLAG]) return;
+    if (typeof purify.addHook !== 'function') return;
+    purify.addHook('afterSanitizeAttributes', (node) => {
+        // nodeType 1 = element; text/comment-узлы не имеют hasAttribute.
+        if (node && node.nodeType === 1 && node.hasAttribute('target')) {
+            node.setAttribute('rel', 'noopener noreferrer');
+        }
+    });
+    purify[SAFE_LINK_HOOK_FLAG] = true;
+}
+
 /**
  * Декодирует HTML-entity (hex, decimal), убирает control/whitespace chars
  * (tab/newline/CR/FF/VT/NUL) — браузер игнорирует их при resolve URL-scheme,
@@ -45,6 +71,7 @@ function neutralizeUrl(rawValue) {
 export function sanitizeHtml(html, globalApi = globalThis) {
     const input = String(html ?? '');
     if (globalApi && globalApi.DOMPurify && typeof globalApi.DOMPurify.sanitize === 'function') {
+        ensureSafeLinkHook(globalApi.DOMPurify);
         return globalApi.DOMPurify.sanitize(input, {
             USE_PROFILES: { html: true },
             ADD_ATTR: ['target']

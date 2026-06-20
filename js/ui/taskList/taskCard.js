@@ -47,6 +47,23 @@ function buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle)
     `;
 }
 
+function buildWorkProfileHtml(effortRisk) {
+    if (!effortRisk || !effortRisk.profile) return '';
+    const severity = effortRisk.severity || 'low';
+    const profileLabel = effortRisk.profile.label || 'Mixed';
+    const summary = effortRisk.summary || '';
+    const tooltip = effortRisk.tooltip || `Профиль работ: ${profileLabel}`;
+    const summaryHtml = summary
+        ? `<span class="task-role-risk-summary task-role-risk-summary--${severity}">${escapeHtml(summary)}</span>`
+        : '';
+    return `
+        <div class="task-work-profile task-work-profile--${severity}" tabindex="0" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}">
+            <span class="task-work-profile-badge">${escapeHtml(profileLabel)}</span>
+            ${summaryHtml}
+        </div>
+    `;
+}
+
 /**
  * Creates a task card DOM element using VM.
  * Exported for reuse by alternate views (e.g. quadrant-grouped view).
@@ -89,6 +106,7 @@ export function createTaskElement(
     const effortText = nfs.formatNumber(taskTotal);
     const priorityScoreTitle = `Приоритет: ${priorityLabel} (${priorityScoreText})`;
     const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle);
+    const workProfileHtml = buildWorkProfileHtml(vm.effortRisk);
 
     // SM-комментарий: иконка в строке (filled-стиль если коммент есть), редактирование
     // в модалке #noteModal. В печать попадает только заполненный (.task-note-print).
@@ -116,6 +134,7 @@ export function createTaskElement(
                     <a class="task-jira-link" target="_blank" rel="noopener noreferrer"></a>
                     <div class="task-title"></div>
                 </div>
+                ${workProfileHtml}
                 <div class="task-comment"></div>
             </div>
             ${noteBtnHtml}
