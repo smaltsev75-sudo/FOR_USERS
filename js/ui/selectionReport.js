@@ -18,6 +18,8 @@ import {
     buildAlgorithmCardsHtml,
     buildAlgorithmDescriptionsHtml,
     buildAlgorithmDetailsHtml,
+    buildAlgorithmSetInsightData,
+    buildAlgorithmSetInsightHtml,
     buildRecommendationsButtonHtml
 } from './selectionReport/sections.js';
 import { bindAccordionHandlers, highlightRecommendedApplyButton } from './selectionReport/interactions.js';
@@ -53,9 +55,11 @@ export function renderSelectionReport(multiSelectionResults, algorithms = ALGORI
     const bestValues = computeComparisonBestValues(comparableData);
     const recommended = pickRecommendedAlgorithm(comparableData);
     const recommendedKey = recommended ? recommended.algo : null;
+    const setInsight = buildAlgorithmSetInsightData(results, algorithms);
 
     contentEl.innerHTML = [
         buildAlgorithmCardsHtml(comparableData, bestValues, recommendedKey),
+        buildAlgorithmSetInsightHtml(setInsight),
         buildRecommendationsButtonHtml(),
         buildAlgorithmDescriptionsHtml(),
         buildAlgorithmDetailsHtml(results, comparison, algorithms)
