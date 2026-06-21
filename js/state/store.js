@@ -233,17 +233,24 @@ export class Store {
      * @param {Partial<AppState>} newState
      */
     loadState(newState) {
+        // STORE-3 (DEEP-REFAC 2026-06-21): config/numberFormatSettings/ui теперь
+        // ЗАМЕНЯЮТСЯ (как roles/tasks/criteria), а не мержатся поверх живого state.
+        // loadState документирован как «полная перезагрузка» — мерж давал
+        // rollback-неполноту (импорт-added config-ключ не убирался при откате через
+        // restoreRuntimeSnapshot). Behavior-preserving для прода: newState.config
+        // приходит full-normalized (migratePersistedState / snapshot getState()),
+        // поэтому replace ≡ merge по совпадающим наборам ключей.
         this.update(() => ({
             ...newState,
             roles: newState.roles || ROLES.map(r => ({ ...r })),
             tasks: newState.tasks || [],
             criteria: newState.criteria || [],
-            config: { ...this.state.config, ...newState.config },
-            numberFormatSettings: { ...this.state.numberFormatSettings, ...newState.numberFormatSettings },
+            config: newState.config || this.state.config,
+            numberFormatSettings: newState.numberFormatSettings || this.state.numberFormatSettings,
             activeTab: newState.activeTab || 'planning',
             taskFilter: newState.taskFilter || { search: '', type: '' },
             taskSort: newState.taskSort || { by: 'priority', order: 'desc' },
-            ui: { ...(this.state.ui || {}), ...(newState.ui || {}) }
+            ui: newState.ui || this.state.ui || {}
         }));
     }
 

@@ -1,8 +1,8 @@
 /* ---------- task-card-effort.css ---------- */
-/* Task card estimates and effort summary. Split from task-card.css; keep stylesheet order in index.html. */
+/* Task card role estimates. Split from task-card.css; keep stylesheet order in index.html. */
 
 /* ─── Блок оценок трудозатрат ────────────────────────────────────────
-   Компактный 1-row layout: label inline → chips → Σ total.
+   Компактный 1-row layout: label inline → role chips.
    Каждый chip = иконка роли + label + input. */
 .task-estimates {
     display: flex;
@@ -207,46 +207,5 @@
     color: var(--text-muted);
     font-size: 0.65rem;
     flex-shrink: 0;
-}
-
-/* Итоговый бейдж Effort = sum(est). Компактный inline-pill. */
-.est-box-total {
-    background: var(--accent-bg-subtle);
-    border: 1px solid var(--accent-border-faint);
-    border-radius: var(--radius-sm);
-    padding: 2px 9px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    flex-shrink: 0;
-    min-height: 24px;
-}
-
-.est-box-total-icon {
-    display: inline-flex;
-    color: var(--accent);
-}
-
-.est-box-total-icon .icon {
-    width: 13px;
-    height: 13px;
-}
-
-.est-box-total-label {
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.task-effort-value {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--accent);
-    white-space: nowrap;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
 }
 

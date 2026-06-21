@@ -69,7 +69,7 @@ function applyOverloadIndicators(model, tasks, root) {
             const pctOverload = cap > 0 ? (diff / cap * 100) : 0;
             if (cap > 0 && diff > 0 && pctOverload > config.alert) {
                 const pct = (cumulativeTotal / cap * 100) - 100;
-                container.innerHTML = `<div class="overload-tag" title="Перегрузка: +${nfs.formatNumber(diff)} ч (+${formatUiPercent(pctOverload)}%)">+${nfs.formatNumber(diff)} <span class="overload-percent">+${formatUiPercent(pct)}%</span></div>`;
+                container.innerHTML = `<div class="overload-tag" title="Роль перегружена сверх доступной ёмкости">+${nfs.formatNumber(diff)} <span class="overload-percent">+${formatUiPercent(pct)}%</span></div>`;
             } else {
                 container.innerHTML = '<div class="overload-placeholder-spacer"></div>';
             }

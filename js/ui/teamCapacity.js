@@ -144,12 +144,10 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
 
         const labelText = `${role.name}: ${nfs.formatNumber(data.current)} из ${nfs.formatNumber(data.capacity)} ч (${formatUiPercent(data.currentPercent)}%)`;
         card.setAttribute('aria-label', labelText);
-        let titleText = labelText;
         if (previewTask && data.delta !== 0) {
             const sign = data.delta > 0 ? '+' : '';
-            titleText += ` → ${sign}${nfs.formatNumber(data.delta)} ч (${formatSignedUiPercent(data.deltaPercent)})`;
+            card.title = `Что изменится: ${sign}${nfs.formatNumber(data.delta)} ч (${formatSignedUiPercent(data.deltaPercent)})`;
         }
-        card.title = titleText;
 
         // Header строки карточки: иконка + название + большой %
         const cardHead = document.createElement('header');
@@ -223,7 +221,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
         // («%» / «д») уже присутствует в label. Раньше пользователь видел
         // дублирование: «FTE %  100 %» и «Отпуск (д)  5 д».
         controls.innerHTML = `
-            <label class="team-cap__card-control" title="${escapeHtml(role.name)} FTE %">
+            <label class="team-cap__card-control">
                 <span class="team-cap__card-control-label">FTE %</span>
                 <span class="team-cap__card-control-pill">
                     <input type="text" class="input-fte number-input team-cap__card-control-input"
@@ -232,7 +230,7 @@ export function renderTeamCapacity(state, nfs, opts = {}) {
                            aria-label="${escapeHtml(role.name)} FTE %">
                 </span>
             </label>
-            <label class="team-cap__card-control" title="${escapeHtml(role.name)} отпуск (дней)">
+            <label class="team-cap__card-control">
                 <span class="team-cap__card-control-label">Отпуск (д)</span>
                 <span class="team-cap__card-control-pill">
                     <input type="text" inputmode="decimal"

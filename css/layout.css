@@ -90,52 +90,10 @@
     gap: 10px;
 }
 
-.task-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.task-estimates {
-    display: flex;
-    gap: 4px;
-    min-width: 100px;
-}
-
 /* Legacy .est-box / .est-input-container / .est-box-total rules
    удалены v8.22.2 — все стили теперь в task-card.css. Здесь были
    правила, которые конфликтовали (flex-direction:column, max-width:75px)
    и не позволяли компактировать карточку. */
-
-.task-btn-group {
-    display: flex;
-    gap: 6px;
-    align-items: flex-start;
-}
-
-.criteria-row {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.criteria-evaluation {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    flex: 1;
-}
-
-.priority-score-container {
-    margin-left: 15px;
-    padding: 8px 12px;
-    white-space: nowrap;
-    min-width: 130px;
-    text-align: center;
-}
 
 .criteria-header-title {
     display: flex;
@@ -242,47 +200,9 @@
         grid-template-columns: 1fr;
     }
 
-    .task-row {
-        flex-wrap: wrap;
-    }
-
-    .task-estimates {
-        order: 1;
-        width: 100%;
-        margin-top: 8px;
-        justify-content: flex-start;
-        overflow-x: auto;
-    }
-
     .task-create-estimates,
     .est-label-row {
         grid-template-columns: repeat(3, 70px) 100px 30px;
-    }
-
-    .criteria-row {
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-
-    .priority-score-container {
-        margin-left: 0;
-        margin-top: 12px;
-        width: 100%;
-    }
-
-    .criteria-eval-item {
-        min-width: 120px;
-    }
-
-    .criteria-eval-abbreviation {
-        display: none;
-    }
-
-    .mobile-criteria-abbreviation {
-        display: block;
     }
 
     .criteria-name-container {
@@ -301,16 +221,6 @@
     .task-create-estimates,
     .est-label-row {
         grid-template-columns: repeat(2, 70px) 100px 30px;
-    }
-
-    .criteria-row {
-        gap: 5px;
-    }
-
-    .criteria-eval-item {
-        min-width: 110px;
-        gap: 4px;
-        padding: 4px 6px;
     }
 
     .criteria-header {

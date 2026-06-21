@@ -5,10 +5,9 @@
 
 @media print {
     /* ---------- Скрываем всё лишнее ---------- */
-    /* v8.30.1: ролевые est-box'ы и criteria-eval-item ВОЗВРАЩЕНЫ на печать —
-       пользователь должен видеть разбивку трудозатрат по ролям и оценки
-       по каждому критерию. Скрываются только UI-controls (input-рамки,
-       stepper-кнопки, бары, mobile-abbreviation, overload-placeholder). */
+    /* Пользователь должен видеть разбивку трудозатрат по ролям и итоговые
+       метрики. Скрываются только UI-controls (input-рамки, бары,
+       overload-placeholder). */
     .export-btn,
     .task-action-btn,
     .task-btn-group,
@@ -37,12 +36,8 @@
     .info-hint,
     .overload-tag,
     .overload-placeholder,
-    .mobile-criteria-abbreviation,
     .est-box-bar,
     .est-box-bar-fill,
-    .criteria-eval-bar,
-    .criteria-eval-bar-fill,
-    .criteria-eval-step,
     .quadrant-group--empty,
     .task-note-btn {
         display: none !important;
@@ -324,39 +319,6 @@
         color: #333;
     }
 
-    /* Строка 3: Priority Score и Effort в одной строке, прижаты к правому краю */
-    .task-metrics-row {
-        display: flex;
-        justify-content: flex-end;
-        gap: 20px;
-        margin-top: 5px;
-        font-size: 10pt;
-    }
-
-    .priority-score-container {
-        display: block !important;
-        margin: 0;
-        padding: 0;
-        background: transparent !important;
-        border: none !important;
-        color: black;
-        font-weight: normal;
-    }
-
-    .est-box-total {
-        display: block !important;
-        margin: 0;
-        padding: 0;
-        background: transparent !important;
-        border: none !important;
-        color: black;
-    }
-
-    .est-box-total .task-effort-value {
-        color: black;
-        font-weight: normal;
-    }
-
     /* ---------- v8.30.4: FLOWING INLINE TEXT (wrap по словам, не по chip'ам) ----
      *
      * v8.30.3 был inline-flex с flex-wrap — на A4 (~700px эффективной ширины)
@@ -399,23 +361,17 @@
 
     .task-estimates-grid,
     .task-estimates-roles,
-    .est-box-header,
-    .criteria-row-body,
-    .criteria-evaluation,
-    .criteria-eval-head {
+    .est-box-header {
         display: inline !important;
     }
 
-    .est-role-icon,
-    .est-box-total-icon,
-    .priority-score-icon,
-    .mobile-criteria-abbreviation {
+    .est-role-icon {
         display: none !important;
     }
 
     /* Ролевой chip — inline-block чтобы не разрывался посередине, но flow'ил
        вместе с соседями как слова в абзаце. */
-    .est-box:not(.est-box-total) {
+    .est-box {
         display: inline-block !important;
         padding: 0;
         margin: 0 8px 0 0;
@@ -476,141 +432,6 @@
         font-size: 9pt;
         color: black;
         margin-left: 2px;
-    }
-
-    /* Σ Effort — inline-block, выделен жирным, перед ним разделитель «·» */
-    .est-box-total {
-        display: inline-block !important;
-        margin: 0 0 0 8px;
-        padding: 0 0 0 8px;
-        border: none !important;
-        border-left: 1px solid #999 !important;
-        background: transparent !important;
-        font-weight: bold;
-        font-size: 9pt;
-        white-space: nowrap;
-        line-height: 1.4;
-        min-height: 0;
-    }
-
-    .est-box-total .task-effort-value,
-    .est-box-total-label {
-        display: inline !important;
-        color: black;
-        font-weight: bold;
-    }
-
-    /* ---------- v8.30.4: КРИТЕРИИ — flowing inline ---------- */
-    .criteria-row {
-        display: block !important;
-        padding-top: 4px;
-        margin-top: 4px;
-        border-top: 1px dashed #999 !important;
-        page-break-inside: avoid;
-        font-size: 9pt;
-        line-height: 1.4;
-        text-align: left;
-    }
-
-    .criteria-eval-item {
-        display: inline-block !important;
-        margin: 0 8px 0 0;
-        padding: 0;
-        border: none !important;
-        background: transparent !important;
-        font-size: 9pt;
-        color: black;
-        white-space: nowrap;
-        min-height: 0;
-        min-width: 0;
-        line-height: 1.4;
-    }
-
-    .criteria-eval-abbreviation {
-        display: inline !important;
-        font-weight: bold;
-        font-size: 9pt;
-        color: black;
-        min-width: 0;
-    }
-
-    .criteria-eval-weight {
-        display: inline !important;
-        font-size: 8.5pt;
-        color: #333 !important;
-        margin: 0 2px;
-    }
-
-    .criteria-eval-weight::before { content: "\00a0("; }
-    .criteria-eval-weight::after { content: ")"; }
-
-    .criteria-eval-stepper {
-        display: inline !important;
-        padding: 0;
-        border: none !important;
-        background: transparent !important;
-        min-height: 0;
-    }
-
-    .criteria-eval-score {
-        display: inline !important;
-        font-weight: bold;
-        font-size: 9pt;
-        color: black;
-        padding: 0;
-        background: transparent !important;
-        border: none !important;
-        min-width: 0;
-    }
-
-    .criteria-score-input,
-    .criteria-score-select,
-    .criteria-score-dropdown {
-        display: none !important;
-    }
-
-    .criteria-score-print {
-        display: inline !important;
-    }
-
-    .criteria-eval-score::before {
-        content: "\00a0";
-    }
-
-    .criteria-eval-score::after {
-        content: "/10";
-        font-weight: normal;
-        font-size: 8.5pt;
-        color: #333;
-        margin-left: 1px;
-    }
-
-    /* v8.30.6: «Вклад в Priority Score» (+5,0 и т.п.) не выводим на печати —
-       нагружает строку метрик, при этом ту же информацию читатель восстановит
-       по score×weight/10. Скрываем здесь, а не удаляем из DOM (нужен в UI). */
-    .criteria-eval-contribution {
-        display: none !important;
-    }
-
-    /* Priority Score — inline в конце строки критериев, через левый бордер */
-    .criteria-row .priority-score-container,
-    .criteria-row-body .priority-score-container {
-        display: inline-block !important;
-        margin: 0 0 0 8px;
-        padding: 0 0 0 8px;
-        border: none !important;
-        border-left: 1px solid #999 !important;
-        background: transparent !important;
-        font-weight: bold;
-        font-size: 9pt;
-        white-space: nowrap;
-        line-height: 1.4;
-    }
-
-    .priority-score-label,
-    .priority-score-value {
-        display: inline !important;
-        color: black;
     }
 
     /* Компактный контейнер задачи */

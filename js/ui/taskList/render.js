@@ -54,26 +54,6 @@ function highlightNewTask(state, taskListEl) {
     doHighlight();
 }
 
-/**
- * v8.27.2: добавляет .priority-score-value--pulsed классу .priority-score-value
- * у задач, чьё значение изменилось с прошлого render'а. Класс снимается через
- * 350ms — соответствует CSS-transition в task-card.css.
- * @param {HTMLElement} taskListEl
- * @param {Map<string,string>} previousScores — map taskId → previous textContent
- */
-function pulseChangedPriorityScores(taskListEl, previousScores) {
-    if (previousScores.size === 0) return;
-    taskListEl.querySelectorAll('.task-item').forEach((item) => {
-        const id = item.dataset.id;
-        const valueEl = item.querySelector('.priority-score-value');
-        if (!id || !valueEl) return;
-        const prev = previousScores.get(id);
-        if (prev === undefined || prev === valueEl.textContent) return;
-        valueEl.classList.add('priority-score-value--pulsed');
-        setTimeout(() => valueEl.classList.remove('priority-score-value--pulsed'), 350);
-    });
-}
-
 export function renderTaskList(state, nfs, taskController = null) {
     const taskListEl = document.getElementById('taskList');
     if (!taskListEl) return;
@@ -81,15 +61,6 @@ export function renderTaskList(state, nfs, taskController = null) {
     // v8.30.0: новое поколение — pending idle-callback'и старого рендера
     // увидят расхождение и абортятся (см. renderNextBatch ниже).
     const myGeneration = ++renderGeneration;
-
-    // v8.27.2: snapshot prior priority-score значений для pulse-анимации
-    // изменившихся чисел после re-render. Хранится по task.id.
-    const previousScores = new Map();
-    taskListEl.querySelectorAll('.task-item').forEach((item) => {
-        const valueEl = item.querySelector('.priority-score-value');
-        const id = item.dataset.id;
-        if (valueEl && id) previousScores.set(id, valueEl.textContent);
-    });
 
     // Запоминаем focused editable control внутри #taskList, чтобы вернуть фокус
     // после replaceChildren без прокрутки viewport.
@@ -179,6 +150,5 @@ export function renderTaskList(state, nfs, taskController = null) {
     }
 
     highlightNewTask(state, taskListEl);
-    pulseChangedPriorityScores(taskListEl, previousScores);
     restoreTaskListFocus(taskListEl, focusedTaskListControl);
 }

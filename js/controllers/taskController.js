@@ -238,55 +238,6 @@ export class TaskController {
                 }
             });
 
-            // v8.30.39: stepper-кнопки criteria-eval вокруг editable input.
-            // Контракт: click на .criteria-eval-step с data-action=decrement|increment
-            // меняет score и пересчитывает priority через handleCriteriaScoreChange.
-            taskList.addEventListener('click', (e) => {
-                const btn = e.target.closest('.criteria-eval-step');
-                if (!btn) return;
-                const stepper = btn.closest('.criteria-eval-stepper');
-                if (!stepper) return;
-                const action = btn.dataset.action;
-                const input = stepper.querySelector('.criteria-score-input');
-                if (!input) return;
-                const current = parseCriteriaScore(input.value);
-                let next = current;
-                if (action === 'decrement') next = Math.max(0, current - 1);
-                if (action === 'increment') next = Math.min(10, current + 1);
-                if (next === current) return;
-                this._dispatchCriteriaScore(stepper, next);
-            });
-
-            // Клавиатура на input: ↑/→/PgUp = +1, ↓/←/PgDn = −1,
-            // Home = 0, End = 10, Enter = commit typed value.
-            taskList.addEventListener('keydown', (e) => {
-                const input = e.target.closest?.('.criteria-score-input');
-                if (!input) return;
-                const stepper = input.closest('.criteria-eval-stepper');
-                if (!stepper) return;
-                const current = parseCriteriaScore(input.value);
-                let next;
-                let forceCommit = false;
-                switch (e.key) {
-                    case 'ArrowUp':
-                    case 'ArrowRight':
-                    case 'PageUp':   next = Math.min(10, current + 1); break;
-                    case 'ArrowDown':
-                    case 'ArrowLeft':
-                    case 'PageDown': next = Math.max(0, current - 1); break;
-                    case 'Home':     next = 0; break;
-                    case 'End':      next = 10; break;
-                    case 'Enter':
-                        next = current;
-                        forceCommit = true;
-                        break;
-                    default: return;
-                }
-                if (next === current && !forceCommit) return;
-                e.preventDefault();
-                this._dispatchCriteriaScore(stepper, next);
-            });
-
             taskList.addEventListener('click', (e) => {
                 const buttonAction = readTaskListButtonAction(e.target);
                 if (!buttonAction) return;
@@ -472,51 +423,21 @@ export class TaskController {
         if (input && counter) counter.textContent = `Осталось: ${Math.max(0, 500 - input.value.length)}`;
     }
 
-    /**
-     * Обрабатывает изменение оценки по критерию (legacy — был для <select>).
-     * Сейчас главный путь идёт через _dispatchCriteriaScore (stepper).
-     * @param {Event} e
-     */
+    /** Обрабатывает прямое изменение оценки по критерию. */
     handleCriteriaScoreChange(e) {
         this._syncCriteriaScoreControls(e.target);
         this._list.handleCriteriaScoreChange(e);
     }
 
     /**
-     * v8.30.40: task-card has two controls for the same score: direct input and
-     * native select. Selecting from the dropdown can blur the input; depending on
-     * browser event order, that late input change must not re-commit the old value.
+     * Keeps the changed control aligned with the strict score parser before
+     * delegating to taskList state mutation.
      * @param {EventTarget|null} target
      */
     _syncCriteriaScoreControls(target) {
         if (!target || !('value' in target)) return;
         const normalizedScore = String(parseCriteriaScore(target.value));
         target.value = normalizedScore;
-        const stepper = target.closest?.('.criteria-eval-stepper');
-        if (!stepper) return;
-        const input = stepper.querySelector('.criteria-score-input');
-        const select = stepper.querySelector('.criteria-score-select');
-        if (input) input.value = normalizedScore;
-        if (select) select.value = normalizedScore;
-    }
-
-    /**
-     * v8.30.39: применяет новое значение score к задаче через stepper group.
-     * Эмулирует change-событие для совместимости с _list.handleCriteriaScoreChange().
-     * @param {HTMLElement} stepper — корень group с data-id и data-criterion-id
-     * @param {number} score — новое значение 0..10
-     */
-    _dispatchCriteriaScore(stepper, score) {
-        const fakeEvent = {
-            target: {
-                dataset: {
-                    id: stepper.dataset.id,
-                    criterionId: stepper.dataset.criterionId
-                },
-                value: String(score)
-            }
-        };
-        this._list.handleCriteriaScoreChange(fakeEvent);
     }
 
     /** Переключает исключение задачи. */

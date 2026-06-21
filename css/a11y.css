@@ -140,10 +140,6 @@ a:focus-visible,
 }
 
 /* ===== Tabular-nums для числовых колонок ===== */
-.criteria-eval-value,
-.criteria-eval-weight,
-.priority-score-container,
-.task-effort-value,
 .table-dash td,
 .table-dash th,
 .est-input-container input,

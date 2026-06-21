@@ -13,7 +13,7 @@ export function renderAppVersionBadge(root = document) {
     const el = root.getElementById ? root.getElementById('appVersion') : root.querySelector('#appVersion');
     if (!el) return null;
     el.textContent = APP_VERSION;
-    el.title = `Sprint Planner ${APP_VERSION}`;
+    el.title = 'Версия приложения';
     return el;
 }
 

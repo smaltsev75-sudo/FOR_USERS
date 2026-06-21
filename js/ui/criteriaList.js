@@ -73,7 +73,7 @@ function buildSumBarHtml(total) {
             Авто-баланс
         </button>
         <button type="button" id="resetCriteriaBtn" class="btn-reset-criteria" title="Сбросить критерии к значениям по умолчанию" aria-label="Сбросить критерии к значениям по умолчанию">${icon('rotateCcw')}</button>
-        <button type="button" id="addCriteriaBtn" class="btn-add-criteria-small" title="Добавить новый критерий">${icon('plus')}<span>Добавить</span></button>
+        <button type="button" id="addCriteriaBtn" class="btn-add-criteria-small" aria-label="Добавить новый критерий">${icon('plus')}<span>Добавить</span></button>
     </div>
 </div>`;
 }

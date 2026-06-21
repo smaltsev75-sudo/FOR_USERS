@@ -1,51 +1,6 @@
 /* ---------- task-card-states.css ---------- */
 /* Task card responsive states and drag feedback. Split from task-card.css; keep stylesheet order in index.html. */
 
-/* Цветовые варианты Priority Score */
-.priority-score-container.priority-score-critical {
-    border-color: var(--danger-bg-light);
-    background: var(--danger-bg-subtle);
-}
-.priority-score-critical .priority-score-icon {
-    background: var(--danger-bg-light);
-    color: var(--danger);
-}
-.priority-score-critical .priority-score-value {
-    color: var(--danger);
-}
-
-.priority-score-container.priority-score-high {
-    border-color: var(--warning-bg-light);
-    background: var(--warning-bg-subtle);
-}
-.priority-score-high .priority-score-icon {
-    background: var(--warning-bg-light);
-    color: var(--warning);
-}
-.priority-score-high .priority-score-value {
-    color: var(--warning);
-}
-
-.priority-score-container.priority-score-medium {
-    border-color: var(--accent-border-faint);
-    background: var(--accent-bg-subtle);
-}
-.priority-score-medium .priority-score-value {
-    color: var(--accent);
-}
-
-.priority-score-container.priority-score-low {
-    border-color: var(--border);
-    background: var(--overlay-faint);
-}
-.priority-score-low .priority-score-icon {
-    background: var(--overlay-medium);
-    color: var(--text-muted);
-}
-.priority-score-low .priority-score-value {
-    color: var(--text-muted);
-}
-
 /* Мобильная адаптация */
 @media (max-width: 900px) {
     .task-row--header {

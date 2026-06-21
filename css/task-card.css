@@ -317,11 +317,7 @@
     letter-spacing: -0.005em;
 }
 
-/* Tabular-nums для выровненных числовых колонок (effort, priority-score) */
-.task-effort-value,
-.priority-score-container,
-.criteria-eval-value,
-.criteria-eval-weight,
+/* Tabular-nums для выровненных числовых колонок (effort, priority) */
 .est-input-container input {
     font-variant-numeric: tabular-nums;
 }

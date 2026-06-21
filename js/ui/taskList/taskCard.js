@@ -6,18 +6,18 @@ import { buildEstimatesHtml } from './estimatesSection.js';
 function buildTypeBadgeHtml(vm) {
     const typeIconMap = { us: 'bookOpen', bug: 'alertCircle', tech: 'roleCode' };
     const iconName = typeIconMap[vm.type] || 'bookOpen';
-    return `<span class="task-type-badge type-${vm.type}" title="${escapeHtml(vm.typeLabel)}" aria-label="${escapeHtml(vm.typeLabel)}">${icon(iconName)}<span class="task-type-badge-text">${escapeHtml(vm.typeLabel)}</span></span>`;
+    return `<span class="task-type-badge type-${vm.type}" aria-label="${escapeHtml(vm.typeLabel)}">${icon(iconName)}<span class="task-type-badge-text">${escapeHtml(vm.typeLabel)}</span></span>`;
 }
 
 function buildStatusBadgeHtml(vm) {
     if (vm.excluded) {
-        return `<span class="task-status-badge status-excluded" title="Задача исключена из спринта" aria-label="Задача исключена из спринта">${icon('eyeOff')}<span class="task-status-badge-text">Исключена</span></span>`;
+        return `<span class="task-status-badge status-excluded" aria-label="Задача исключена из спринта">${icon('eyeOff')}<span class="task-status-badge-text">Исключена</span></span>`;
     }
-    return `<span class="task-status-badge status-active" title="Задача в работе (в спринте)" aria-label="Задача в работе">${icon('check')}<span class="task-status-badge-text">В работе</span></span>`;
+    return `<span class="task-status-badge status-active" aria-label="Задача в работе">${icon('check')}<span class="task-status-badge-text">В работе</span></span>`;
 }
 
-function buildPriorityBadgeHtml(level, label, score) {
-    return `<span class="task-priority-badge priority-${level}" title="Приоритет: ${escapeHtml(label)} (${score})" aria-label="Приоритет ${escapeHtml(label)}">${icon('gauge')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
+function buildPriorityBadgeHtml(level, label) {
+    return `<span class="task-priority-badge priority-${level}" aria-label="Приоритет ${escapeHtml(label)}">${icon('gauge')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
 }
 
 /**
@@ -29,17 +29,16 @@ function buildPriorityBadgeHtml(level, label, score) {
  * (--priority-score-color / --effort-color) задаются в CSS.
  * @param {string} priorityScoreText — уже отформатированный Priority Score
  * @param {string} effortText — уже отформатированный суммарный Effort (часы)
- * @param {string} priorityScoreTitle — title для Priority Score ряда
  * @returns {string}
  */
-function buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle) {
+function buildTaskMetricsHtml(priorityScoreText, effortText) {
     return `
         <div class="task-metrics">
-            <span class="task-metric-row task-metric--priority" title="${escapeHtml(priorityScoreTitle)}">
+            <span class="task-metric-row task-metric--priority" title="Уровень приоритета по текущим критериям">
                 <span class="task-metric-label">Priority Score</span>
                 <span class="task-metric-value task-metric-value--priority">${priorityScoreText}</span>
             </span>
-            <span class="task-metric-row task-metric--effort" title="Суммарные трудозатраты: ${effortText} ч">
+            <span class="task-metric-row task-metric--effort" title="Сумма оценок всех ролей по задаче">
                 <span class="task-metric-label">Effort</span>
                 <span class="task-metric-value task-metric-value--effort">${effortText} ч</span>
             </span>
@@ -98,11 +97,10 @@ export function createTaskElement(
     const priorityLabel = getPriorityLabel(priorityLevel);
     const typeBadgeHtml = buildTypeBadgeHtml(vm);
     const statusBadgeHtml = buildStatusBadgeHtml(vm);
-    const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel, nfs.formatNumber(priorityScore));
+    const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel);
     const priorityScoreText = nfs.formatNumber(priorityScore);
     const effortText = nfs.formatNumber(taskTotal);
-    const priorityScoreTitle = `Приоритет: ${priorityLabel} (${priorityScoreText})`;
-    const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText, priorityScoreTitle);
+    const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText);
     const workProfileHtml = buildWorkProfileHtml(vm.effortRisk);
 
     // SM-комментарий: иконка в строке (filled-стиль если коммент есть), редактирование
@@ -151,13 +149,14 @@ export function createTaskElement(
     // Use textContent for XSS safety
     const titleEl = el.querySelector('.task-title');
     titleEl.textContent = vm.title;
-    titleEl.title = vm.title;
 
     const jiraLink = el.querySelector('.task-jira-link');
     if (vm.jira && vm.jiraKey) {
         jiraLink.href = vm.jira;
         jiraLink.textContent = vm.jiraKey;
-        jiraLink.title = vm.jira;
+        if (vm.jira !== vm.jiraKey) {
+            jiraLink.title = vm.jira;
+        }
     } else {
         jiraLink.hidden = true;
     }
@@ -165,7 +164,6 @@ export function createTaskElement(
     const commentEl = el.querySelector('.task-comment');
     if (vm.comment) {
         commentEl.textContent = vm.comment;
-        commentEl.title = vm.comment;
     } else {
         commentEl.hidden = true;
     }

@@ -51,19 +51,20 @@ export class NumberFormatService {
     }
 
     /**
-     * Сохраняет настройки в localStorage.
-     * v8.30.2: возвращает {ok, error} status-объект.
-     * @returns {{ok: true} | {ok: false, error: string}}
+     * UTILSVC-2 (DEEP-REFAC 2026-06-21): single source of truth для
+     * decimalSeparator — главный state-blob (`numberFormatSettings.decimalSeparator`,
+     * persistenceCoordinator → serializeStateForStorage). Раньше отдельный
+     * standalone-ключ `localStorage['numberFormatSettings']` писался ПАРАЛЛЕЛЬНО:
+     * он не попадал в pre-migration backup и diagnostics, мог разойтись с blob и
+     * на старте всё равно затирался значением из blob (app.js). Standalone-WRITE
+     * убран — separator теперь персистится ТОЛЬКО через state-blob (covered by
+     * backup/diagnostics). `loadSettings()` оставлен как legacy read-fallback для
+     * старых blob'ов без separator (без data-loss). No-op возвращает ok=true:
+     * запись теперь не может провалиться здесь, ошибки storage сигналит state-blob save.
+     * @returns {{ok: true}}
      */
     saveSettings() {
-        const settings = { decimalSeparator: this.decimalSeparator };
-        try {
-            localStorage.setItem('numberFormatSettings', JSON.stringify(settings));
-            return { ok: true };
-        } catch (err) {
-            const name = (err && (err.name || err.message)) || 'StorageError';
-            return { ok: false, error: String(name) };
-        }
+        return { ok: true };
     }
 
     /**

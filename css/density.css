@@ -37,10 +37,7 @@
 }
 
 #taskList[data-density="compact"] .est-role-label,
-#taskList[data-density="compact"] .est-box-bar,
-#taskList[data-density="compact"] .est-box-total-label,
-#taskList[data-density="compact"] .priority-score-label,
-#taskList[data-density="compact"] .priority-score-sublabel {
+#taskList[data-density="compact"] .est-box-bar {
     display: none;
 }
 
@@ -67,76 +64,6 @@
     font-size: 0.62rem;
 }
 
-#taskList[data-density="compact"] .task-estimates,
-#taskList[data-density="compact"] .criteria-row {
+#taskList[data-density="compact"] .task-estimates {
     padding-top: 4px;
-}
-
-#taskList[data-density="compact"] .priority-score-container {
-    padding: 2px 8px;
-    min-width: 64px;
-    min-height: 22px;
-}
-
-#taskList[data-density="compact"] .priority-score-value {
-    font-size: 0.95rem;
-}
-
-#taskList[data-density="compact"] .est-box-total {
-    padding: 2px 8px;
-    min-width: 72px;
-    min-height: 22px;
-}
-
-#taskList[data-density="compact"] .task-effort-value {
-    font-size: 0.82rem;
-}
-
-#taskList[data-density="compact"] .criteria-row {
-    margin-top: 4px;
-    padding-top: 4px;
-    display: none;
-}
-
-#taskList[data-density="compact"] .criteria-eval-item {
-    padding: 2px 6px;
-    min-width: 104px;
-    min-height: 22px;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-}
-
-#taskList[data-density="compact"] .criteria-eval-bar {
-    display: none;
-}
-
-#taskList[data-density="compact"] .criteria-eval-contribution {
-    display: none;
-}
-
-#taskList[data-density="compact"] .criteria-eval-stepper {
-    padding: 0;
-}
-
-#taskList[data-density="compact"] .criteria-eval-step {
-    width: 19px;
-    height: 19px;
-    font-size: 0.82rem;
-}
-
-#taskList[data-density="compact"] .criteria-eval-score {
-    font-size: 0.78rem;
-    padding: 1px 3px;
-}
-
-#taskList[data-density="compact"] .criteria-score-input {
-    height: 19px;
-    min-width: 26px;
-}
-
-#taskList[data-density="compact"] .criteria-score-dropdown {
-    height: 19px;
-    width: 17px;
-    min-width: 17px;
 }

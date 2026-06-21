@@ -10,9 +10,8 @@
 export function captureCriteriaScoreFocus(taskListEl, active = document.activeElement) {
     if (!active || !taskListEl.contains(active)) return null;
     const input = active.closest?.('.criteria-score-input');
-    const stepper = active.closest?.('.criteria-eval-stepper');
-    const taskId = input?.dataset.id || stepper?.dataset.id;
-    const criterionId = input?.dataset.criterionId || stepper?.dataset.criterionId;
+    const taskId = input?.dataset.id;
+    const criterionId = input?.dataset.criterionId;
     return taskId && criterionId ? `${taskId}::${criterionId}` : null;
 }
 
@@ -128,10 +127,9 @@ export function restoreTaskListFocus(taskListEl, focusInfo) {
 export function restoreCriteriaScoreFocus(taskListEl, key, focusInfo = {}) {
     if (!key) return;
     const [taskId, criterionId] = key.split('::');
-    const stepper = taskListEl.querySelector(
-        `.criteria-eval-stepper[data-id="${escapeSelectorValue(taskId)}"][data-criterion-id="${escapeSelectorValue(criterionId)}"]`
+    const input = taskListEl.querySelector(
+        `.criteria-score-input[data-id="${escapeSelectorValue(taskId)}"][data-criterion-id="${escapeSelectorValue(criterionId)}"]`
     );
-    const input = stepper?.querySelector('.criteria-score-input');
     if (input && typeof input.focus === 'function') {
         input.focus({ preventScroll: true });
         restoreSelection(input, focusInfo);

@@ -40,10 +40,9 @@ export function renderMatrix(state, nfs) {
         const cells = TYPE_KEYS.map(t => {
             const v = s[t];
             const barWidth = colMax[t] > 0 ? (v / colMax[t]) * 100 : 0;
-            const pctOfRole = roleTotal > 0 ? (v / roleTotal) * 100 : 0;
             const tip = v > 0
-                ? `${TYPE_LABELS[t]}: ${nfs.formatNumber(v)} ч · ${formatUiPercent(pctOfRole)}% от часов роли ${s.name}`
-                : `${TYPE_LABELS[t]}: задач этого типа нет у роли ${s.name}`;
+                ? `Доля ${TYPE_LABELS[t]} в загрузке роли ${s.name}`
+                : `У роли ${s.name} нет задач типа ${TYPE_LABELS[t]}`;
             const muted = v === 0 ? ' is-empty' : '';
             return `<td class="data-cell number-display${muted}" data-type="${t}" style="--bar-width:${barWidth.toFixed(1)}%" title="${escapeHtml(tip)}">
                 <span class="data-cell__bar" aria-hidden="true"></span>
@@ -67,7 +66,6 @@ export function renderMatrix(state, nfs) {
     // недозагрузке, >100% при перегрузке). Это была другая метрика («% capacity
     // использовано данным типом»), но название блока и пользовательское ожидание
     // — именно distribution. Capacity-сравнение остаётся в Team Capacity Dashboard.
-    const totalWork = typeTotals.bug + typeTotals.tech + typeTotals.us;
     // v8.30.39: распределяем уже округлённые целые по largest remainder, чтобы
     // видимая строка ИТОГО тоже давала ровно 100% (1/3 + 1/3 + 1/3 → 34/33/33).
     const [bugPercent, techPercent, usPercent] = distributeRoundedPercentages([
@@ -81,9 +79,9 @@ export function renderMatrix(state, nfs) {
         { type: 'tech', total: typeTotals.tech, pct: techPercent },
         { type: 'us', total: typeTotals.us, pct: usPercent }
     ].map(({ type, total, pct }) => {
-        const tip = totalWork > 0
-            ? `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (${formatUiPercent(pct)}% от общего объёма работ)`
-            : `${TYPE_LABELS[type]}: ${nfs.formatNumber(total)} ч (задач нет)`;
+        const tip = total > 0
+            ? `Доля ${TYPE_LABELS[type]} в общем объёме работ`
+            : `Нет задач типа ${TYPE_LABELS[type]} в текущем составе`;
         return `<td class="matrix-total number-display" data-type="${type}" title="${escapeHtml(tip)}">
             <div class="matrix-total__percent percentage-cell">${formatUiPercent(pct)}%</div>
             <div class="matrix-total__value">${nfs.formatNumber(total)} ч</div>
