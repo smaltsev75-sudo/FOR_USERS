@@ -6,18 +6,20 @@ import { buildEstimatesHtml } from './estimatesSection.js';
 function buildTypeBadgeHtml(vm) {
     const typeIconMap = { us: 'bookOpen', bug: 'alertCircle', tech: 'roleCode' };
     const iconName = typeIconMap[vm.type] || 'bookOpen';
-    return `<span class="task-type-badge type-${vm.type}" aria-label="${escapeHtml(vm.typeLabel)}">${icon(iconName)}<span class="task-type-badge-text">${escapeHtml(vm.typeLabel)}</span></span>`;
+    const label = escapeHtml(vm.typeLabel);
+    return `<span class="task-type-badge type-${vm.type}" title="${label}" aria-label="${label}">${icon(iconName)}<span class="task-type-badge-text">${label}</span></span>`;
 }
 
 function buildStatusBadgeHtml(vm) {
     if (vm.excluded) {
-        return `<span class="task-status-badge status-excluded" aria-label="Задача исключена из спринта">${icon('eyeOff')}<span class="task-status-badge-text">Исключена</span></span>`;
+        return `<span class="task-status-badge status-excluded" title="Задача исключена из спринта" aria-label="Задача исключена из спринта">${icon('eyeOff')}<span class="task-status-badge-text">Исключена</span></span>`;
     }
-    return `<span class="task-status-badge status-active" aria-label="Задача в работе">${icon('check')}<span class="task-status-badge-text">В работе</span></span>`;
+    return `<span class="task-status-badge status-active" title="Задача в работе" aria-label="Задача в работе">${icon('check')}<span class="task-status-badge-text">В работе</span></span>`;
 }
 
 function buildPriorityBadgeHtml(level, label) {
-    return `<span class="task-priority-badge priority-${level}" aria-label="Приоритет ${escapeHtml(label)}">${icon('gauge')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
+    const safeLabel = escapeHtml(`Приоритет ${label}`);
+    return `<span class="task-priority-badge priority-${level}" title="${safeLabel}" aria-label="${safeLabel}">${icon('gauge')}<span class="task-priority-badge-text">${escapeHtml(label)}</span></span>`;
 }
 
 /**
