@@ -31,3 +31,10 @@ export const EXCLUSION_REASON_ALGORITHM = 'Исключена алгоритмо
 
 /** Причина дополнительного исключения safety-guard'ом при применении результата. */
 export const EXCLUSION_REASON_CAPACITY_GUARD = 'Исключена алгоритмом: превышение ёмкости';
+
+/**
+ * SELECT-1 refinement (DEEP-REFAC 2026-06-21): dependency-cascade drop — задача
+ * выброшена apply-time guard'ом, потому что её зависимость не отобрана, а не из-за
+ * ёмкости. Точная причина/счётчик в UI вместо ложного «превышение ёмкости».
+ */
+export const EXCLUSION_REASON_DEPENDENCY = 'Исключена алгоритмом: не выполнены зависимости';

@@ -13,7 +13,7 @@ import { showModal, hideModal } from '../ui/modalManager.js';
 import { CriteriaFormController } from './criteria/criteriaFormController.js';
 import { updateSumBar } from '../ui/criteriaList.js';
 import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
-import { initializeCriteriaEvaluations } from '../domain/criteria.js';
+import { initializeCriteriaEvaluations, removeCriterionEvaluation } from '../domain/criteria.js';
 
 export class CriteriaController {
     constructor(store, criteriaManager) {
@@ -328,14 +328,7 @@ export class CriteriaController {
             () => {
                 if (cmgr.deleteCriteria(id)) {
                     store.setCriteria(cmgr.getCriteria());
-                    const tasks = store.getState().tasks.map(task => {
-                        const criteriaEvaluations = { ...(task.criteriaEvaluations || {}) };
-                        if (criteriaEvaluations[id]) {
-                            delete criteriaEvaluations[id];
-                        }
-                        return { ...task, criteriaEvaluations };
-                    });
-                    store.setTasks(tasks);
+                    store.setTasks(removeCriterionEvaluation(store.getState().tasks, id));
                     messageService.showMessage('Критерий удален');
                 }
             }

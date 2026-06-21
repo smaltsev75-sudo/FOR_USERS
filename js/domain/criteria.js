@@ -52,6 +52,41 @@ export function alignTasksToCriteria(tasks, criteria) {
     }));
 }
 
+/**
+ * CTRL-2 (DEEP-REFAC 2026-06-21): удаляет eval-ключ criterionId из всех задач
+ * (delete-критерий path). Behavior-preserving extract из
+ * criteriaController.deleteCriteria: spread + delete только этого ключа,
+ * остальные (включая orphan) сохраняются, input не мутируется.
+ */
+export function removeCriterionEvaluation(tasks, criterionId) {
+    return tasks.map(task => {
+        const criteriaEvaluations = { ...(task.criteriaEvaluations || {}) };
+        if (criteriaEvaluations[criterionId]) {
+            delete criteriaEvaluations[criterionId];
+        }
+        return { ...task, criteriaEvaluations };
+    });
+}
+
+/**
+ * CTRL-2 (DEEP-REFAC 2026-06-21): добавляет {score:0,value:0} для отсутствующих
+ * criteria-ключей, НЕ трогая существующие значения и НЕ удаляя orphan-ключи
+ * (add-критерий path). Отличается от alignCriteriaEvaluations, который orphan
+ * отбрасывает — поэтому отдельный helper, а не переиспользование align
+ * (иначе orphan-drop = behavior-change).
+ */
+export function fillMissingCriteriaEvaluations(tasks, criteria) {
+    return tasks.map(task => {
+        const criteriaEvaluations = { ...(task.criteriaEvaluations || {}) };
+        criteria.forEach(criterion => {
+            if (!criteriaEvaluations[criterion.id]) {
+                criteriaEvaluations[criterion.id] = { score: 0, value: 0 };
+            }
+        });
+        return { ...task, criteriaEvaluations };
+    });
+}
+
 export function calculateCriteriaValue(score, weight) {
     return (score * weight) / 10;
 }

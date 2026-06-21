@@ -18,19 +18,17 @@ export function setSelectionLoadingState(loadingEl, actionBtn, isLoading) {
     }
 }
 
-export function buildTasksWithPriority(tasks, criteriaManager, roles) {
+export function buildTasksWithPriority(tasks, criteriaManager) {
     return tasks.map((task) => {
         // Всегда пересчитываем priorityScore по актуальным весам критериев,
-        // чтобы избежать использования устаревших значений из задачи
+        // чтобы избежать использования устаревших значений из задачи.
+        // SELECT-2 (DEEP-REFAC 2026-06-21): effort/roleEffort здесь больше НЕ
+        // считаются — prepareTasks (base.js normalizeRoleEffort/normalizeTaskEffort)
+        // пересчитывает их из task.est перед отбором, игнорируя входящие (est —
+        // object из store → fallback на roleEffort не срабатывает; explicit effort
+        // только при all-zero est, где calculateTaskTotal тоже даёт 0). Мёртвая работа.
         const priorityScore = criteriaManager.calculatePriorityScore(task.criteriaEvaluations || {});
-        // Рассчитываем effort для каждой задачи
-        const effort = calculateTaskTotal(task, roles);
-        return {
-            ...task,
-            priorityScore,
-            effort,
-            roleEffort: Object.fromEntries(ROLES.map(r => [r.id, task.est?.[r.id] || 0]))
-        };
+        return { ...task, priorityScore };
     });
 }
 
@@ -72,6 +70,9 @@ export function buildCapacitySafeSelection(selectedTasks, allTasks, capacityByRo
     const taskById = new Map((allTasks || []).map(task => [Number(task.id), task]));
     const selectedIds = new Set();
     const droppedIds = new Set();
+    // SELECT-1 refinement: подмножество droppedIds, выброшенное sweep'ом по
+    // невыполненным зависимостям (а не по ёмкости) — для точной причины/счётчика.
+    const depDroppedIds = new Set();
     const loadByRole = Object.fromEntries(roleList.map(role => [role.id, 0]));
     const totalCapacity = roleList.reduce((sum, role) => {
         const capacity = Number(capacityByRole?.[role.id]);
@@ -117,5 +118,29 @@ export function buildCapacitySafeSelection(selectedTasks, allTasks, capacityByRo
         }
     }
 
-    return { selectedIds, droppedIds, loadByRole, totalLoad, totalCapacity };
+    // SELECT-1 (DEEP-REFAC 2026-06-21): ре-валидация зависимостей. Capacity-loop
+    // мог сбросить задачу, от которой зависит другая выбранная — domain (base.js
+    // topological fixpoint) такого не допускает, но этот apply-time guard deps не
+    // проверял → мог оставить selected задачу с dropped-зависимостью. Удаляем
+    // такие до стабилизации, откатывая их нагрузку.
+    let depChanged = true;
+    while (depChanged) {
+        depChanged = false;
+        for (const id of [...selectedIds]) {
+            const task = taskById.get(id);
+            const deps = Array.isArray(task?.dependencies) ? task.dependencies : [];
+            if (deps.some(depId => !selectedIds.has(Number(depId)))) {
+                selectedIds.delete(id);
+                droppedIds.add(id);
+                depDroppedIds.add(id);
+                totalLoad -= calculateTaskTotal(task, roleList);
+                for (const role of roleList) {
+                    loadByRole[role.id] -= Number(task.est?.[role.id]) || 0;
+                }
+                depChanged = true;
+            }
+        }
+    }
+
+    return { selectedIds, droppedIds, depDroppedIds, loadByRole, totalLoad, totalCapacity };
 }

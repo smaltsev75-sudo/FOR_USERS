@@ -13,12 +13,20 @@ import {
 /**
  * v8.30.6: defense-at-load для jira URL. Оставляем http/https и относительные
  * URL, но отбрасываем javascript:, data:, vbscript:, file: и другие схемы.
+ *
+ * SEC-1 (DEEP-REFAC 2026-06-21): судим по `probe` со снятыми control-chars.
+ * Браузерный URL-parser (WHATWG) удаляет \t\n\r из URL перед резолвом схемы,
+ * поэтому `java\tscript:alert(1)` на `<a href>` исполняется как `javascript:`.
+ * Старый deny-regex ломался на встроенном control-char и пропускал значение —
+ * decode-before-check по той же нормализованной форме, что увидит браузер.
  */
 function sanitizeJiraUrl(raw) {
     const trimmed = String(raw ?? '').trim();
     if (!trimmed) return '';
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return '';
+    const probe = trimmed.replace(/[\t\n\r\f\v\0]/g, '');
+    if (!probe) return '';
+    if (/^https?:\/\//i.test(probe)) return trimmed;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(probe)) return '';
     return trimmed;
 }
 

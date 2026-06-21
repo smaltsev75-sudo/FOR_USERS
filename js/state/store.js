@@ -46,6 +46,10 @@ export class Store {
                 viewMode: 'list',
                 expandedQuadrants: [...DEFAULT_EXPANDED_QUADRANTS]
             },
+            // STORE-2 (DEEP-REFAC 2026-06-21): runtime-поле объявлено в default,
+            // чтобы `new Store()` был консистентен с migrate/createInitialState
+            // (там оно ставится в null). Раньше отсутствовало → undefined.
+            lastAddedTaskId: null,
             ...initialState
         };
         this.listeners = [];
@@ -78,7 +82,12 @@ export class Store {
      * @private
      */
     notify() {
-        this.listeners.forEach(listener => listener(this.state));
+        // STORE-1 (DEEP-REFAC 2026-06-21): подписчики получают тот же frozen
+        // snapshot, что и getState(), а не сырой this.state — иначе listener мог
+        // бы мутировать живой Store снизу в обход freeze-контракта. Один freeze
+        // на notify (не на каждого listener).
+        const snapshot = this.getState();
+        this.listeners.forEach(listener => listener(snapshot));
     }
 
     /**

@@ -1,5 +1,6 @@
 // @ts-check
 // js/domain/roleFieldContract.js
+import { parseStrictInteger } from './strictInteger.js';
 //
 // Единый контракт парсинга/валидации FTE и off (отпуск) для всех entry points:
 // roleController (UI ввод), persistence.js (import JSON), unit/integration тесты.
@@ -17,29 +18,10 @@
 // Контракт строгий: parseInt-мусор НЕ принимается. UI / persistence / tests
 // используют ИДЕНТИЧНУЮ функцию.
 
-/**
- * Strict integer parsing. Принимает: number (integer) или string из чистых цифр
- * (optionally leading '-'). Любая дробь, suffix, NaN, Infinity → null.
- *
- * @param {*} raw — sourced value
- * @returns {number|null}
- */
-function parseStrictInteger(raw) {
-    if (raw === null || raw === undefined) return null;
-    if (typeof raw === 'number') {
-        if (!Number.isFinite(raw)) return null;
-        if (!Number.isInteger(raw)) return null;
-        return raw;
-    }
-    if (typeof raw === 'string') {
-        const trimmed = raw.trim();
-        if (trimmed.length === 0) return null;
-        if (!/^-?\d+$/.test(trimmed)) return null;
-        const n = Number(trimmed);
-        return Number.isFinite(n) && Number.isInteger(n) ? n : null;
-    }
-    return null;
-}
+// SEC-3 (DEEP-REFAC 2026-06-21): parseStrictInteger импортируется из
+// strictInteger.js (был байт-идентичный копипаст — два источника правды могли
+// разойтись). parseDecimalOneDigit ниже — НЕ дубль (контракт «ровно 1 знак»
+// vs configurable maxDecimals у parseStrictDecimal), оставлен как есть.
 
 /**
  * Strict decimal parsing с точностью до 1 знака после запятой.

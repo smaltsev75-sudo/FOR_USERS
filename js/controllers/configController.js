@@ -24,17 +24,11 @@ export class ConfigController {
         this.unsubscribe = null;
         this.lastConfigSignature = '';
         this.form = new ConfigFormAdapter(nfs);
-        // Bind event-handler methods so they can be passed as callbacks
-        this.updateInputsFromState = this.updateInputsFromState.bind(this);
-        this.handleDaysInput = this.handleDaysInput.bind(this);
-        this.handleDaysChange = this.handleDaysChange.bind(this);
-        this.handleStartDateChange = this.handleStartDateChange.bind(this);
-        this.handleEndDateChange = this.handleEndDateChange.bind(this);
-        this.handleHolidaysInput = this.handleHolidaysInput.bind(this);
-        this.handleHolidaysChange = this.handleHolidaysChange.bind(this);
-        this.handleAvailCoefInput = this.handleAvailCoefInput.bind(this);
-        this.handleAvailCoefChange = this.handleAvailCoefChange.bind(this);
-        this.handleAlertChange = this.handleAlertChange.bind(this);
+        // CTRL-3 (DEEP-REFAC 2026-06-21): вестигиальные .bind() удалены — все
+        // хендлеры передаются arrow-обёртками `(e)=>this.handleX(e)` (attachEvents
+        // ~103-113) и вызываются method-call'ом, `this` корректен без bind.
+        // Доказательство: handleProductChange биндился идентично, но в bind-списке
+        // отсутствовал и работал — значит bind'ы были мёртвым остатком рефактора.
     }
 
     /**

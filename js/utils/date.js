@@ -7,7 +7,14 @@ export function parseDate(str) {
     if (!str || str.trim() === '') return null;
     const [d, m, y] = str.split('.').map(Number);
     if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 1 || m > 12 || y < 1000) return null;
-    return new Date(y, m - 1, d);
+    const date = new Date(y, m - 1, d);
+    // UTILSVC-1 (DEEP-REFAC 2026-06-21): round-trip guard. JS Date молча роллит
+    // невозможные даты (31.04 → 01.05, 29.02 невисокосный → 01.03), возвращая
+    // валидный объект вместо null. configController использует !parseDate как
+    // единственный format-guard → опечатка проходила, schedule считался от
+    // другого месяца молча. Сверяем, что компоненты не сместились.
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+    return date;
 }
 
 /**

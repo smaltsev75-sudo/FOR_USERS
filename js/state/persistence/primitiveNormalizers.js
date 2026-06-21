@@ -9,7 +9,14 @@ export function safePlainObject(value) {
 // v8.30.0: unique-id allocator с first-owner-wins политикой у callers.
 export function createIdAllocator(existingIds, minBase = 1) {
     const used = new Set(existingIds);
-    let next = Math.max(minBase, used.size ? Math.max(...used) + 1 : minBase);
+    // PERSIST-3 (DEEP-REFAC 2026-06-21): fold вместо Math.max(...used) — спред
+    // большого Set в аргументы бросал RangeError на крупном импорте и ломал
+    // total-function контракт migrate. O(n) без spread, результат идентичен.
+    let maxId = minBase - 1;
+    for (const id of used) {
+        if (id > maxId) maxId = id;
+    }
+    let next = maxId + 1;
     return () => {
         while (used.has(next)) next++;
         const id = next;

@@ -68,7 +68,12 @@ function addCriteriaEvaluationIssues(issues, task, index, rawState, validCritIds
     }
 
     const seenCanonical = new Map();
-    const criteriaProvided = Array.isArray(rawState.criteria);
+    // PERSIST-1 (DEEP-REFAC 2026-06-21): align с migrate-предикатом
+    // (persistence.js:37 `safe.criteria !== undefined`). Раньше analyze гейтил
+    // orphan-репорт на Array.isArray → для `criteria:{}` (present-but-non-array)
+    // migrate ДРОПАЛ eval'ы (validCritIds пустой), а analyze молчал — нарушение
+    // honest-import контракта. Теперь оба судят «criteria provided?» одинаково.
+    const criteriaProvided = rawState.criteria !== undefined;
     Object.entries(task.criteriaEvaluations).forEach(([critKey, ev]) => {
         const parsedKey = parseStrictIntegerInRange(critKey, 1, Number.MAX_SAFE_INTEGER);
         if (parsedKey === null) {
@@ -149,26 +154,50 @@ function addDependencyCycleIssues(issues, rawState, validTaskIds) {
         return [...arr.slice(minIdx), ...arr.slice(0, minIdx)].join(',');
     }
 
-    function dfs(u, path) {
-        color.set(u, GRAY);
-        for (const v of (adj.get(u) || [])) {
-            if (color.get(v) === GRAY) {
-                const startIdx = path.indexOf(v);
-                const cycleNodes = path.slice(startIdx);
-                const key = canonical(cycleNodes);
-                if (!cycles.has(key)) {
-                    cycles.add(key);
-                    const display = [...cycleNodes, cycleNodes[0]].join(' → ');
-                    issues.push(`tasks.dependencies cycle detected: ${display}; зависимости отброшены`);
+    // PERSIST-2 (DEEP-REFAC 2026-06-21): итеративный explicit-stack DFS вместо
+    // рекурсии. Рекурсивный обход переполнял call stack на глубокой цепочке
+    // зависимостей (RangeError), а analyzeImportIssues зовётся ВНЕ try/catch
+    // (statePreview.js), поэтому файл, который migrate бы импортировал, падал.
+    // Зеркало findCycleParticipants (dependencies.js). Семантика идентична: тот
+    // же порядок обхода соседей, та же canonical-дедупликация, одно issue на цикл.
+    for (const start of adj.keys()) {
+        if ((color.get(start) || WHITE) !== WHITE) continue;
+        const path = [start];
+        const nextIdx = [0];
+        color.set(start, GRAY);
+
+        while (path.length > 0) {
+            const u = path[path.length - 1];
+            const neighbors = adj.get(u) || [];
+            let descended = false;
+
+            while (nextIdx[nextIdx.length - 1] < neighbors.length) {
+                const v = neighbors[nextIdx[nextIdx.length - 1]++];
+                const cv = color.get(v) || WHITE;
+                if (cv === GRAY) {
+                    const startIdx = path.indexOf(v);
+                    const cycleNodes = path.slice(startIdx);
+                    const key = canonical(cycleNodes);
+                    if (!cycles.has(key)) {
+                        cycles.add(key);
+                        const display = [...cycleNodes, cycleNodes[0]].join(' → ');
+                        issues.push(`tasks.dependencies cycle detected: ${display}; зависимости отброшены`);
+                    }
+                } else if (cv === WHITE) {
+                    color.set(v, GRAY);
+                    path.push(v);
+                    nextIdx.push(0);
+                    descended = true;
+                    break;
                 }
-            } else if ((color.get(v) || WHITE) === WHITE) {
-                dfs(v, [...path, v]);
+                // BLACK → узел уже полностью обработан, пропускаем
+            }
+
+            if (!descended) {
+                color.set(u, BLACK);
+                path.pop();
+                nextIdx.pop();
             }
         }
-        color.set(u, BLACK);
-    }
-
-    for (const node of adj.keys()) {
-        if ((color.get(node) || WHITE) === WHITE) dfs(node, [node]);
     }
 }

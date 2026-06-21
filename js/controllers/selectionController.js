@@ -14,7 +14,8 @@ import { LruCache } from '../utils/lruCache.js';
 import {
     ALGORITHM_KEYS,
     EXCLUSION_REASON_ALGORITHM,
-    EXCLUSION_REASON_CAPACITY_GUARD
+    EXCLUSION_REASON_CAPACITY_GUARD,
+    EXCLUSION_REASON_DEPENDENCY
 } from '../domain/selection/config.js';
 import { renderSelectionReport } from '../ui/selectionReport.js';
 import { renderRecommendations } from '../ui/selectionRecommendations.js';
@@ -134,7 +135,7 @@ export class SelectionController {
 
         setSelectionLoadingState(loadingEl, autoSelectBtn, true);
 
-        const tasksWithPriority = buildTasksWithPriority(originalTasks, this.criteriaManager, this.store.getState().roles);
+        const tasksWithPriority = buildTasksWithPriority(originalTasks, this.criteriaManager);
 
         try {
             const comparisonResult = this.getCachedAlgorithmResults(tasksWithPriority, capacityByRole);
@@ -187,16 +188,21 @@ export class SelectionController {
         );
         const selectedIds = safety.selectedIds;
         const droppedIds = safety.droppedIds;
+        // SELECT-1 refinement: dependency-cascade drops получают точную причину,
+        // не ложное «превышение ёмкости».
+        const depDroppedIds = safety.depDroppedIds || new Set();
 
         const updatedTasks = allTasks.map(task => {
             const isSelected = selectedIds.has(task.id);
-            const wasDroppedBySafety = droppedIds.has(task.id);
+            const reason = depDroppedIds.has(task.id)
+                ? EXCLUSION_REASON_DEPENDENCY
+                : droppedIds.has(task.id)
+                    ? EXCLUSION_REASON_CAPACITY_GUARD
+                    : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM);
             return {
                 ...task,
                 excluded: isSelected ? 0 : 1,
-                exclusionReason: isSelected
-                    ? ''
-                    : (wasDroppedBySafety ? EXCLUSION_REASON_CAPACITY_GUARD : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM))
+                exclusionReason: isSelected ? '' : reason
             };
         });
 
@@ -213,8 +219,12 @@ export class SelectionController {
         // в списке. Snackbar показываем ТОЛЬКО при защитном дропе задач (важное
         // предупреждение), иначе тихо.
         if (droppedIds.size > 0) {
+            const capacityDropped = droppedIds.size - depDroppedIds.size;
+            const reasons = [];
+            if (capacityDropped > 0) reasons.push(`по ёмкости: ${capacityDropped}`);
+            if (depDroppedIds.size > 0) reasons.push(`по невыполненным зависимостям: ${depDroppedIds.size}`);
             showSnackbar(
-                `Применён ${algoResult.algorithmName || algorithmKey}. Защитная проверка исключила задач: ${droppedIds.size}, чтобы не превысить ёмкость.`,
+                `Применён ${algoResult.algorithmName || algorithmKey}. Защитная проверка исключила задач (${reasons.join(', ')}).`,
                 { duration: 6000 }
             );
         }

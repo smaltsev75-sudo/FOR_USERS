@@ -5,6 +5,7 @@ import { validateAbbreviation, isAbbreviationUnique, generateAbbreviation } from
 import { generateScaleEditorHTML } from '../../ui/criteriaList.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
 import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
+import { fillMissingCriteriaEvaluations } from '../../domain/criteria.js';
 
 /**
  * CriteriaFormController — контроллер модального окна добавления/редактирования критерия.
@@ -173,19 +174,11 @@ export class CriteriaFormController {
                 messageService.showMessage(message);
             }
 
-            // Re-initialize evaluations for all tasks when a new criterion is added
+            // Fill evaluations for all tasks when a new criterion is added
+            // (existing values preserved, orphans kept — CTRL-2 domain helper).
             if (!cmgr.editCriteriaId) {
                 const criteria = cmgr.getCriteria();
-                const tasks = store.getState().tasks.map(task => {
-                    const criteriaEvaluations = { ...(task.criteriaEvaluations || {}) };
-                    criteria.forEach(criterion => {
-                        if (!criteriaEvaluations[criterion.id]) {
-                            criteriaEvaluations[criterion.id] = { score: 0, value: 0 };
-                        }
-                    });
-                    return { ...task, criteriaEvaluations };
-                });
-                store.setTasks(tasks);
+                store.setTasks(fillMissingCriteriaEvaluations(store.getState().tasks, criteria));
             }
 
             if (this._onSaved) this._onSaved();

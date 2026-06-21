@@ -74,7 +74,24 @@ export class TaskController {
         if (typeof fn === 'function') this._renderHold = fn;
     }
 
+    // CTRL-4 (DEEP-REFAC 2026-06-21): attachEvents разбит на приватные wiring-
+    // методы без смены поведения — порядок регистрации listener'ов сохранён
+    // (важно для click-делегации на #taskList, где обработчики closest-гейтят
+    // свои селекторы по порядку). Каждый метод содержит свой блок verbatim.
     attachEvents() {
+        this._wireFormButtons();
+        this._wireCreateEstInputs();
+        this._wireCreateCriteriaDelegation();
+        this._wireListActions();
+        this._wireTaskListDelegation();
+        this._wireNoteModalAndDrag();
+        this._wireGlobalDeselect();
+        this._wireCommentAndShortcuts();
+        this._wireFilters();
+    }
+
+    /** @private */
+    _wireFormButtons() {
         // ➕ Новая задача
         const addBtn = document.getElementById('addTaskBtn');
         if (addBtn) addBtn.addEventListener('click', () => this._form.openCreateModal());
@@ -105,7 +122,10 @@ export class TaskController {
                 submitTaskFormAction(this._form);
             });
         }
+    }
 
+    /** @private */
+    _wireCreateEstInputs() {
         // Обработчики событий для полей оценки трудозатрат.
         // v8.30.24: live cap через nfs.handleInput (раньше handleInput жил
         // в коде, но не вызывался — внешний аудит P1.1). Blur округляет до
@@ -129,7 +149,10 @@ export class TaskController {
                 });
             }
         });
+    }
 
+    /** @private */
+    _wireCreateCriteriaDelegation() {
         // Делегация мероприятия для изменения критериев отбора
         const criteriaContainer = document.getElementById('createCriteriaContainer');
         if (criteriaContainer) {
@@ -163,7 +186,10 @@ export class TaskController {
                 this._form.setCriteriaScaleValue(scale.dataset.criterionId, next, { dispatch: true });
             });
         }
+    }
 
+    /** @private */
+    _wireListActions() {
         // Кнопка «Сортировать по приоритету»
         const sortBtn = document.getElementById('sortByPriorityBtn');
         if (sortBtn) sortBtn.addEventListener('click', () => this.handleSortByPriority());
@@ -171,7 +197,10 @@ export class TaskController {
         // Кнопка «Удалить все задачи»
         const deleteAllBtn = document.getElementById('deleteAllTasksBtn');
         if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.handleDeleteAll());
+    }
 
+    /** @private */
+    _wireTaskListDelegation() {
         // Список задач – обработчики событий
         const taskList = document.getElementById('taskList');
         if (taskList) {
@@ -270,7 +299,10 @@ export class TaskController {
                 else if (action === 'openNote') this.handleOpenNote(id);
             });
         }
+    }
 
+    /** @private */
+    _wireNoteModalAndDrag() {
         // Модалка комментария SM (#noteModal): открытие из иконки строки задачи.
         const saveNoteBtn = document.getElementById('saveNoteBtn');
         if (saveNoteBtn) saveNoteBtn.addEventListener('click', () => this._saveNote());
@@ -278,17 +310,24 @@ export class TaskController {
         document.getElementById('cancelNoteBtn')?.addEventListener('click', closeNote);
         document.getElementById('closeNoteModalBtn')?.addEventListener('click', closeNote);
         document.getElementById('noteModalInput')?.addEventListener('input', () => this._updateNoteCounter());
+        const taskList = document.getElementById('taskList');
         if (taskList) {
             this._drag.attachTo(taskList);
         }
+    }
 
+    /** @private */
+    _wireGlobalDeselect() {
         // Снятие выделения при клике вне области задачи
         document.addEventListener('click', (e) => {
             if (!this.selectedTaskId) return;
             if (e.target.closest('.task-item')) return;
             this.deselectTask();
         });
+    }
 
+    /** @private */
+    _wireCommentAndShortcuts() {
         // v8.27: counter-обновление + Ctrl+S/Ctrl+Enter навешены на единый
         // newComment / createTaskModal (отдельный editModal удалён).
         const newCommentEl = document.getElementById('newComment');
@@ -308,7 +347,10 @@ export class TaskController {
                 }
             });
         }
+    }
 
+    /** @private */
+    _wireFilters() {
         // Фильтры
         const searchInput = document.getElementById('taskSearchInput');
         if (searchInput) {
@@ -326,6 +368,30 @@ export class TaskController {
     }
 
     /**
+     * CTRL-1 (DEEP-REFAC 2026-06-21): общий MutationObserver-паттерн — дождаться
+     * появления узла по selector в #taskList, затем disconnect + onFound, с
+     * safety-disconnect через safetyMs. Извлечён из _onTaskCreated и
+     * handleToggleExclude (был дублирован).
+     * @param {string} selector
+     * @param {(el: Element) => void} onFound
+     * @param {{ safetyMs?: number }} [opts]
+     * @private
+     */
+    _observeTaskAppearance(selector, onFound, { safetyMs = 3000 } = {}) {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) return;
+        const observer = new MutationObserver(() => {
+            const el = taskList.querySelector(selector);
+            if (el) {
+                observer.disconnect();
+                onFound(el);
+            }
+        });
+        observer.observe(taskList, { childList: true, subtree: true });
+        setTimeout(() => observer.disconnect(), safetyMs);
+    }
+
+    /**
      * Callback после создания задачи.
      * Использует MutationObserver для отслеживания появления новой задачи в DOM,
      * чтобы автоматически выделить её (selectTask) и запустить таймер сброса подсветки.
@@ -333,23 +399,14 @@ export class TaskController {
      * @private
      */
     _onTaskCreated(newTask) {
-        const taskList = document.getElementById('taskList');
-        if (taskList) {
-            const observer = new MutationObserver(() => {
-                const taskElement = taskList.querySelector(`.task-item[data-id="${newTask.id}"]`);
-                if (taskElement) {
-                    observer.disconnect();
-                    this.selectTask(newTask.id);
-                    setTimeout(() => {
-                        if (this.store.getState().lastAddedTaskId === newTask.id) {
-                            this.store.updateState({ lastAddedTaskId: null });
-                        }
-                    }, 5000);
+        this._observeTaskAppearance(`.task-item[data-id="${newTask.id}"]`, () => {
+            this.selectTask(newTask.id);
+            setTimeout(() => {
+                if (this.store.getState().lastAddedTaskId === newTask.id) {
+                    this.store.updateState({ lastAddedTaskId: null });
                 }
-            });
-            observer.observe(taskList, { childList: true, subtree: true });
-            setTimeout(() => observer.disconnect(), 3000);
-        }
+            }, 5000);
+        });
     }
 
     // ---------- Прокси-методы для обратной совместимости с внешними вызовами ----------
@@ -474,21 +531,12 @@ export class TaskController {
 
         this._list.handleToggleExclude(taskId);
 
-        // При включении: MutationObserver ждёт появления задачи без класса excluded
-        // Паттерн аналогичен _onTaskCreated — не зависит от таймингов rAF
+        // При включении: ждём появления задачи без класса excluded (CTRL-1 helper,
+        // паттерн идентичен _onTaskCreated — не зависит от таймингов rAF).
         if (wasExcluded) {
-            const taskList = document.getElementById('taskList');
-            if (taskList) {
-                const observer = new MutationObserver(() => {
-                    const el = taskList.querySelector(`.task-item[data-id="${taskId}"]:not(.excluded)`);
-                    if (el) {
-                        observer.disconnect();
-                        this.selectTask(taskId, true);
-                    }
-                });
-                observer.observe(taskList, { childList: true, subtree: true });
-                setTimeout(() => observer.disconnect(), 3000);
-            }
+            this._observeTaskAppearance(`.task-item[data-id="${taskId}"]:not(.excluded)`, () => {
+                this.selectTask(taskId, true);
+            });
         }
     }
 
