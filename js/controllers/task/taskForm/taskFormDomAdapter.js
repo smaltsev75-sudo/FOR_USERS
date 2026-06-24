@@ -1,10 +1,6 @@
 import { parseStrictIntegerInRange } from '../../../domain/strictInteger.js';
-import { ROLES } from '../../../utils/constants.js';
 import { escapeHtml } from '../../../utils/escapeHtml.js';
-import {
-    calculateCreateFormTotal,
-    collectCriteriaEvaluations
-} from '../formHelpers.js';
+import { collectCriteriaEvaluations } from '../formHelpers.js';
 
 export class TaskFormDomAdapter {
     constructor(nfs, doc = document) {
@@ -75,23 +71,6 @@ export class TaskFormDomAdapter {
         });
         const hidden = this.document.getElementById('newType');
         if (hidden) hidden.value = type;
-    }
-
-    wirePresetChips() {
-        const roots = this.modal?.querySelectorAll('.cf-role__presets[data-target]') || [];
-        roots.forEach(root => {
-            if (root.dataset.wired === '1') return;
-            root.dataset.wired = '1';
-            root.addEventListener('click', (e) => {
-                const chip = e.target.closest('.cf-preset[data-value]');
-                if (!chip || !root.contains(chip)) return;
-                const input = this.document.getElementById(root.dataset.target);
-                if (!input) return;
-                input.value = chip.dataset.value;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.focus();
-            });
-        });
     }
 
     /**
@@ -167,7 +146,7 @@ export class TaskFormDomAdapter {
     }
 
     clear(criteria = []) {
-        const ids = ['newTitle', 'newJira', 'newComment', ...ROLES.map(role => `h_${role.id}`)];
+        const ids = ['newTitle', 'newJira', 'newComment'];
         ids.forEach(id => {
             const el = this.document.getElementById(id);
             if (!el) return;
@@ -207,14 +186,6 @@ export class TaskFormDomAdapter {
         this.setValue('newComment', draft.comment || '');
         this.updateCommentCounter((draft.comment || '').length, 255);
 
-        const estimates = draft.estimates || {};
-        ROLES.forEach(role => {
-            const input = this.document.getElementById(`h_${role.id}`);
-            if (!input) return;
-            const value = estimates[role.id];
-            input.value = value ? this.nfs.formatNumber(value) : '';
-        });
-
         const evaluations = draft.criteriaEvaluations || {};
         criteria.forEach(criterion => {
             const score = evaluations[criterion.id]?.score;
@@ -229,19 +200,9 @@ export class TaskFormDomAdapter {
         }
     }
 
-    updateTotalHeader() {
-        const total = calculateCreateFormTotal(this.nfs);
-        const headerEl = this.document.getElementById('createEffortHeader');
-        if (headerEl) {
-            headerEl.textContent = `Effort: ${this.nfs.formatNumber(total)}`;
-        }
-    }
-
     updateCommentCounter(used, max) {
-        const counterText = this.document.getElementById('newCommentCounter')
-            || this.document.getElementById('editCommentCounter');
-        const bar = this.document.getElementById('newCommentCounterBar')
-            || this.document.getElementById('editCommentCounterBar');
+        const counterText = this.document.getElementById('newCommentCounter');
+        const bar = this.document.getElementById('newCommentCounterBar');
         const remaining = Math.max(0, max - used);
         const pct = Math.min(100, Math.max(0, (used / max) * 100));
         if (counterText) counterText.textContent = `Осталось: ${remaining}`;

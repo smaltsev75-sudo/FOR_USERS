@@ -213,7 +213,7 @@ export class NumberFormatService {
      *
      * Использование (в controller'ах):
      *   nfs.wireDecimalInput(document.getElementById('cfgAvailCoef'));
-     *   nfs.wireDecimalInput(document.getElementById('h_uiux'));
+     *   nfs.wireDecimalInput(document.querySelector('[data-role="uiux"] input'));
      *
      * Архитектурный invariant: для каждого decimal input в HTML должен
      * существовать вызов `wireDecimalInput` или эквивалент в init-методе

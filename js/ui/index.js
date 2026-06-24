@@ -6,7 +6,6 @@ import { renderMatrix } from './matrix.js';
 import { renderTaskList } from './taskList.js';
 import { renderGroupedTasks } from './taskListGrouped.js';
 import { renderCriteriaList } from './criteriaList.js';
-import { updateCreateFormTotal } from './createForm.js';
 
 export function renderApp(state, deps = {}) {
     const nfs = getNFS(deps.nfs);
@@ -25,5 +24,4 @@ export function renderApp(state, deps = {}) {
         renderTaskList(state, nfs, deps.taskController);
     }
     renderCriteriaList(state, nfs);
-    updateCreateFormTotal(nfs);
 }

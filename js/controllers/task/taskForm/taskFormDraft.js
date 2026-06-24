@@ -7,19 +7,11 @@ export function createEmptyTaskFormDraft(criteria = []) {
         jira: '',
         type: 'us',
         comment: '',
-        estimates: emptyEstimates(),
         criteriaEvaluations: emptyCriteriaEvaluations(criteria)
     };
 }
 
 export function taskToTaskFormDraft(task = {}, criteria = []) {
-    const estimates = emptyEstimates();
-    const sourceEstimates = task.est || {};
-    ROLES.forEach(role => {
-        const value = sourceEstimates[role.id];
-        estimates[role.id] = Number.isFinite(value) ? value : 0;
-    });
-
     const sourceEvaluations = task.criteriaEvaluations || {};
     const criteriaEvaluations = {};
     criteria.forEach(criterion => {
@@ -36,7 +28,6 @@ export function taskToTaskFormDraft(task = {}, criteria = []) {
         jira: task.jira || '',
         type: task.type || 'us',
         comment: task.comment || '',
-        estimates,
         criteriaEvaluations
     };
 }
@@ -47,7 +38,7 @@ export function taskFormDraftToCreateTaskInput(draft) {
         jira: draft.jira,
         type: draft.type || 'us',
         comment: draft.comment || '',
-        estimates: normalizeEstimates(draft.estimates)
+        estimates: emptyEstimates()
     };
 }
 
@@ -78,15 +69,6 @@ export function calculateDraftPriorityScore(criteria = [], criteriaEvaluations =
 
 function emptyEstimates() {
     return Object.fromEntries(ROLES.map(role => [role.id, 0]));
-}
-
-function normalizeEstimates(estimates = {}) {
-    const normalized = {};
-    ROLES.forEach(role => {
-        const value = estimates[role.id];
-        normalized[role.id] = Number.isFinite(value) ? value : 0;
-    });
-    return normalized;
 }
 
 function emptyCriteriaEvaluations(criteria = []) {

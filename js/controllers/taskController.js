@@ -1,6 +1,5 @@
 // js/controllers/taskController.js
 
-import { ROLES } from '../utils/constants.js';
 import { parseCriteriaScore } from '../domain/criteria.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
 import { TaskCacheService } from './task/taskCacheService.js';
@@ -80,7 +79,6 @@ export class TaskController {
     // свои селекторы по порядку). Каждый метод содержит свой блок verbatim.
     attachEvents() {
         this._wireFormButtons();
-        this._wireCreateEstInputs();
         this._wireCreateCriteriaDelegation();
         this._wireListActions();
         this._wireTaskListDelegation();
@@ -95,12 +93,6 @@ export class TaskController {
         // ➕ Новая задача
         const addBtn = document.getElementById('addTaskBtn');
         if (addBtn) addBtn.addEventListener('click', () => this._form.openCreateModal());
-
-        // v8.30.34: mobile FAB — primary action на mobile viewport ≤600px.
-        // Audit T4: toolbar часто за viewport на 390×844, пользователь долго
-        // скроллит. FAB position:fixed bottom-right. Тот же controller path.
-        const mobileFab = document.getElementById('mobileFab');
-        if (mobileFab) mobileFab.addEventListener('click', () => this._form.openCreateModal());
 
         // v8.27: единый task-form modal — close/cancel/save диспатчат
         // по this._form.editId (если != null → edit, иначе → create).
@@ -122,33 +114,6 @@ export class TaskController {
                 submitTaskFormAction(this._form);
             });
         }
-    }
-
-    /** @private */
-    _wireCreateEstInputs() {
-        // Обработчики событий для полей оценки трудозатрат.
-        // v8.30.24: live cap через nfs.handleInput (раньше handleInput жил
-        // в коде, но не вызывался — внешний аудит P1.1). Blur округляет до
-        // 2 знаков и форматирует через formatNumber (trim trailing zeros).
-        ROLES.map(r => `h_${r.id}`).forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', (e) => {
-                    this.nfs.handleInput(e.target); // live cap ≤ 2 знака
-                    // Защита от отрицательного — после strict parse.
-                    const val = this.nfs.parseNumber(e.target.value);
-                    if (val < 0) e.target.value = '0';
-                    this._form.updateCreateFormTotal();
-                });
-                el.addEventListener('blur', (e) => {
-                    let num = this.nfs.parseNumber(e.target.value);
-                    if (num < 0) num = 0;
-                    num = this.nfs.roundToDecimals(num, 2);
-                    e.target.value = num === 0 ? '' : this.nfs.formatNumber(num);
-                    this._form.updateCreateFormTotal();
-                });
-            }
-        });
     }
 
     /** @private */
@@ -367,7 +332,6 @@ export class TaskController {
     closeEditModal() { this._form.closeEditModal(); }
     handleAddTask() { return this._form.handleAddTask(); }
     handleAddTaskWithSelect() { return this._form.handleAddTask(); }
-    updateCreateFormTotal() { this._form.updateCreateFormTotal(); }
 
     // ---------- Кеширование ----------
     getCachedPriorityScore(task) {

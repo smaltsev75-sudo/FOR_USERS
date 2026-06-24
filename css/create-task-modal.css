@@ -79,11 +79,6 @@
     background: var(--accent-bg-subtle);
 }
 
-.cf-metric--effort {
-    color: var(--success);
-    background: var(--success-bg-subtle);
-}
-
 /* ---------- Field / label / input ---------- */
 .cf-field {
     display: flex;
@@ -422,122 +417,6 @@
     color: var(--accent);
 }
 
-/* ---------- Roles block: карточки ролей с пресетами ---------- */
-.cf-roles {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-}
-
-@media (max-width: 720px) {
-    .cf-roles {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 420px) {
-    .cf-roles {
-        grid-template-columns: 1fr;
-    }
-}
-
-.cf-role {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.cf-role:focus-within {
-    border-color: var(--accent);
-    background: var(--accent-bg-faint);
-}
-
-.cf-role__label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.create-form .cf-role__input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 8px;
-    background: transparent;
-    border: none;
-    border-bottom: 1.5px solid var(--border-light);
-    border-radius: 0;
-    color: var(--text);
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    box-shadow: none;
-    transition: border-bottom-color 0.15s ease;
-}
-
-.create-form .cf-role__input:focus,
-.create-form .cf-role__input:focus-visible {
-    outline: none;
-    border-bottom-color: var(--accent);
-    box-shadow: 0 1px 0 0 var(--accent);
-}
-
-.cf-role__input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.5;
-    font-weight: 400;
-}
-
-.cf-role__presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-}
-
-.cf-preset {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 3px 0;
-    background: var(--overlay-light);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-family: inherit;
-    font-size: 0.68rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-    font-variant-numeric: tabular-nums;
-}
-
-.cf-preset:hover {
-    background: var(--accent-bg-subtle);
-    color: var(--accent);
-}
-
-.cf-preset:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-}
-
-.cf-preset:active {
-    background: var(--accent-bg-medium);
-}
-
-@media (pointer: coarse) {
-    .cf-preset {
-        padding: 8px 0;
-        min-height: 32px;
-    }
-}
-
 /* ---------- Action buttons ---------- */
 .cf-actions {
     display: flex;
@@ -610,9 +489,6 @@
 @media (prefers-reduced-motion: reduce) {
     .cf-input,
     .cf-seg-btn,
-    .cf-role,
-    .cf-role__input,
-    .cf-preset,
     .cf-btn {
         transition: none;
     }

@@ -49,7 +49,6 @@ export class TaskFormController {
         this.clearAddForm();
         this.populateCreateCriteriaSelects();
         this._wireSegmentedType(modal);
-        this._wirePresetChips(modal);
         this._setModalMode(modal, 'create');
         showModal(modal);
         this.form.focusFirstInput();
@@ -81,16 +80,6 @@ export class TaskFormController {
         this.form.setTypeSegment(type);
     }
 
-    /**
-     * Idempotent: вешает делегированные click-listeners на preset-чипы
-     * в карточках ролей. Клик по «4» → input.value = «4», dispatch input
-     * event, чтобы updateCreateFormTotal пересчитал Effort.
-     * @private
-     */
-    _wirePresetChips(_modal) {
-        this.form.wirePresetChips();
-    }
-
     closeCreateModal() {
         const modal = document.getElementById('createTaskModal');
         if (modal) hideModal(modal);
@@ -112,14 +101,9 @@ export class TaskFormController {
         this.form.updatePriorityHeader(calculateDraftPriorityScore(criteria, draft.criteriaEvaluations));
     }
 
-    updateCreateFormTotal() {
-        this.form.updateTotalHeader();
-    }
-
     clearAddForm() {
         this.form.clear(this.store.getState().criteria || []);
         this.updateCreateFormPriorityScore();
-        this.updateCreateFormTotal();
     }
 
     handleAddTask() {
@@ -249,14 +233,12 @@ export class TaskFormController {
         this.clearAddForm();              // resets all create-form fields + clears errors
         this.populateCreateCriteriaSelects();
         this._wireSegmentedType(modal);
-        this._wirePresetChips(modal);
 
         const criteria = state.criteria || [];
         this.form.writeDraft(taskToTaskFormDraft(task, criteria), criteria);
 
-        // Refresh derived headers (Priority Score / Effort) from new values
+        // Refresh derived Priority Score header from new values
         this.updateCreateFormPriorityScore();
-        this.updateCreateFormTotal();
 
         this._setModalMode(modal, 'edit');
         showModal(modal);
@@ -270,9 +252,8 @@ export class TaskFormController {
      * Обновляет character counter под textarea: текст «Осталось: N» +
      * прогресс-бар, цвет которого плавно переходит зелёный → жёлтый →
      * красный по мере приближения к лимиту.
-     * v8.27: единая форма create+edit → counter навешен на newComment'е
-     * (id newCommentCounter / newCommentCounterBar). Старый editCommentCounter
-     * поддержан как fallback для тестовых mock'ов.
+     * Единая форма create+edit использует один textarea newComment и один
+     * counter pair: newCommentCounter / newCommentCounterBar.
      * @param {number} used - текущая длина текста
      * @param {number} max - максимум (255)
      */
@@ -306,10 +287,8 @@ export class TaskFormController {
         const draft = this.form.readDraft(this.store.getState().criteria);
         const patch = taskFormDraftToTaskPatch({ ...draft, title, jira });
 
-        // v8.30.6 P1 fix: доменное поле task.estimates → task.est.
-        // До v8.30.6 здесь писалось `estimates` (название локальной переменной),
-        // а normalizeTasks/createTask читают `task.est` → изменения часов через
-        // edit-modal терялись после следующего persist'а. Контракт см. js/domain/task.js.
+        // Effort не редактируется в модалке задачи: часы меняются inline в
+        // карточке, поэтому patch намеренно не содержит est.
         this.store.updateTask(this.editId, patch);
         this._invalidateCaches();
         // v2 auto-sort: правка оценок критериев меняет score → пересортировка.

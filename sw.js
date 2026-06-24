@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.31.12-pwa-brand-icon-fix';
+const CACHE_VERSION = 'sp-v8.31.13-redesign-leftover-cleanup';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -137,7 +137,6 @@ const ASSETS_TO_CACHE = [
     './js/ui/appVersionBadge.js',
     './js/ui/blockedScreen.js',
     './js/ui/commandMetadata.js',
-    './js/ui/createForm.js',
     './js/ui/criteriaList.js',
     './js/ui/header.js',
     './js/ui/importIssues.js',
