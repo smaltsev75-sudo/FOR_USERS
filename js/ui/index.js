@@ -1,5 +1,5 @@
 // js/ui/index.js
-import { getNFS, updateTabTitle } from './utils.js';
+import { getNFS } from './utils.js';
 import { renderHeader } from './header.js';
 import { renderTeamCapacity } from './teamCapacity.js';
 import { renderMatrix } from './matrix.js';
@@ -25,6 +25,5 @@ export function renderApp(state, deps = {}) {
         renderTaskList(state, nfs, deps.taskController);
     }
     renderCriteriaList(state, nfs);
-    updateTabTitle(state);
     updateCreateFormTotal(nfs);
 }

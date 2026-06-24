@@ -26,8 +26,12 @@ export class ThemeController {
         // не подключался. Симметрично _applyTheme, где setItem уже в try/catch.
         let saved = null;
         try { saved = localStorage.getItem(THEME_KEY); } catch { /* SecurityError → fallback */ }
-        const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-        const initial = saved || (prefersDark ? DARK : LIGHT);
+        // v8.31.12: дефолт темы — LIGHT (sage shadcn), синхронно с FOUC-скриптом в
+        // index.html (если нет saved → 'light'). Раньше здесь была
+        // prefers-color-scheme логика, расходившаяся с FOUC → видимая вспышка
+        // light→dark на свежем визите при тёмной ОС-теме. Единый источник
+        // правды дефолта = LIGHT.
+        const initial = saved || LIGHT;
         this._applyTheme(initial);
 
         this._btn.addEventListener('click', () => {

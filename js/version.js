@@ -1,7 +1,7 @@
 // js/version.js
 // Single source of truth для версии приложения.
 //
-// Авто-синхронизация через scripts/bump-version.mjs обновляет 7 мест через
+// Авто-синхронизация через scripts/bump-version.mjs обновляет 9 мест через
 // regex-замены + дополнительная синхронизация package-lock.json через
 // `npm install --package-lock-only` (добавлено в v8.30.20):
 //   - package.json            "version" (без префикса 'v')
@@ -15,6 +15,10 @@
 //   - index.html              ВСЕ <link rel="stylesheet" href="css/X.css?v=vX.Y.Z">
 //                             (unified CSS cache-bust для non-SW сценариев;
 //                             добавлено в v8.30.15)
+//   - manifest.json           ВСЕ icons[].src "icons/X?v=X.Y.Z"
+//   - index.html              <link rel="apple-touch-icon" href="icons/X?v=X.Y.Z">
+//                             (cache-bust иконок: смена бренда должна доходить до
+//                             установленных PWA / favicon-кэша; добавлено в v8.31.12)
 //   + package-lock.json       root.version и packages[""].version
 //                             (через npm install --package-lock-only после regex-шага;
 //                             добавлено в v8.30.20 — lockfile дрейфовал второй раз)
@@ -25,6 +29,6 @@
 // Тест tests/unit/version.test.js проверяет согласованность auto-updated мест
 // (включая инвариант lockfile == package.json).
 // Тест tests/unit/scripts/bumpVersion.test.js проверяет, что эта шапка
-// упоминает корректное N regex-мест (7) — синхронно с шапкой bump-version.mjs.
+// упоминает корректное N regex-мест (9) — синхронно с шапкой bump-version.mjs.
 
-export const APP_VERSION = 'v8.31.11';
+export const APP_VERSION = 'v8.31.12';

@@ -1,24 +1,10 @@
 /* css/capacity-strip.css
-   LEGACY: 5-segment Capacity Strip (v8.14). Live UI с v8.21 — Team Capacity
-   Dashboard (см. css/team-capacity.css + js/ui/teamCapacity.js). Этот файл
-   сохранён как dual-class hooks `cap-segment*` для backward-compat
-   существующих e2e/unit тестов, на которые опирается живой dashboard.
+   LEGACY hooks: dual-class `cap-segment*` для живого Team Capacity Dashboard
+   (v8.21, см. css/team-capacity.css + js/ui/teamCapacity.js). Обёртки старого
+   5-segment strip'а (.cap-strip, .cap-strip__bar, .cap-segment__label-row,
+   .cap-strip__total*) удалены в v8.31.12 — ни одного эмиттера в js/.
    Layer hint: components-level styles. Uses tokens from base.css.
 */
-
-.cap-strip {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.cap-strip__bar {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    align-items: stretch;
-}
 
 /* ── Segment ─────────────────────────────────────────────────────────────── */
 .cap-segment {
@@ -81,14 +67,6 @@
     border-right: 2px dashed currentColor;
     transition: width 120ms ease;
     pointer-events: none;
-}
-
-.cap-segment__label-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 6px;
-    flex-wrap: wrap;
 }
 
 .cap-segment__label {
@@ -204,56 +182,3 @@
     }
 }
 
-/* ── Total summary row ────────────────────────────────────────────────────── */
-.cap-strip__total {
-    display: grid;
-    grid-template-columns: 80px 1fr auto;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    background: var(--accent-bg-subtle);
-    border: 1px solid var(--accent-border-faint);
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.cap-strip__total-label {
-    color: var(--accent);
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-}
-
-.cap-strip__total-numbers {
-    font-variant-numeric: tabular-nums;
-    color: var(--text-muted, inherit);
-}
-
-.cap-strip__total-percent {
-    font-variant-numeric: tabular-nums;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.cap-strip__total--success .cap-strip__total-percent {
-    color: var(--success);
-}
-
-.cap-strip__total--warning .cap-strip__total-percent {
-    color: var(--warning);
-}
-
-.cap-strip__total--danger .cap-strip__total-percent {
-    color: var(--danger);
-}
-
-/* v8.27.1: .res-grid-header--inputs удалён — больше нет inline role-input rows
-   под strip'ом. */
-
-/* Mobile: stack segments vertically */
-@media (max-width: 600px) {
-    .cap-strip__bar {
-        grid-template-columns: 1fr;
-    }
-}

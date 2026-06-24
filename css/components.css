@@ -96,31 +96,8 @@
 
 /* Кнопки → см. buttons.css */
 
-/* ---------- Табы ---------- */
-.tab-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    padding: 10px 18px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-}
-
-.tab-btn:hover {
-    color: var(--text);
-    background: var(--overlay-light);
-}
-
-.tab-btn.active {
-    color: var(--accent);
-    border-bottom: 2px solid var(--accent);
-}
+/* Табы (.tab-btn) удалены в redesign v2 (desktop-only) — мёртвый CSS убран в
+   v8.31.12. Контейнер .tab-content остаётся живым (#planningTabContent). */
 
 /* v8.27.1: legacy .res-grid-header / .role-res-row / .role-total-row /
    .role-load-numbers / .role-name-cell / .role-inline-stats / .role-input-cell

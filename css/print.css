@@ -15,8 +15,6 @@
     .toolbar__center,
     .toolbar__divider,
     .modal-overlay,
-    .tab-btn,
-    .header-container .export-buttons,
     .drag-handle,
     .btn-edit,
     .btn-delete,
@@ -92,38 +90,9 @@
         max-width: none;
     }
 
-    /* ---------- ПАНЕЛЬ ПАРАМЕТРОВ СПРИНТА ---------- */
-    .availability-info {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #000;
-        padding: 10px;
-        background: #f9f9f9 !important;
-    }
-
-    .availability-info > div {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .availability-info label {
-        font-weight: bold;
-        font-size: 10pt;
-        white-space: nowrap;
-    }
-
-    .availability-info input,
-    .availability-info select {
-        border: 1px solid #ccc !important;
-        background: white;
-        padding: 3px 5px;
-        font-size: 10pt;
-        width: 100%;
-        box-sizing: border-box;
-    }
+    /* Print-блок .availability-info удалён v8.31.12 — конфиг-панель печатается
+       через актуальные .cfg-* print-правила ниже (старый .availability-info-layout
+       заменён на .cfg-panel в redesign v2). */
 
     /* ---------- БЛОК ИНФОРМАЦИИ О ЗАДАЧАХ (В ОДНУ СТРОКУ, С ИЗМЕНЁННЫМ ПОРЯДКОМ) ---------- */
     .toolbar__status-group {

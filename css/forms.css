@@ -2,12 +2,9 @@
 /* Общие стили полей ввода, извлечённые из components.css */
 
 .number-input,
-.task-create-main input,
-.task-create-main select,
 .modal-form input,
 .modal-form select,
-.modal-form textarea,
-.availability-info input {
+.modal-form textarea {
    background: var(--bg-main);
    border: 1px solid var(--border);
    color: var(--text);
@@ -20,12 +17,9 @@
 }
 
 .number-input:focus,
-.task-create-main input:focus,
-.task-create-main select:focus,
 .modal-form input:focus,
 .modal-form select:focus,
-.modal-form textarea:focus,
-.availability-info input:focus {
+.modal-form textarea:focus {
    border-color: var(--accent);
    box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
    outline: none;

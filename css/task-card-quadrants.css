@@ -40,13 +40,13 @@
 }
 
 .view-toggle-btn.active {
-    background: var(--accent, #00d9ff);
-    color: var(--accent-text, #0f172a);
+    background: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
 }
 
 .view-toggle-btn:focus-visible {
-    outline: 2px solid var(--accent, #00d9ff);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 
@@ -120,14 +120,14 @@
 }
 
 .quadrant-group-header:focus-visible {
-    outline: 2px solid var(--accent, #00d9ff);
+    outline: 2px solid var(--accent);
     outline-offset: -2px;
 }
 
 .quadrant-group-icon {
     display: inline-flex;
     align-items: center;
-    color: var(--accent, #00d9ff);
+    color: var(--accent);
 }
 
 .quadrant-group-title {

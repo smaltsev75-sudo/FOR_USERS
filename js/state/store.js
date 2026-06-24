@@ -1,6 +1,7 @@
 // @ts-check
 // js/state/store.js
 import { ROLES } from '../utils/constants.js';
+import { APP_CONFIG } from '../utils/appConfig.js';
 /** @typedef {import('../types/contracts.js').AppState} AppState */
 
 const VALID_VIEW_MODES = ['list', 'quadrants'];
@@ -17,13 +18,18 @@ export class Store {
      */
     constructor(initialState = {}) {
         this.state = {
+            // v8.31.12: дефолты читаются из APP_CONFIG.SPRINT (единый источник
+            // правды, как createDefaultConfig в domain/config.js), а не дублируются
+            // литералами. Добавлено отсутствовавшее поле holidays. startDate/endDate
+            // остаются пустыми — production проставляет их через createInitialState.
             config: {
-                product: 'SberUnity',
-                days: 10,
+                product: APP_CONFIG.SPRINT.DEFAULT_PRODUCT,
+                days: APP_CONFIG.SPRINT.DEFAULT_DAYS,
+                holidays: APP_CONFIG.SPRINT.DEFAULT_HOLIDAYS,
                 startDate: '',
                 endDate: '',
-                availCoef: 93.5,
-                alert: 3
+                availCoef: APP_CONFIG.SPRINT.DEFAULT_AVAIL_COEF,
+                alert: APP_CONFIG.SPRINT.DEFAULT_ALERT_THRESHOLD
             },
             roles: ROLES.map(role => ({ ...role })),
             tasks: [],

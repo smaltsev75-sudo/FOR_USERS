@@ -38,7 +38,6 @@ a:focus-visible,
 
 @media (pointer: coarse), (max-width: 720px) {
     .export-btn,
-    .tab-btn,
     .confirm-btn,
     .btn-reset-criteria,
     .btn-add-criteria-small,
