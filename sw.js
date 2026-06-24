@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.31.10-selection-set-insight';
+const CACHE_VERSION = 'sp-v8.31.11-sw-update-false-positive';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -52,6 +52,8 @@ const ASSETS_TO_CACHE = [
     './js/app/persistenceCoordinator.js',
     './js/app/renderScheduler.js',
     './js/config/commands.js',
+    // JS — PWA (детекция обновления SW; импортируется inline-модулем index.html)
+    './js/pwa/swUpdateNotifier.js',
     // JS — vendor (offline-готовый marked + DOMPurify для справки)
     './js/vendor/marked.min.js',
     './js/vendor/purify.min.js',
