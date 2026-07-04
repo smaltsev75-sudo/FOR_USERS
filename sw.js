@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.14-controller-helper-splits';
+const CACHE_VERSION = 'sp-v8.32.15-config-field-actions';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -67,6 +67,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/capacityStripController.js',
     './js/controllers/config/configActions.js',
     './js/controllers/config/configEventWiring.js',
+    './js/controllers/config/configFieldActions.js',
     './js/controllers/config/configFormAdapter.js',
     './js/controllers/configController.js',
     './js/controllers/densityController.js',
