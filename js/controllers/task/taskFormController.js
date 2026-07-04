@@ -1,15 +1,17 @@
 // js/controllers/task/taskFormController.js
 
-import { createTask } from '../../domain/task.js';
-import { resortTasksByPriority } from './taskOrderingActions.js';
-import { showModal, hideModal } from '../../ui/modalManager.js';
 import { TaskFormDomAdapter } from './taskForm/taskFormDomAdapter.js';
+import { calculateDraftPriorityScore } from './taskForm/taskFormDraft.js';
 import {
-    calculateDraftPriorityScore,
-    taskFormDraftToCreateTaskInput,
-    taskFormDraftToTaskPatch,
-    taskToTaskFormDraft
-} from './taskForm/taskFormDraft.js';
+    closeTaskFormCreateModal,
+    closeTaskFormEditModal,
+    openTaskFormCreateModal,
+    openTaskFormEditModal
+} from './taskForm/taskFormModalActions.js';
+import {
+    handleTaskFormAddSubmit,
+    handleTaskFormEditSubmit
+} from './taskForm/taskFormSubmitActions.js';
 import {
     validateTaskFormField,
     validateTaskJiraField,
@@ -41,15 +43,14 @@ export class TaskFormController {
     // ── Create modal ──────────────────────────────────────────────────────────
 
     openCreateModal() {
-        const modal = document.getElementById('createTaskModal');
-        if (!modal) return;
-        this.editId = null;
-        this.clearAddForm();
-        this.populateCreateCriteriaSelects();
-        this._wireSegmentedType(modal);
-        this._setModalMode(modal, 'create');
-        showModal(modal);
-        this.form.focusFirstInput();
+        openTaskFormCreateModal({
+            form: this.form,
+            clearAddForm: this.clearAddForm.bind(this),
+            populateCreateCriteriaSelects: this.populateCreateCriteriaSelects.bind(this),
+            wireSegmentedType: this._wireSegmentedType.bind(this),
+            setModalMode: this._setModalMode.bind(this),
+            setEditId: (editId) => { this.editId = editId; }
+        });
     }
 
     /**
@@ -77,8 +78,7 @@ export class TaskFormController {
     }
 
     closeCreateModal() {
-        const modal = document.getElementById('createTaskModal');
-        if (modal) hideModal(modal);
+        closeTaskFormCreateModal({});
     }
 
     populateCreateCriteriaSelects() {
@@ -103,35 +103,15 @@ export class TaskFormController {
     }
 
     handleAddTask() {
-        const title = this._validateTitleField('create');
-        if (!title) return false;
-
-        const jira = this._validateJiraField('create');
-        if (!jira) return false;
-
-        const draft = this.form.readDraft(this.store.getState().criteria);
-        const input = taskFormDraftToCreateTaskInput({ ...draft, title, jira });
-
-        const newTask = createTask(input);
-        newTask.criteriaEvaluations = draft.criteriaEvaluations;
-
-        this.store.addTask(newTask);
-        this.store.updateState({ lastAddedTaskId: newTask.id });
-        this._invalidateCaches();
-        // v2 auto-sort: новая задача занимает позицию по Priority Score.
-        // Синхронно с addTask → rAF-батчинг даёт один кадр (нет мерцания).
-        resortTasksByPriority(this.store);
-        this.clearAddForm();
-
-        if (this._onTaskCreated) this._onTaskCreated(newTask);
-
-        setTimeout(() => {
-            if (this.store.getState().lastAddedTaskId === newTask.id) {
-                this.store.updateState({ lastAddedTaskId: null });
-            }
-        }, 5000);
-
-        return true;
+        return handleTaskFormAddSubmit({
+            store: this.store,
+            form: this.form,
+            validateTitleField: this._validateTitleField.bind(this),
+            validateJiraField: this._validateJiraField.bind(this),
+            clearAddForm: this.clearAddForm.bind(this),
+            invalidateCaches: this._invalidateCaches,
+            onTaskCreated: this._onTaskCreated
+        });
     }
 
     /**
@@ -185,29 +165,17 @@ export class TaskFormController {
     // ── Edit modal ────────────────────────────────────────────────────────────
 
     openEditModal(taskId) {
-        const state = this.store.getState();
-        const task = state.tasks.find(t => t.id === taskId);
-        if (!task) return;
-        const modal = document.getElementById('createTaskModal');
-        if (!modal) return;
-
-        this.editId = taskId;
-        this.clearAddForm();              // resets all create-form fields + clears errors
-        this.populateCreateCriteriaSelects();
-        this._wireSegmentedType(modal);
-
-        const criteria = state.criteria || [];
-        this.form.writeDraft(taskToTaskFormDraft(task, criteria), criteria);
-
-        // Refresh derived Priority Score header from new values
-        this.updateCreateFormPriorityScore();
-
-        this._setModalMode(modal, 'edit');
-        showModal(modal);
-        setTimeout(() => {
-            const titleEl = document.getElementById('newTitle');
-            if (titleEl) titleEl.focus();
-        }, 50);
+        openTaskFormEditModal({
+            taskId,
+            store: this.store,
+            form: this.form,
+            clearAddForm: this.clearAddForm.bind(this),
+            populateCreateCriteriaSelects: this.populateCreateCriteriaSelects.bind(this),
+            wireSegmentedType: this._wireSegmentedType.bind(this),
+            updateCreateFormPriorityScore: this.updateCreateFormPriorityScore.bind(this),
+            setModalMode: this._setModalMode.bind(this),
+            setEditId: (editId) => { this.editId = editId; }
+        });
     }
 
     /**
@@ -224,42 +192,22 @@ export class TaskFormController {
     }
 
     closeEditModal() {
-        this.editId = null;
-        const modal = document.getElementById('createTaskModal');
-        if (modal) {
-            this._setModalMode(modal, 'create');
-            hideModal(modal);
-        }
+        closeTaskFormEditModal({
+            setEditId: (editId) => { this.editId = editId; },
+            setModalMode: this._setModalMode.bind(this)
+        });
     }
 
     handleSaveEdit() {
-        if (this.editId === null) return;
-        const task = this.store.getState().tasks.find(t => t.id === this.editId);
-        if (!task) return;
-
-        // Edit-mode reuses the create form fields (newTitle/newJira/etc).
-        // Validators historically used 'edit' DOM IDs; we point them to the
-        // create-form IDs by mapping mode → IDs in _validateField.
-        const title = this._validateTitleField('edit', this.editId);
-        if (!title) return;
-
-        const jira = this._validateJiraField('edit', this.editId);
-        if (!jira) return;
-
-        const draft = this.form.readDraft(this.store.getState().criteria);
-        const patch = taskFormDraftToTaskPatch({ ...draft, title, jira });
-
-        // Effort не редактируется в модалке задачи: часы меняются inline в
-        // карточке, поэтому patch намеренно не содержит est.
-        this.store.updateTask(this.editId, patch);
-        this._invalidateCaches();
-        // v2 auto-sort: правка оценок критериев меняет score → пересортировка.
-        resortTasksByPriority(this.store);
-        const editedId = this.editId;
-        this.closeEditModal();
-
-        if (this._onTaskEdited) {
-            this._onTaskEdited(editedId, patch);
-        }
+        return handleTaskFormEditSubmit({
+            editId: this.editId,
+            store: this.store,
+            form: this.form,
+            validateTitleField: this._validateTitleField.bind(this),
+            validateJiraField: this._validateJiraField.bind(this),
+            closeEditModal: this.closeEditModal.bind(this),
+            invalidateCaches: this._invalidateCaches,
+            onTaskEdited: this._onTaskEdited
+        });
     }
 }
