@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.5-modal-manager-facade-split';
+const CACHE_VERSION = 'sp-v8.32.6-task-list-grouped-facade-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -168,6 +168,10 @@ const ASSETS_TO_CACHE = [
     './js/ui/teamCapacity/gauge.js',
     './js/ui/teamCapacity/header.js',
     './js/ui/teamCapacity/render.js',
+    './js/ui/taskListGrouped/groupSection.js',
+    './js/ui/taskListGrouped/model.js',
+    './js/ui/taskListGrouped/render.js',
+    './js/ui/taskListGrouped/summary.js',
     './js/ui/taskListGrouped.js',
     './js/ui/createTaskRowVM.js',
     './js/ui/selectionRecommendations.js',
