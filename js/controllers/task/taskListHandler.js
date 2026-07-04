@@ -1,13 +1,15 @@
 // @ts-check
 // js/controllers/task/taskListHandler.js
 
-import { messageService } from '../../services/message.js';
-import { showSnackbar } from '../../ui/snackbar.js';
 import { buildCriteriaEvaluationUpdate } from './criteriaScoreMutations.js';
 import { buildEstimateUpdate } from './taskEstimateMutations.js';
-import { buildToggleExcludeUpdate } from './taskExcludeMutations.js';
-import { moveTaskByDirection, resortTasksByPriority, sortTasksByPriority } from './taskOrderingActions.js';
-import { restoreDeletedTask, restoreDeletedTasks } from './undoDeleteService.js';
+import {
+    handleDeleteAllTasksAction,
+    handleDeleteTaskAction
+} from './taskDeleteActions.js';
+import { handleToggleExcludeAction } from './taskExcludeActions.js';
+import { moveTaskByDirection, resortTasksByPriority } from './taskOrderingActions.js';
+import { handleSortByPriorityAction } from './taskSortActions.js';
 
 /**
  * TaskListHandler — обработчики бизнес-логики задач в списке.
@@ -95,25 +97,12 @@ export class TaskListHandler {
      * @param {number} taskId
      */
     handleToggleExclude(taskId) {
-        const state = this.store.getState();
-        const task = state.tasks.find(t => t.id === taskId);
-        const updates = buildToggleExcludeUpdate(task);
-        if (!updates) return;
-        const applyExclusion = () => {
-            this.store.updateTask(taskId, updates);
-            this._cache.invalidate();
-            // v2 auto-sort: вместо только excluded-в-конец — полная пересортировка
-            // DESC по score (включает fixTaskOrder).
-            this._resortByPriority();
-        };
-        const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
-        if (taskElement) {
-            taskElement.style.transition = 'opacity 0.3s ease';
-            taskElement.style.opacity = updates.excluded ? '0.5' : '1';
-            setTimeout(applyExclusion, 300);
-        } else {
-            applyExclusion();
-        }
+        handleToggleExcludeAction({
+            taskId,
+            store: this.store,
+            cache: this._cache,
+            resortByPriority: this._resortByPriority.bind(this)
+        });
     }
 
     /**
@@ -136,59 +125,13 @@ export class TaskListHandler {
      * @param {number} taskId
      */
     handleDeleteTask(taskId) {
-        const state = this.store.getState();
-        const taskIndex = state.tasks.findIndex(t => t.id === taskId);
-        if (taskIndex === -1) return;
-        const deletedTask = { ...state.tasks[taskIndex] };
-        const originalIndex = taskIndex;
-
-        // v8.30.31: локальные closure-переменные (не на this), чтобы одновременные
-        // delete двух задач не перетирали состояние друг друга.
-        let pendingTimer = null;
-        let applied = false;
-
-        const applyDelete = () => {
-            if (applied) return;
-            applied = true;
-            this.store.deleteTask(taskId);
-            if (this._getSelectedTaskId() === taskId) this._setSelectedTaskId(null);
-            this._cache.invalidate();
-            this._resortByPriority();
-        };
-
-        const taskElement = /** @type {HTMLElement|null} */ (document.querySelector(`.task-item[data-id="${taskId}"]`));
-        if (taskElement) {
-            taskElement.classList.add('removing');
-            pendingTimer = setTimeout(() => {
-                pendingTimer = null;
-                applyDelete();
-            }, 300);
-        } else {
-            applyDelete();
-        }
-
-        showSnackbar(`Задача «${deletedTask.title}» удалена`, {
-            onUndo: () => {
-                // 1. Отменяем pending 300ms timer, если ещё не сработал.
-                if (pendingTimer !== null) {
-                    clearTimeout(pendingTimer);
-                    pendingTimer = null;
-                    applied = true; // не даём поздному applyDelete сработать (defence-in-depth)
-                }
-                // 2. Снимаем CSS-анимацию (если узел ещё в DOM).
-                if (taskElement && taskElement.isConnected) {
-                    taskElement.classList.remove('removing');
-                }
-                // 3. Если delete уже применён к store (timer успел сработать ДО undo,
-                //    т.е. undo после 300ms) — insert back at original index. В противном
-                //    случае задача ещё в store, restore — no-op для данных, только cache.
-                const currentTasks = this.store.getState().tasks;
-                const restored = restoreDeletedTask(currentTasks, deletedTask, originalIndex);
-                if (restored) this.store.setTasks(restored);
-                this._cache.invalidate();
-                // v2 auto-sort: восстановленная задача занимает позицию по score.
-                this._resortByPriority();
-            }
+        handleDeleteTaskAction({
+            taskId,
+            store: this.store,
+            cache: this._cache,
+            getSelectedTaskId: this._getSelectedTaskId,
+            setSelectedTaskId: this._setSelectedTaskId,
+            resortByPriority: this._resortByPriority.bind(this)
         });
     }
 
@@ -205,23 +148,11 @@ export class TaskListHandler {
      * См. memory/feedback-undo-full-snapshot-breaks-intermediate-edits.md.
      */
     handleDeleteAll() {
-        messageService.showConfirm('Удалить все задачи?', () => {
-            const deletedTasks = [...this.store.getState().tasks];
-            if (deletedTasks.length === 0) return;
-
-            this.store.setTasks([]);
-            this._setSelectedTaskId(null);
-            this._cache.invalidate();
-
-            showSnackbar(`Удалено ${deletedTasks.length} задач`, {
-                onUndo: () => {
-                    const currentTasks = this.store.getState().tasks;
-                    this.store.setTasks(restoreDeletedTasks(currentTasks, deletedTasks));
-                    this._cache.invalidate();
-                    // v2 auto-sort: восстановленный список — DESC по score.
-                    this._resortByPriority();
-                }
-            });
+        handleDeleteAllTasksAction({
+            store: this.store,
+            cache: this._cache,
+            setSelectedTaskId: this._setSelectedTaskId,
+            resortByPriority: this._resortByPriority.bind(this)
         });
     }
 
@@ -230,17 +161,10 @@ export class TaskListHandler {
      * Использует кэшированные значения из TaskCacheService.
      */
     handleSortByPriority() {
-        if (!this._cache.isReady()) {
-            messageService.showMessage('calculatePriorityScore не определено');
-            return;
-        }
-        const state = this.store.getState();
-        const sorted = sortTasksByPriority(
-            state.tasks,
-            state.criteria,
-            (task, criteria) => this._cache.getCachedPriorityScore(task, criteria)
-        );
-        this.store.reorderTasks(sorted);
+        handleSortByPriorityAction({
+            store: this.store,
+            cache: this._cache
+        });
     }
 
     /**

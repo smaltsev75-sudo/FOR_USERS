@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.16-task-form-action-splits';
+const CACHE_VERSION = 'sp-v8.32.17-task-list-action-splits';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -95,9 +95,12 @@ const ASSETS_TO_CACHE = [
     './js/controllers/selectionController.js',
     './js/controllers/task/formHelpers.js',
     './js/controllers/task/criteriaScoreMutations.js',
+    './js/controllers/task/taskDeleteActions.js',
     './js/controllers/task/taskEstimateMutations.js',
+    './js/controllers/task/taskExcludeActions.js',
     './js/controllers/task/taskExcludeMutations.js',
     './js/controllers/task/taskOrderingActions.js',
+    './js/controllers/task/taskSortActions.js',
     './js/controllers/task/taskCacheService.js',
     './js/controllers/task/taskDragController.js',
     './js/controllers/task/taskEventWiring.js',
