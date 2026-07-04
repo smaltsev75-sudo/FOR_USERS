@@ -8,6 +8,7 @@ import {
     createStartDatePatch
 } from '../domain/sprintSchedule.js';
 import { ConfigFormAdapter } from './config/configFormAdapter.js';
+import { wireConfigControllerEvents } from './config/configEventWiring.js';
 import {
     applyAvailCoef,
     applyDays,
@@ -29,8 +30,8 @@ export class ConfigController {
         this.lastConfigSignature = '';
         this.form = new ConfigFormAdapter(nfs);
         // CTRL-3 (DEEP-REFAC 2026-06-21): вестигиальные .bind() удалены — все
-        // хендлеры передаются arrow-обёртками `(e)=>this.handleX(e)` (attachEvents
-        // ~103-113) и вызываются method-call'ом, `this` корректен без bind.
+        // хендлеры передаются arrow-обёртками в configEventWiring и вызываются
+        // method-call'ом, `this` корректен без bind.
         // Доказательство: handleProductChange биндился идентично, но в bind-списке
         // отсутствовал и работал — значит bind'ы были мёртвым остатком рефактора.
     }
@@ -88,19 +89,7 @@ export class ConfigController {
      * Подключение обработчиков событий DOM для полей конфигурации и кнопок.
      */
     attachEvents() {
-        this.form.attachEvents({
-            onProductChange: (e) => this.handleProductChange(e),
-            onDaysInput: (e) => this.handleDaysInput(e),
-            onDaysChange: (e) => this.handleDaysChange(e),
-            onStartDateChange: (e) => this.handleStartDateChange(e),
-            onEndDateChange: (e) => this.handleEndDateChange(e),
-            onHolidaysInput: (e) => this.handleHolidaysInput(e),
-            onHolidaysChange: (e) => this.handleHolidaysChange(e),
-            onAvailCoefInput: (e) => this.handleAvailCoefInput(e),
-            onAvailCoefChange: (e) => this.handleAvailCoefChange(e),
-            onAlertChange: (e) => this.handleAlertChange(e),
-            onResetConfig: () => this.handleResetConfig()
-        });
+        wireConfigControllerEvents(this);
     }
 
     /**
