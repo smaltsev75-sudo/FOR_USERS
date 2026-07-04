@@ -3,6 +3,7 @@
     max-width: 1300px;
     margin: 0 auto;
     width: 100%;
+    box-sizing: border-box;
     /* padding-left освобождает место под фиксированный .app-rail (60px) СЛЕВА
        (как в эталоне sprint-planner-cloud). Desktop-only, без media-queries. */
     padding: 0 5px 0 72px;

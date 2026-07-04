@@ -34,8 +34,8 @@
         justify-content: flex-end;
     }
 
-    .est-box {
-        flex: 1 1 calc(33.333% - 6px);
+    .task-estimates-roles .est-box {
+        flex: 1 1 calc(50% - 6px);
     }
 
     .task-status-badge,

@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.20-selection-report-css-split';
+const CACHE_VERSION = 'sp-v8.32.21-mobile-overflow-fix';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
