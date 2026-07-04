@@ -1,0 +1,23 @@
+/* ---------- selection-report-states.css ---------- */
+/* Motion and responsive states for selection report sections. */
+
+@media (prefers-reduced-motion: reduce) {
+   .metric-bar__fill {
+      transition: none;
+   }
+}
+
+@media (max-width: 720px) {
+   .algo-cards-grid,
+   .algo-info-grid {
+      grid-template-columns: 1fr;
+   }
+
+   .rec-card--algo .rec-card-header {
+      min-height: 0;
+   }
+
+   .rec-card-metrics {
+      gap: 6px;
+   }
+}

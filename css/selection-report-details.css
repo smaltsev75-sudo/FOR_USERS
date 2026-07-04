@@ -1,0 +1,101 @@
+/* ---------- selection-report-details.css ---------- */
+/* Algorithm description and per-algorithm detail accordions. */
+
+.algo-info-grid {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 12px;
+   margin-top: 8px;
+   min-width: 0;
+}
+
+.algo-info-card {
+   background: var(--overlay-faint);
+   padding: 12px;
+   border-radius: 8px;
+}
+
+.algo-info-card-title {
+   font-weight: 600;
+   color: var(--accent);
+   margin-bottom: 8px;
+   font-size: 0.85rem;
+}
+
+.algo-info-card-body {
+   margin: 0;
+   font-size: 0.8rem;
+   line-height: 1.5;
+}
+
+.algo-info-footnote {
+   font-size: 0.75rem;
+   color: var(--text-muted);
+   margin-top: 12px;
+   font-style: italic;
+}
+
+.algo-detail-section {
+   margin-bottom: 12px;
+}
+
+.algo-detail-quadrant-title {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   font-weight: 600;
+   font-size: 0.8rem;
+   margin-bottom: 6px;
+   color: var(--text);
+}
+
+.algo-detail-quadrant-title .icon {
+   color: var(--accent);
+   flex-shrink: 0;
+}
+
+.algo-detail-list {
+   margin: 0 0 8px 4px;
+   padding-left: 20px;
+   font-size: 0.75rem;
+   line-height: 1.7;
+   color: var(--text-muted);
+}
+
+.algo-detail-list li {
+   color: var(--text);
+}
+
+.algo-detail-list .algo-detail-meta {
+   color: var(--text-muted);
+   font-variant-numeric: tabular-nums;
+}
+
+.algo-detail-excluded-title {
+   color: var(--danger);
+   font-weight: 600;
+   font-size: 0.8rem;
+   margin: 12px 0 6px;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+}
+
+.algo-detail-excluded-title .icon {
+   color: var(--danger);
+}
+
+.algo-detail-excluded-list {
+   margin: 0;
+   padding-left: 20px;
+   font-size: 0.75rem;
+   line-height: 1.7;
+}
+
+.algo-detail-excluded-list li {
+   color: var(--text);
+}
+
+.algo-detail-excluded-list .algo-detail-reason {
+   color: var(--text-muted);
+}

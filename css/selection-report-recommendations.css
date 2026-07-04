@@ -1,0 +1,149 @@
+/* ---------- selection-report-recommendations.css ---------- */
+/* Recommendation modal/card primitives shared by selection report sections. */
+
+#recommendationsContent {
+   overflow-x: hidden;
+   word-break: break-word;
+}
+
+.recommendations-container {
+   display: flex;
+   flex-direction: column;
+   gap: 24px;
+}
+
+.rec-section-title {
+   font-weight: bold;
+   font-size: 0.9rem;
+   color: var(--accent);
+   padding-bottom: 4px;
+   border-bottom: 1px solid var(--border);
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   margin-bottom: 12px;
+}
+
+.rec-section-title--center {
+   text-align: center;
+   justify-content: center;
+}
+
+.rec-section-title .icon {
+   flex-shrink: 0;
+}
+
+.rec-card {
+   max-width: 100%;
+   box-sizing: border-box;
+   background: var(--bg-card);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   padding: 12px;
+   transition: all 0.2s;
+}
+
+.rec-card:hover {
+   border-color: var(--accent);
+   box-shadow: 0 4px 8px var(--accent-shadow);
+}
+
+.rec-card-header {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-bottom: 8px;
+   flex-wrap: wrap;
+}
+
+.rec-card-title {
+   font-weight: 600;
+   font-size: 0.85rem;
+   color: var(--text);
+   flex: 1;
+}
+
+.rec-card-severity {
+   font-size: 0.7rem;
+   padding: 2px 8px;
+   border-radius: 12px;
+   background: var(--overlay-medium);
+   white-space: nowrap;
+}
+
+.severity-high {
+   background: var(--danger-bg-light);
+   color: var(--danger);
+}
+
+.severity-medium {
+   background: var(--warning-bg-light);
+   color: var(--warning);
+}
+
+.severity-low {
+   background: var(--accent-bg-strong);
+   color: var(--accent);
+}
+
+.severity-info {
+   background: var(--success-bg-subtle);
+   color: var(--success);
+}
+
+.rec-card-suggestion {
+   font-size: 0.75rem;
+   color: var(--text-muted);
+   font-style: italic;
+   border-top: 1px dashed var(--border);
+   padding-top: 6px;
+   margin-top: 6px;
+   display: flex;
+   align-items: flex-start;
+   gap: 6px;
+}
+
+.rec-card-suggestion .icon {
+   flex-shrink: 0;
+   margin-top: 1px;
+   color: var(--accent);
+}
+
+.rec-cards {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.rec-card--full {
+   width: 100%;
+}
+
+.rec-card--empty {
+   text-align: center;
+   color: var(--text-muted);
+}
+
+.rec-empty {
+   text-align: center;
+   padding: 20px;
+   color: var(--text-muted);
+}
+
+.algorithms-grid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+}
+
+.algorithm-column {
+   background: var(--overlay-subtle);
+   border-radius: 8px;
+   padding: 12px;
+}
+
+.general-recommendations .rec-cards {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}

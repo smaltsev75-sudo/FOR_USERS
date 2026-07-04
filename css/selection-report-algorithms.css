@@ -1,0 +1,153 @@
+/* ---------- selection-report-algorithms.css ---------- */
+/* Algorithm comparison cards and metric bars. */
+
+.algo-cards-grid {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 12px;
+   margin-bottom: 16px;
+}
+
+.rec-card--algo {
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+}
+
+.rec-card--algo .rec-card-header {
+   align-items: flex-start;
+   min-height: 34px;
+}
+
+.rec-card--algo.rec-card--recommended {
+   border-color: var(--accent);
+   box-shadow: 0 4px 8px var(--accent-shadow);
+}
+
+.rec-card--algo .rec-card-title {
+   font-size: 0.85rem;
+   display: flex;
+   align-items: flex-start;
+   gap: 6px;
+   line-height: 1.25;
+   min-width: 0;
+}
+
+.rec-card--algo .rec-card-title .icon {
+   color: var(--accent);
+   flex-shrink: 0;
+}
+
+.algo-card-marker {
+   font-size: 0.7rem;
+   padding: 2px 8px;
+   border-radius: 12px;
+   background: var(--accent-bg-strong);
+   color: var(--accent);
+   white-space: nowrap;
+   font-weight: 600;
+}
+
+.algo-card-metrics {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   flex: 1;
+}
+
+.algo-card-metric {
+   display: grid;
+   grid-template-columns: 1fr auto;
+   gap: 4px 8px;
+   font-size: 0.75rem;
+   align-items: baseline;
+}
+
+.algo-card-metric-label {
+   color: var(--text-muted);
+}
+
+.algo-card-metric-value {
+   font-weight: 600;
+   font-variant-numeric: tabular-nums;
+   text-align: right;
+   color: var(--text);
+}
+
+.metric-bar {
+   grid-column: 1 / -1;
+   height: 4px;
+   background: var(--progress-track);
+   border-radius: 2px;
+   overflow: hidden;
+}
+
+.metric-bar__fill {
+   display: block;
+   height: 100%;
+   background: var(--accent);
+   border-radius: inherit;
+   opacity: 0.7;
+   transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+.algo-card-metric:hover .metric-bar__fill {
+   opacity: 1;
+}
+
+.metric-bar__fill--success { background: var(--success); }
+.metric-bar__fill--warning { background: var(--warning); }
+.metric-bar__fill--danger  { background: var(--danger); }
+
+.algo-card-actions {
+   margin-top: auto;
+   padding-top: 2px;
+}
+
+.export-btn--select-algorithm {
+   width: 100%;
+   justify-content: center;
+   min-height: 34px;
+}
+
+.algo-set-insight {
+   display: grid;
+   gap: 6px;
+   margin: -4px 0 14px;
+   padding: 10px 12px;
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   background: var(--overlay-faint);
+   color: var(--text);
+   font-size: 0.8rem;
+}
+
+.algo-set-insight__title {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   font-size: 0.82rem;
+}
+
+.algo-set-insight__title .icon {
+   color: var(--success);
+   flex-shrink: 0;
+}
+
+.algo-set-insight p {
+   margin: 0;
+   color: var(--text-muted);
+   line-height: 1.45;
+}
+
+.algo-set-insight__list {
+   display: grid;
+   gap: 4px;
+   margin: 0;
+   padding-left: 20px;
+   line-height: 1.45;
+}
+
+.algo-set-insight__reason {
+   color: var(--text-muted);
+}

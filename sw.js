@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.19-criteria-css-split';
+const CACHE_VERSION = 'sp-v8.32.20-selection-report-css-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -37,6 +37,10 @@ const ASSETS_TO_CACHE = [
     './css/criteria-form.css',
     './css/criteria-states.css',
     './css/selection-report.css',
+    './css/selection-report-recommendations.css',
+    './css/selection-report-algorithms.css',
+    './css/selection-report-details.css',
+    './css/selection-report-states.css',
     './css/task-card.css',
     './css/task-card-effort.css',
     './css/task-card-actions.css',
