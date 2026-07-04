@@ -1,0 +1,155 @@
+/* css/team-capacity-header.css */
+
+/* ── Header: общая загрузка команды ───────────────────────────────────── */
+/* Header-band и карточки делят panel-контракт: рамка var(--border),
+   radius var(--radius-lg), мягкая тень через токен var(--shadow-sm).
+   Это выравнивает «Загрузка команды» по той же сетке, что и cfg-panel
+   и соседняя matrix-панель. */
+.team-cap__header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px var(--shadow-sm);
+    transition: background 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.team-cap__header:hover {
+    box-shadow: 0 4px 14px var(--shadow-md);
+}
+
+.team-cap__header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.team-cap__header-label {
+    font-size: 0.7rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.team-cap__header-numbers {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.team-cap__header-percent {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--text);
+    transition: color 240ms ease;
+}
+
+.team-cap__header-percent-value {
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+.team-cap__header-percent-sign {
+    font-size: 1.05rem;
+    opacity: 0.65;
+    margin-left: 1px;
+}
+
+/* Gauge — circular SVG progress (-90deg origin) */
+.team-cap__gauge {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.team-cap__gauge-svg {
+    width: 56px;
+    height: 56px;
+    transform: rotate(-90deg);
+}
+
+.team-cap__gauge-track {
+    fill: none;
+    stroke: var(--button-bg);
+    stroke-width: 6;
+}
+
+.team-cap__gauge-fill {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dasharray 360ms ease, stroke 240ms ease;
+}
+
+.team-cap__gauge-icon {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    pointer-events: none;
+    opacity: 0.55;
+}
+
+.team-cap__gauge-icon .icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Header level coloring */
+.team-cap__header--success .team-cap__header-percent {
+    color: var(--success);
+}
+
+.team-cap__header--success .team-cap__gauge-fill {
+    stroke: var(--success);
+}
+
+.team-cap__header--warning {
+    border-color: var(--warning-bg-light, var(--border-light));
+    background: linear-gradient(135deg, var(--warning-bg-faint, var(--bg-card)) 0%, var(--bg-card) 70%);
+}
+
+.team-cap__header--warning .team-cap__header-percent {
+    color: var(--warning);
+}
+
+.team-cap__header--warning .team-cap__gauge-fill {
+    stroke: var(--warning);
+}
+
+.team-cap__header--danger {
+    border-color: var(--danger-bg-light, var(--danger));
+    background: linear-gradient(135deg, var(--danger-bg-faint, var(--bg-card)) 0%, var(--bg-card) 65%);
+    box-shadow: 0 2px 12px rgba(185, 28, 28, 0.12);
+}
+
+.team-cap__header--danger .team-cap__header-percent {
+    color: var(--danger);
+}
+
+.team-cap__header--danger .team-cap__gauge-fill {
+    stroke: var(--danger);
+    animation: teamCapHeaderPulse 2.4s ease-out 1;
+}
+
+@keyframes teamCapHeaderPulse {
+    0% { stroke-opacity: 0.4; }
+    50% { stroke-opacity: 1; }
+    100% { stroke-opacity: 1; }
+}
+

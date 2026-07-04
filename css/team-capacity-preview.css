@@ -1,0 +1,36 @@
+/* css/team-capacity-preview.css */
+
+/* Preview state (hover на task) */
+.team-cap__card--preview {
+    border-color: var(--accent);
+    border-style: dashed;
+}
+
+.team-cap__card-delta {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 700;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.team-cap__card--preview-up .team-cap__card-delta {
+    background: var(--warning);
+}
+
+.team-cap__card--preview-down .team-cap__card-delta {
+    background: var(--success);
+}
+
+.team-cap__card--preview-down .team-cap__card-bar-preview {
+    color: var(--success);
+}
+
+.team-cap__card--preview-up .team-cap__card-bar-preview {
+    color: var(--warning);
+}

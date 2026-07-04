@@ -1,0 +1,47 @@
+/* css/team-capacity-states.css */
+
+/* На очень узких экранах (телефон) — cards столбиком. */
+@media (max-width: 540px) {
+    .team-cap__cards {
+        grid-template-columns: 1fr;
+    }
+
+    .team-cap__header {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "text gauge"
+            "percent gauge";
+        gap: 8px 14px;
+    }
+
+    .team-cap__header-text { grid-area: text; }
+    .team-cap__header-percent { grid-area: percent; }
+    .team-cap__gauge { grid-area: gauge; }
+    .team-cap__header-percent-value { font-size: 2rem; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .team-cap__card,
+    .team-cap__card-bar-fill,
+    .team-cap__card-bar-preview,
+    .team-cap__gauge-fill,
+    .team-cap__header,
+    .team-cap__card-icon,
+    .team-cap__card-control-input {
+        transition: none;
+    }
+    .team-cap__card-bar-overload,
+    .team-cap__header--danger .team-cap__gauge-fill {
+        animation: none;
+    }
+}
+
+/* Touch targets */
+@media (pointer: coarse) {
+    .team-cap__card-control-input {
+        min-height: 44px;
+        padding: 8px 24px 8px 12px;
+        font-size: 1rem;
+    }
+}

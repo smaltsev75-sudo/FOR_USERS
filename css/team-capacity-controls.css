@@ -1,0 +1,100 @@
+/* css/team-capacity-controls.css */
+
+/* Controls: КАЖДЫЙ input — отдельная row на полную ширину карточки.
+   Это гарантирует, что цифра помещается даже при cards 120px (5 в ряду
+   на узком экране). Label — ВЫШЕ pill, не отнимает горизонтального места. */
+.team-cap__card-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.team-cap__card-control {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.team-cap__card-control-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding-left: 2px;
+    line-height: 1;
+}
+
+/* Input pill: рамка + bg + suffix справа, цифра center-right.
+   Используем grid 1fr auto чтобы input занял весь свободный space, suffix
+   фиксированной ширины — никогда не наложатся. */
+.team-cap__card-control-pill {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    background: var(--button-bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0 8px 0 8px;
+    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    min-height: 30px;
+}
+
+.team-cap__card-control-pill:hover {
+    border-color: var(--border-light);
+    background: var(--button-hover);
+}
+
+.team-cap__card-control-pill:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background: var(--button-hover);
+}
+
+.team-cap__card-control-input {
+    min-width: 0;
+    padding: 4px 4px 4px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    /* Explicitly reset inset box-shadow injected by .number-input in forms.css */
+    box-shadow: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    width: 100%;
+    font-family: inherit;
+    text-align: right;
+}
+
+/* Reset both :focus and :focus-visible — the pill wrapper handles the focus ring
+   via its own :focus-within box-shadow. Without this, .number-input:focus in
+   forms.css injects a conflicting box-shadow directly on the input element. */
+.team-cap__card-control-input:focus,
+.team-cap__card-control-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.team-cap__card-control-suffix {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    padding-left: 4px;
+}
+
+/* Скрыть native spin buttons — они съедают место и ломают alignment. */
+.team-cap__card-control-input::-webkit-outer-spin-button,
+.team-cap__card-control-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.team-cap__card-control-input[type="number"] {
+    -moz-appearance: textfield;
+}

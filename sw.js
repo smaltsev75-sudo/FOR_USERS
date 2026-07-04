@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.10-file-import-export-flow-split';
+const CACHE_VERSION = 'sp-v8.32.11-team-capacity-css-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -41,6 +41,11 @@ const ASSETS_TO_CACHE = [
     './css/density.css',
     './css/capacity-strip.css',
     './css/team-capacity.css',
+    './css/team-capacity-header.css',
+    './css/team-capacity-card.css',
+    './css/team-capacity-controls.css',
+    './css/team-capacity-preview.css',
+    './css/team-capacity-states.css',
     './css/toolbar.css',
     './css/config-panel.css',
     './css/a11y.css',

@@ -1,0 +1,203 @@
+/* css/team-capacity-card.css */
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+/* Карточки ролей: равная ширина в ряду (grid repeat(5, minmax(0,1fr))),
+   единый radius var(--radius-lg) и рамка var(--border) — как .role-load-card
+   в sprint-planner-cloud. Тень через токен var(--shadow-sm). */
+.team-cap__card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 11px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    min-height: 0;
+    min-width: 0;
+}
+
+.team-cap__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(45, 36, 25, 0.025) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.team-cap__card:hover,
+.team-cap__card:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px var(--shadow-md);
+    border-color: var(--border-light);
+}
+
+/* Head: иконка + название (одна строка). Процент — в отдельной row выше bar.
+   На узкой карточке (5 в ряду на 1100px = ~210px каждая) name через ellipsis. */
+.team-cap__card-head {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+}
+
+.team-cap__card-icon {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    background: var(--accent-bg-faint);
+    color: var(--accent);
+    transition: background 200ms ease, color 200ms ease;
+    flex-shrink: 0;
+}
+
+.team-cap__card-icon .icon {
+    width: 15px;
+    height: 15px;
+}
+
+.team-cap__card-name {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--text);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* Процент крупный, отдельной строкой над bar. Гарантированно вмещается
+   при 5 cards в ряду даже на 1024px (~190px карточка). */
+.team-cap__card-percent {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 1px;
+}
+
+.team-cap__card-percent sup {
+    font-size: 0.65rem;
+    margin-left: 1px;
+    opacity: 0.65;
+    font-weight: 600;
+    top: -0.5em;
+    position: relative;
+}
+
+/* Bar */
+.team-cap__card-bar {
+    position: relative;
+    height: 10px;
+    background: var(--button-bg);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.team-cap__card-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: var(--success);
+    transition: width 320ms ease, background 240ms ease;
+    box-shadow: 0 1px 0 rgba(45, 36, 25, 0.06) inset;
+}
+
+/* Полу-прозрачный шоколадный диагональный паттерн для overload — без белого.
+   Создаёт эффект «штриховки опасности» на кремовом фоне без выпадения из палитры. */
+.team-cap__card-bar-overload {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            45deg,
+            rgba(45, 36, 25, 0.25) 0,
+            rgba(45, 36, 25, 0.25) 6px,
+            transparent 6px,
+            transparent 12px
+        );
+    pointer-events: none;
+    animation: teamCapOverloadStripes 1.4s linear 1;
+    will-change: background-position;
+}
+
+@keyframes teamCapOverloadStripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 24px 0; }
+}
+
+.team-cap__card-bar-preview {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    height: 100%;
+    border-radius: 5px;
+    opacity: 0.45;
+    border-right: 2px dashed currentColor;
+    transition: width 160ms ease;
+    pointer-events: none;
+}
+
+/* Level coloring of card bars */
+.team-cap__card--success .team-cap__card-bar-fill {
+    background: var(--success);
+}
+
+.team-cap__card--warning .team-cap__card-bar-fill {
+    background: var(--warning);
+}
+
+.team-cap__card--warning .team-cap__card-percent {
+    color: var(--warning);
+}
+
+.team-cap__card--warning .team-cap__card-icon {
+    background: var(--warning-bg-faint, var(--accent-bg-faint));
+    color: var(--warning);
+}
+
+.team-cap__card--danger .team-cap__card-bar-fill {
+    background: var(--danger);
+}
+
+.team-cap__card--danger .team-cap__card-percent {
+    color: var(--danger);
+}
+
+.team-cap__card--danger .team-cap__card-icon {
+    background: var(--danger-bg-faint, var(--accent-bg-faint));
+    color: var(--danger);
+}
+
+.team-cap__card--danger {
+    border-color: var(--danger-bg-light, var(--border-light));
+    background: linear-gradient(180deg, var(--danger-bg-faint, var(--bg-card)) 0%, var(--bg-card) 70%);
+}
+
+/* Numbers: маленькая вторичная инфа.
+   На узких карточках (5-в-ряд на ~190px) строка «1266,0 / 6799,8 ч»
+   переносится на 2 строки, тогда как на коротких числах («617,0 / 816,0 ч»)
+   остаётся в 1 → FTE/Отпуск-pills уезжают по вертикали относительно
+   соседних карточек. Фиксируем line-height и резервируем место под 2
+   строки — нижние контролы выстраиваются в одну линию во всех 5 cards. */
+.team-cap__card-numbers {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    margin-top: -2px;
+    line-height: 1.3;
+    min-height: 2.6em;
+}
+
