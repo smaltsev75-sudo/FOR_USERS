@@ -17,7 +17,7 @@ import {
     collectDiagnosticsBundle
 } from '../services/diagnostics.js';
 import { showSnackbar } from '../ui/snackbar.js';
-import { getCommand } from '../config/commands.js';
+import { wireFileControllerEvents } from './file/fileEventWiring.js';
 
 export class FileController {
     constructor(store, numberFormatService) {
@@ -35,31 +35,7 @@ export class FileController {
     }
 
     attachEvents() {
-        const saveBtn = document.getElementById(getCommand('save').buttonId);
-        const loadBtn = document.getElementById(getCommand('load').buttonId);
-        const diagnosticsBtn = document.getElementById(getCommand('diagnostics').buttonId);
-
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                this.saveToFile();
-            });
-        } else {
-            messageService.showMessage('Ошибка: кнопка «Сохранить» не найдена в DOM');
-        }
-
-        if (loadBtn) {
-            loadBtn.addEventListener('click', () => {
-                this.loadFromFile();
-            });
-        } else {
-            messageService.showMessage('Ошибка: кнопка «Загрузить» не найдена в DOM');
-        }
-
-        if (diagnosticsBtn) {
-            diagnosticsBtn.addEventListener('click', () => {
-                this.downloadDiagnostics();
-            });
-        }
+        wireFileControllerEvents(this);
     }
 
     showProgress(message) {
