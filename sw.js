@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.9-help-controller-content-split';
+const CACHE_VERSION = 'sp-v8.32.10-file-import-export-flow-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -70,7 +70,9 @@ const ASSETS_TO_CACHE = [
     './js/controllers/criteria/criteriaInlineWeights.js',
     './js/controllers/criteria/criteriaListEvents.js',
     './js/controllers/criteriaController.js',
+    './js/controllers/file/exportFlow.js',
     './js/controllers/file/fileEventWiring.js',
+    './js/controllers/file/importFlow.js',
     './js/controllers/fileController.js',
     './js/controllers/help/helpContent.js',
     './js/controllers/help/helpTocLinks.js',
