@@ -1,12 +1,5 @@
 // js/controllers/task/taskFormController.js
 
-import { messageService } from '../../services/message.js';
-import {
-    validateTitle,
-    validateJiraUrl,
-    isTitleUnique,
-    isJiraUrlUnique
-} from '../../domain/validation.js';
 import { createTask } from '../../domain/task.js';
 import { resortTasksByPriority } from './taskOrderingActions.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
@@ -17,6 +10,11 @@ import {
     taskFormDraftToTaskPatch,
     taskToTaskFormDraft
 } from './taskForm/taskFormDraft.js';
+import {
+    validateTaskFormField,
+    validateTaskJiraField,
+    validateTaskTitleField
+} from './taskForm/taskFormValidation.js';
 
 /**
  * Handles create/edit modal logic for tasks.
@@ -146,42 +144,14 @@ export class TaskFormController {
      * @returns {string|null} trimmed value or null on failure
      */
     _validateField(elementId, validateFn, uniqueFn, uniqueErrorMsg, excludeId = null) {
-        const el = document.getElementById(elementId);
-        if (!el) {
-            const err = `[TaskFormController] DOM-инвариант нарушен: элемент #${elementId} отсутствует в форме`;
-            // v8.30.13: в тестовом окружении (jest jsdom: process.env.NODE_ENV === 'test')
-            // явно бросаем — иначе пропавший элемент даёт «кнопка не работает в тишине».
-            // В production показываем пользователю снэкбар и пишем в console.error
-            // (console.warn недостаточно: warn часто отфильтрован в реальных консолях).
-            // globalThis.process — присутствует в Node/jsdom (test env), undefined в браузере.
-            // Без `globalThis.` ESLint в browser-окружении ругается no-undef.
-            if (globalThis.process?.env?.NODE_ENV === 'test') {
-                throw new Error(err);
-            }
-            console.error(err);
-            messageService.showMessage('Не удалось обработать форму: внутренняя ошибка интерфейса. Перезагрузите страницу (Ctrl+Shift+R).');
-            return null;
-        }
-        const value = el.value.trim();
-        const result = validateFn(value);
-        // v8.30.31: aria-invalid выставляется/снимается вместе с .error class.
-        // Без этого screen reader пользователь не получает звукового сигнала
-        // об ошибке валидации — он видит ТОЛЬКО visual error class.
-        if (!result.valid) {
-            el.classList.add('error');
-            el.setAttribute('aria-invalid', 'true');
-            messageService.showMessage(result.message);
-            return null;
-        }
-        if (!uniqueFn(this.store.getState().tasks, value, excludeId)) {
-            el.classList.add('error');
-            el.setAttribute('aria-invalid', 'true');
-            messageService.showMessage(uniqueErrorMsg);
-            return null;
-        }
-        el.classList.remove('error');
-        el.removeAttribute('aria-invalid');
-        return value;
+        return validateTaskFormField({
+            store: this.store,
+            elementId,
+            validateFn,
+            uniqueFn,
+            uniqueErrorMsg,
+            excludeId
+        });
     }
 
     /**
@@ -193,13 +163,10 @@ export class TaskFormController {
      * @returns {string|null}
      */
     _validateTitleField(_mode = 'create', excludeId = null) {
-        return this._validateField(
-            'newTitle',
-            validateTitle,
-            isTitleUnique,
-            'Название должно быть уникальным',
+        return validateTaskTitleField({
+            store: this.store,
             excludeId
-        );
+        });
     }
 
     /**
@@ -209,13 +176,10 @@ export class TaskFormController {
      * @returns {string|null}
      */
     _validateJiraField(_mode = 'create', excludeId = null) {
-        return this._validateField(
-            'newJira',
-            validateJiraUrl,
-            isJiraUrlUnique,
-            'URL должен быть уникальным',
+        return validateTaskJiraField({
+            store: this.store,
             excludeId
-        );
+        });
     }
 
     // ── Edit modal ────────────────────────────────────────────────────────────

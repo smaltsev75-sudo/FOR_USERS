@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.13-task-form-copy';
+const CACHE_VERSION = 'sp-v8.32.14-controller-helper-splits';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -85,6 +85,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/helpController.js',
     './js/controllers/keyboardController.js',
     './js/controllers/printController.js',
+    './js/controllers/role/roleInputActions.js',
     './js/controllers/roleController.js',
     './js/controllers/selection/selectionApplyFlow.js',
     './js/controllers/selection/selectionEventWiring.js',
@@ -103,6 +104,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/task/taskFormController.js',
     './js/controllers/task/taskForm/taskFormDomAdapter.js',
     './js/controllers/task/taskForm/taskFormDraft.js',
+    './js/controllers/task/taskForm/taskFormValidation.js',
     './js/controllers/task/taskListHandler.js',
     './js/controllers/task/undoDeleteService.js',
     './js/controllers/taskController.js',
