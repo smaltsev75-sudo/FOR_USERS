@@ -1,17 +1,21 @@
 // js/controllers/configController.js
 
 import { messageService } from '../services/message.js';
-import { createDefaultConfig } from '../domain/config.js';
 import { parseDate } from '../utils/date.js';
 import { parseStrictInteger } from '../domain/strictInteger.js';
 import {
-    calculateSprintEndDate,
-    createDaysPatch,
     createEndDatePatch,
-    createHolidaysPatch,
     createStartDatePatch
 } from '../domain/sprintSchedule.js';
 import { ConfigFormAdapter } from './config/configFormAdapter.js';
+import {
+    applyAvailCoef,
+    applyDays,
+    applyHolidays,
+    calculateEndDate,
+    getConfigSignature,
+    resetConfig
+} from './config/configActions.js';
 
 export class ConfigController {
     /**
@@ -73,20 +77,11 @@ export class ConfigController {
     }
 
     applyDays(days) {
-        const currentConfig = this.store.getState().config ?? {};
-        const { days: currentDays } = currentConfig;
-        if (currentDays === days) return false;
-
-        this.store.setConfig(createDaysPatch(currentConfig, days));
-        return true;
+        return applyDays(this.store, days);
     }
 
     applyAvailCoef(availCoef) {
-        const normalized = this.nfs.roundToDecimals(availCoef, 1);
-        const { availCoef: currentCoef } = this.store.getState().config ?? {};
-        if (currentCoef === normalized) return false;
-        this.store.setConfig({ availCoef: normalized });
-        return true;
+        return applyAvailCoef(this.store, this.nfs, availCoef);
     }
 
     /**
@@ -117,15 +112,7 @@ export class ConfigController {
     }
 
     getConfigSignature(config = {}) {
-        return [
-            config.product ?? '',
-            config.days ?? '',
-            config.holidays ?? '',
-            config.startDate ?? '',
-            config.endDate ?? '',
-            config.availCoef ?? '',
-            config.alert ?? ''
-        ].join('|');
+        return getConfigSignature(config);
     }
 
     /**
@@ -269,11 +256,7 @@ export class ConfigController {
      * Применяет новое количество праздничных дней и пересчитывает дни спринта.
      */
     applyHolidays(holidays) {
-        const currentConfig = this.store.getState().config ?? {};
-        const { holidays: currentHolidays } = currentConfig;
-        if (currentHolidays === holidays) return false;
-        this.store.setConfig(createHolidaysPatch(currentConfig, holidays));
-        return true;
+        return applyHolidays(this.store, holidays);
     }
 
     /**
@@ -327,8 +310,7 @@ export class ConfigController {
      * Сброс конфигурации к значениям по умолчанию.
      */
     handleResetConfig() {
-        const defaultConfig = createDefaultConfig();
-        this.store.setConfig(defaultConfig);
+        resetConfig(this.store);
         messageService.showMessage('Конфигурация сброшена к значениям по умолчанию');
     }
 
@@ -339,6 +321,6 @@ export class ConfigController {
      * @returns {string} дата окончания в формате YYYY-MM-DD
      */
     calculateEndDate(startDate, days) {
-        return calculateSprintEndDate(startDate, days);
+        return calculateEndDate(startDate, days);
     }
 }

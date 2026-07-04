@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.0-criteria-refactor-wave';
+const CACHE_VERSION = 'sp-v8.32.1-controller-facade-splits';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -59,6 +59,7 @@ const ASSETS_TO_CACHE = [
     './js/vendor/purify.min.js',
     // JS — controllers
     './js/controllers/capacityStripController.js',
+    './js/controllers/config/configActions.js',
     './js/controllers/config/configFormAdapter.js',
     './js/controllers/configController.js',
     './js/controllers/densityController.js',
@@ -70,7 +71,10 @@ const ASSETS_TO_CACHE = [
     './js/controllers/keyboardController.js',
     './js/controllers/printController.js',
     './js/controllers/roleController.js',
+    './js/controllers/selection/selectionApplyFlow.js',
+    './js/controllers/selection/selectionEventWiring.js',
     './js/controllers/selection/selectionHelpers.js',
+    './js/controllers/selection/selectionRunFlow.js',
     './js/controllers/selectionController.js',
     './js/controllers/task/formHelpers.js',
     './js/controllers/task/criteriaScoreMutations.js',

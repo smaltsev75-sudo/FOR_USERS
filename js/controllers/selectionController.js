@@ -1,27 +1,19 @@
 // js/controllers/selectionController.js
 
-import { messageService } from '../services/message.js';
-import { calculateCapacityByRole, calculateRoleLoad } from '../domain/role.js';
-import { compareAlgorithms } from '../domain/selection/index.js';
-import { fixTaskOrder } from '../domain/task.js';
-import { getTotalWeight } from '../domain/criteriaOps.js';
-import {
-    buildAlgorithmsCacheKey,
-    buildCapacitySafeSelection,
-    buildTasksWithPriority,
-    setSelectionLoadingState
-} from './selection/selectionHelpers.js';
 import { LruCache } from '../utils/lruCache.js';
 import {
-    ALGORITHM_KEYS,
-    EXCLUSION_REASON_ALGORITHM,
-    EXCLUSION_REASON_CAPACITY_GUARD,
-    EXCLUSION_REASON_DEPENDENCY
+    ALGORITHM_KEYS
 } from '../domain/selection/config.js';
 import { renderSelectionReport } from '../ui/selectionReport.js';
 import { renderRecommendations } from '../ui/selectionRecommendations.js';
 import { hideModal } from '../ui/modalManager.js';
-import { showSnackbar } from '../ui/snackbar.js';
+import { applyAlgorithm } from './selection/selectionApplyFlow.js';
+import { wireSelectionControllerEvents } from './selection/selectionEventWiring.js';
+import {
+    calculateSelectionCapacityByRole,
+    getCachedAlgorithmResults,
+    runMultiSelection
+} from './selection/selectionRunFlow.js';
 
 /**
  * SelectionController — контроллер автоотбора задач в спринт.
@@ -45,46 +37,15 @@ export class SelectionController {
     }
 
     attachEvents() {
-        const autoSelectBtn = document.getElementById('autoSelectBtn');
-        if (autoSelectBtn) {
-            autoSelectBtn.addEventListener('click', () => this.runMultiSelection());
-        }
-
-        const modal = document.getElementById('selectionReportModal');
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                const target = e.target.closest?.('button') || e.target;
-                if (target.id === 'applyMatrixBtn') {
-                    this.applyAlgorithm('matrix');
-                } else if (target.id === 'applyValueDensityBtn') {
-                    this.applyAlgorithm('value-density');
-                } else if (target.id === 'applyHybridBtn') {
-                    this.applyAlgorithm('hybrid');
-                } else if (target.id === 'closeSelectionReportBtn' || target.id === 'closeSelectionReportModalBtn') {
-                    this.closeReport();
-                } else if (target.id === 'showRecommendationsBtn') {
-                    this.showRecommendations();
-                }
-                // .accordion-header обрабатывается локальным listener'ом,
-                // навешенным в renderSelectionReport — здесь делегация
-                // больше не нужна (дублировала бы toggle при bubbling).
-            });
-        }
+        wireSelectionControllerEvents(this);
     }
 
     calculateCapacityByRole() {
-        const state = this.store.getState();
-        const { roles, config } = state;
-        return calculateCapacityByRole(roles, config);
+        return calculateSelectionCapacityByRole(this.store);
     }
 
     getCachedAlgorithmResults(tasks, capacityByRole) {
-        const cacheKey = buildAlgorithmsCacheKey(tasks, capacityByRole);
-        const cached = this.algorithmsCache.get(cacheKey);
-        if (cached !== undefined) return cached;
-        const results = compareAlgorithms(tasks, capacityByRole);
-        this.algorithmsCache.set(cacheKey, results);
-        return results;
+        return getCachedAlgorithmResults(this.algorithmsCache, tasks, capacityByRole);
     }
 
     invalidateAlgorithmsCache() {
@@ -93,63 +54,10 @@ export class SelectionController {
 
     /**
      * Запускает сравнение алгоритмов для текущих задач и ёмкостей.
-     * Проверяет сумму весов критериев (=100%), затем вызывает compareAlgorithms.
+     * Проверяет сумму весов критериев (=100%), затем делегирует run-flow.
      */
     runMultiSelection() {
-        // Проверка суммы весов критериев — должна быть ровно 100%
-        const criteria = this.store.getState().criteria || [];
-        const totalWeight = getTotalWeight(criteria);
-        if (totalWeight !== 100) {
-            const direction = totalWeight > 100 ? 'превышает' : 'не достигает';
-            messageService.showMessage(
-                'Невозможно выполнить отбор: сумма весов критериев (' + totalWeight + '%) ' + direction + ' 100%. ' +
-                'Пожалуйста, отредактируйте веса критериев на вкладке "Критерии оценки" так, чтобы их сумма составляла ровно 100%.'
-            );
-            setSelectionLoadingState(
-                document.getElementById('selectionLoadingIndicator'),
-                document.getElementById('autoSelectBtn'),
-                false
-            );
-            return;
-        }
-
-        const loadingEl = document.getElementById('selectionLoadingIndicator');
-        const autoSelectBtn = document.getElementById('autoSelectBtn');
-
-        const originalTasks = this.store.getState().tasks;
-        const capacityByRole = this.calculateCapacityByRole();
-
-        // v8.30.9: precondition — если ни одна роль не перегружена (effort > capacity)
-        // по текущему плану (не-исключённые задачи), показываем info и НЕ запускаем
-        // алгоритмы. Сравнение строгое (>), без alert_threshold — порог влияет только
-        // на UI-подсветку capacity-strip, не на бизнес-решение «нужен ли отбор».
-        const roles = this.store.getState().roles;
-        const overloadedRoles = roles.filter(role => {
-            const load = calculateRoleLoad(role.id, originalTasks, false);
-            const cap = capacityByRole[role.id] || 0;
-            return load > cap;
-        });
-        if (overloadedRoles.length === 0) {
-            messageService.showMessage('Текущий состав спринта уже сбалансирован, корректировка не требуется');
-            return;
-        }
-
-        setSelectionLoadingState(loadingEl, autoSelectBtn, true);
-
-        const tasksWithPriority = buildTasksWithPriority(originalTasks, criteria);
-
-        try {
-            const comparisonResult = this.getCachedAlgorithmResults(tasksWithPriority, capacityByRole);
-            this.multiSelectionResults = comparisonResult;
-        } catch (e) {
-            messageService.showMessage('Ошибка при выполнении алгоритма: ' + e.message);
-            setSelectionLoadingState(loadingEl, autoSelectBtn, false);
-            return;
-        }
-
-        setSelectionLoadingState(loadingEl, autoSelectBtn, false);
-
-        this.showMultiSelectionReport();
+        runMultiSelection(this);
     }
 
     showMultiSelectionReport() {
@@ -169,66 +77,7 @@ export class SelectionController {
      * @param {string} algorithmKey — 'matrix' | 'value-density' | 'hybrid'
      */
     applyAlgorithm(algorithmKey) {
-        if (!this.multiSelectionResults) return;
-
-        const results = this.multiSelectionResults.results;
-        const algoResult = results[algorithmKey];
-        if (!algoResult || !algoResult.selectedTasks) {
-            messageService.showMessage('Нет результатов для выбранного алгоритма');
-            return;
-        }
-
-        const state = this.store.getState();
-        const allTasks = state.tasks;
-        const capacityByRole = this.calculateCapacityByRole();
-        const safety = buildCapacitySafeSelection(
-            algoResult.selectedTasks,
-            allTasks,
-            capacityByRole,
-            state.roles
-        );
-        const selectedIds = safety.selectedIds;
-        const droppedIds = safety.droppedIds;
-        // SELECT-1 refinement: dependency-cascade drops получают точную причину,
-        // не ложное «превышение ёмкости».
-        const depDroppedIds = safety.depDroppedIds || new Set();
-
-        const updatedTasks = allTasks.map(task => {
-            const isSelected = selectedIds.has(task.id);
-            const reason = depDroppedIds.has(task.id)
-                ? EXCLUSION_REASON_DEPENDENCY
-                : droppedIds.has(task.id)
-                    ? EXCLUSION_REASON_CAPACITY_GUARD
-                    : (task.exclusionReason || EXCLUSION_REASON_ALGORITHM);
-            return {
-                ...task,
-                excluded: isSelected ? 0 : 1,
-                exclusionReason: isSelected ? '' : reason
-            };
-        });
-
-        this.store.setTaskFilter({ search: '', type: '' });
-        this.store.setTasks(fixTaskOrder(updatedTasks));
-        // Запоминаем последний применённый алгоритм — переживёт F5.
-        if (typeof this.store.setUiState === 'function') {
-            this.store.setUiState({ activeAlgorithm: algorithmKey });
-        }
-        this.invalidateAlgorithmsCache();
-
-        this.closeReport();
-        // v2: модальное окно «Применён алгоритм…» убрано (owner) — результат виден
-        // в списке. Snackbar показываем ТОЛЬКО при защитном дропе задач (важное
-        // предупреждение), иначе тихо.
-        if (droppedIds.size > 0) {
-            const capacityDropped = droppedIds.size - depDroppedIds.size;
-            const reasons = [];
-            if (capacityDropped > 0) reasons.push(`по ёмкости: ${capacityDropped}`);
-            if (depDroppedIds.size > 0) reasons.push(`по невыполненным зависимостям: ${depDroppedIds.size}`);
-            showSnackbar(
-                `Применён ${algoResult.algorithmName || algorithmKey}. Защитная проверка исключила задач (${reasons.join(', ')}).`,
-                { duration: 6000 }
-            );
-        }
+        applyAlgorithm(this, algorithmKey);
     }
 
     closeReport() {
