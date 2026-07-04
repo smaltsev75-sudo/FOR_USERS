@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.12-team-capacity-primary-selectors';
+const CACHE_VERSION = 'sp-v8.32.13-task-form-copy';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -57,6 +57,7 @@ const ASSETS_TO_CACHE = [
     './js/app/persistenceCoordinator.js',
     './js/app/renderScheduler.js',
     './js/config/commands.js',
+    './js/config/taskFormCopy.js',
     // JS — PWA (детекция обновления SW; импортируется inline-модулем index.html)
     './js/pwa/swUpdateNotifier.js',
     // JS — vendor (offline-готовый marked + DOMPurify для справки)

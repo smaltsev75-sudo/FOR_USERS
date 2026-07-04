@@ -1,4 +1,5 @@
 import { parseStrictIntegerInRange } from '../../../domain/strictInteger.js';
+import { getTaskFormModeCopy } from '../../../config/taskFormCopy.js';
 import { escapeHtml } from '../../../utils/escapeHtml.js';
 import { collectCriteriaEvaluations } from '../formHelpers.js';
 
@@ -17,19 +18,14 @@ export class TaskFormDomAdapter {
         if (!modal) return;
         const title = modal.querySelector('#createTaskModalTitle');
         const saveBtn = modal.querySelector('#saveCreateBtn');
-        const attr = mode === 'edit' ? 'data-edit-text' : 'data-create-text';
-        if (title && title.getAttribute(attr)) {
-            title.textContent = title.getAttribute(attr);
+        const copy = getTaskFormModeCopy(mode);
+        if (title) {
+            title.textContent = copy.title;
         }
-        if (saveBtn && saveBtn.getAttribute(attr)) {
-            saveBtn.textContent = saveBtn.getAttribute(attr);
-            if (mode === 'edit') {
-                saveBtn.setAttribute('title', 'Сохранить — Ctrl+S');
-                saveBtn.setAttribute('aria-label', 'Сохранить (горячая клавиша Ctrl+S)');
-            } else {
-                saveBtn.setAttribute('title', 'Создать задачу — Ctrl+Enter');
-                saveBtn.setAttribute('aria-label', 'Создать задачу (горячая клавиша Ctrl+Enter)');
-            }
+        if (saveBtn) {
+            saveBtn.textContent = copy.submit;
+            saveBtn.setAttribute('title', copy.submitTitle);
+            saveBtn.setAttribute('aria-label', copy.submitAriaLabel);
         }
         modal.dataset.mode = mode;
     }

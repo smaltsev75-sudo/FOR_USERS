@@ -55,10 +55,8 @@ export class TaskFormController {
     }
 
     /**
-     * Переключает текст заголовка/primary-кнопки между create и edit.
-     * Обе подписи лежат в data-create-text / data-edit-text атрибутах
-     * самой кнопки и заголовка — JS только копирует нужный вариант
-     * в textContent. Это держит копирайтинг рядом с разметкой.
+     * Переключает заголовок и primary-кнопку между create и edit.
+     * Текст режимов хранится в config/taskFormCopy.js.
      * @private
      */
     _setModalMode(_modal, mode) {
