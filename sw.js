@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.17-task-list-action-splits';
+const CACHE_VERSION = 'sp-v8.32.18-public-release-process-fix';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
