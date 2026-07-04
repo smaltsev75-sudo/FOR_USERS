@@ -1,0 +1,111 @@
+/* ---------- criteria-sumbar.css ---------- */
+/* Criteria weight summary, total states and auto-balance action. */
+
+.total-weight {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 12px;
+   background: var(--success-bg-light);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   font-size: 0.9rem;
+   font-weight: 500;
+}
+
+.top-total-weight {
+   margin-bottom: 20px;
+}
+
+.bottom-total-weight {
+   margin-top: 20px;
+   display: none;
+}
+
+.weight-valid {
+   color: var(--success);
+   font-weight: bold;
+}
+
+.weight-invalid {
+   color: var(--danger);
+   font-weight: bold;
+}
+
+.criteria-sum-bar {
+   position: sticky;
+   top: 0;
+   z-index: 10;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 10px 12px;
+   margin-bottom: 16px;
+   background: var(--bg-card);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   box-shadow: 0 2px 6px var(--shadow-sm);
+}
+
+.criteria-sum-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   font-size: 0.85rem;
+   font-weight: 600;
+   padding: 6px 14px;
+   border-radius: 20px;
+   background: var(--success-bg-light);
+   color: var(--success);
+   border: 1px solid var(--success-border-faint);
+   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.criteria-sum-pill--invalid-under {
+   background: var(--warning-bg-light);
+   color: var(--warning);
+   border-color: var(--warning);
+}
+
+.criteria-sum-pill--invalid-over {
+   background: var(--danger-bg-light);
+   color: var(--danger);
+   border-color: var(--danger);
+}
+
+.criteria-sum-pill .icon {
+   width: 14px;
+   height: 14px;
+}
+
+.criteria-sum-actions {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.criteria-auto-balance-btn {
+   background: var(--button-bg);
+   border: 1px solid var(--warning);
+   color: var(--warning);
+   border-radius: 6px;
+   padding: 6px 12px;
+   font-size: 0.78rem;
+   font-weight: 500;
+   cursor: pointer;
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   transition: all 0.2s ease;
+}
+
+.criteria-auto-balance-btn:hover {
+   background: var(--warning);
+   color: var(--accent-text);
+   transform: translateY(-1px);
+}
+
+.criteria-auto-balance-btn[hidden] {
+   display: none;
+}

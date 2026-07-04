@@ -51,65 +51,6 @@
    правила, которые конфликтовали (flex-direction:column, max-width:75px)
    и не позволяли компактировать карточку. */
 
-.criteria-header-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.criteria-header-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.criteria-list {
-    margin-top: 20px;
-}
-
-.criteria-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-}
-
-.criteria-name-container {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.criteria-controls-icons {
-    display: flex;
-    gap: 8px;
-}
-
-.criteria-scale-container {
-    margin-top: 16px;
-}
-
-.criteria-scale {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    max-height: 350px;
-    overflow-y: auto;
-}
-
-.criteria-scale.expanded {
-    display: flex;
-}
-
-.scale-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 8px;
-}
-
 .modal-content {
     width: 90%;
     max-width: 520px;
@@ -140,11 +81,6 @@
 }
 
 @media (max-width: 900px) {
-    .criteria-name-container {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
     .task-order-number {
         min-width: 34px;
         height: 24px;
@@ -153,16 +89,6 @@
 }
 
 @media (max-width: 600px) {
-    .criteria-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .criteria-controls-icons {
-        align-self: flex-end;
-    }
-
     .task-order-number {
         min-width: 30px;
         height: 22px;

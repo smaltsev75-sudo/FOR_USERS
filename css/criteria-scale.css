@@ -1,0 +1,95 @@
+/* ---------- criteria-scale.css ---------- */
+/* Read-only score scale display inside criteria cards. */
+
+.criteria-scale-container {
+   margin-top: 16px;
+}
+
+.scale-toggle {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   color: var(--text-muted);
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.8rem;
+   margin-bottom: 10px;
+   padding: 6px;
+   border-radius: 6px;
+   transition: all 0.2s;
+   background: var(--button-bg);
+   border: 1px solid var(--border);
+   width: fit-content;
+   text-align: left;
+}
+
+.scale-toggle:hover {
+   background: var(--button-hover);
+   color: var(--text);
+   border-color: var(--border-light);
+}
+
+.scale-toggle:focus-visible {
+   outline: 2px solid var(--accent);
+   outline-offset: 2px;
+}
+
+.scale-toggle-icon {
+   transition: transform 0.2s;
+}
+
+.scale-toggle-icon.collapsed {
+   transform: rotate(-90deg);
+}
+
+.criteria-scale {
+   display: none;
+   flex-direction: column;
+   gap: 8px;
+   padding: 12px;
+   background: var(--overlay-light);
+   border-radius: 8px;
+   border: 1px solid var(--border);
+   max-height: 350px;
+   overflow-y: auto;
+}
+
+.criteria-scale.expanded {
+   display: flex;
+}
+
+.scale-item {
+   display: flex;
+   align-items: flex-start;
+   gap: 12px;
+   padding: 8px;
+   background: var(--scale-item-bg);
+   border-radius: 6px;
+   border: 1px solid var(--scale-item-border);
+}
+
+.scale-score {
+   font-weight: bold;
+   color: var(--accent);
+   font-size: 0.8rem;
+   min-width: 28px;
+   flex-shrink: 0;
+   background: var(--accent-bg-subtle);
+   border-radius: 4px;
+   padding: 4px;
+   text-align: center;
+}
+
+.scale-description {
+   font-size: 0.8rem;
+   color: var(--text);
+   flex-grow: 1;
+   padding: 4px;
+   min-height: 24px;
+}
+
+.scale-description:empty::before {
+   content: "нет описания";
+   color: var(--text-muted);
+   font-style: italic;
+}

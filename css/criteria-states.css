@@ -1,0 +1,82 @@
+/* ---------- criteria-states.css ---------- */
+/* Criteria responsive, reduced-motion, drag and empty states. */
+
+@media (prefers-reduced-motion: reduce) {
+   .criteria-body {
+      animation: none;
+   }
+
+   .criteria-item-chevron,
+   .criteria-item-grip,
+   .criteria-actions,
+   .criteria-weight-input,
+   .criteria-sum-pill,
+   .criteria-auto-balance-btn {
+      transition: none;
+   }
+}
+
+.criteria-item.is-dragging {
+   opacity: 0.4;
+   cursor: grabbing;
+}
+
+.criteria-item.is-drop-target {
+   border-color: var(--accent);
+   box-shadow: 0 0 0 1px var(--accent), 0 4px 8px var(--accent-shadow);
+}
+
+.criteria-empty-state {
+   text-align: center;
+   padding: 28px 20px;
+   color: var(--text-muted);
+   font-style: italic;
+   border: 1px dashed var(--border);
+   border-radius: 8px;
+}
+
+@media (max-width: 720px) {
+   .criteria-sum-bar {
+      flex-wrap: wrap;
+      padding: 10px;
+   }
+
+   .criteria-item-header {
+      grid-template-columns: auto 1fr auto auto;
+      gap: 8px;
+      padding: 10px;
+   }
+
+   .criteria-item-toggle-btn {
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+   }
+
+   .criteria-item-grip,
+   .criteria-actions {
+      opacity: 1;
+   }
+
+   .criteria-actions {
+      display: none;
+   }
+}
+
+@media (max-width: 900px) {
+   .criteria-name-container {
+      flex-wrap: wrap;
+      gap: 6px;
+   }
+}
+
+@media (max-width: 600px) {
+   .criteria-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+   }
+
+   .criteria-controls-icons {
+      align-self: flex-end;
+   }
+}
