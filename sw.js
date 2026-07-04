@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.2-live-pages-release-guard';
+const CACHE_VERSION = 'sp-v8.32.3-criteria-controller-facade-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -64,7 +64,10 @@ const ASSETS_TO_CACHE = [
     './js/controllers/configController.js',
     './js/controllers/densityController.js',
     './js/controllers/viewModeController.js',
+    './js/controllers/criteria/criteriaDragReorder.js',
     './js/controllers/criteria/criteriaFormController.js',
+    './js/controllers/criteria/criteriaInlineWeights.js',
+    './js/controllers/criteria/criteriaListEvents.js',
     './js/controllers/criteriaController.js',
     './js/controllers/fileController.js',
     './js/controllers/helpController.js',
