@@ -1,23 +1,22 @@
 import { migratePersistedState } from '../state/persistence.js';
 import { alignTasksToCriteria, calculatePriorityScore } from '../domain/criteria.js';
+import { loadDefaultCriteria, loadCriteria } from '../domain/criteriaOps.js';
 import { sortTasksByPriority } from './task/taskOrderingActions.js';
 
-export function createRuntimeSnapshot({ store, criteriaManager, nfs }) {
+export function createRuntimeSnapshot({ store, nfs }) {
     return {
         state: store.getState(),
-        criteria: criteriaManager.getCriteria().map(c => ({ ...c, scale: { ...(c.scale || {}) } })),
         decimalSeparator: nfs.decimalSeparator
     };
 }
 
-export function restoreRuntimeSnapshot(snapshot, { store, criteriaManager, nfs }) {
-    criteriaManager.loadCriteria(snapshot.criteria);
+export function restoreRuntimeSnapshot(snapshot, { store, nfs }) {
     nfs.decimalSeparator = snapshot.decimalSeparator;
     nfs.saveSettings();
     store.loadState(snapshot.state);
 }
 
-export function applyImportedState(rawState, { store, criteriaManager, nfs }) {
+export function applyImportedState(rawState, { store, nfs }) {
     const migratedState = migratePersistedState(rawState);
     let numberFormatSaveResult = null;
 
@@ -26,13 +25,9 @@ export function applyImportedState(rawState, { store, criteriaManager, nfs }) {
         numberFormatSaveResult = nfs.saveSettings();
     }
 
-    if (migratedState.criteria && migratedState.criteria.length > 0) {
-        criteriaManager.loadCriteria(migratedState.criteria);
-    } else {
-        criteriaManager.loadDefaultCriteria();
-    }
-
-    const criteria = criteriaManager.getCriteria();
+    const criteria = migratedState.criteria && migratedState.criteria.length > 0
+        ? loadCriteria(migratedState.criteria)
+        : loadDefaultCriteria();
     // v2 auto-sort (owner): импортированные задачи попадают в store УЖЕ
     // отсортированными DESC по Priority Score (excluded — в конец). Сортировка
     // ДО loadState → один store.update → один кадр рендера (нет мерцания).

@@ -20,10 +20,9 @@ import { showSnackbar } from '../ui/snackbar.js';
 import { getCommand } from '../config/commands.js';
 
 export class FileController {
-    constructor(store, numberFormatService, criteriaManager) {
+    constructor(store, numberFormatService) {
         this.store = store;
         this.nfs = numberFormatService;
-        this.criteriaManager = criteriaManager;
         this.progressEl = null;
         this.progressMessageEl = null;
     }
@@ -86,7 +85,7 @@ export class FileController {
             const state = this.store.getState();
             const data = serializeStateForStorage(
                 state,
-                this.criteriaManager.getCriteria(),
+                state.criteria || [],
                 this.nfs.decimalSeparator
             );
             const filename = buildSprintPlanFilename(state.config?.product);
@@ -103,7 +102,7 @@ export class FileController {
         try {
             const bundle = await collectDiagnosticsBundle({
                 state: this.store.getState(),
-                criteria: this.criteriaManager.getCriteria(),
+                criteria: this.store.getState().criteria || [],
                 decimalSeparator: this.nfs.decimalSeparator
             });
             storageService.saveFile(bundle, buildDiagnosticsFilename());
@@ -151,7 +150,7 @@ export class FileController {
             // message больше не маскирует потерю данных fallback-ом.
             const preview = buildStatePreview(data, {
                 currentState: this.store.getState(),
-                criteria: this.criteriaManager.getCriteria(),
+                criteria: this.store.getState().criteria || [],
                 decimalSeparator: this.nfs.decimalSeparator
             });
             const { issues } = preview;
@@ -162,18 +161,16 @@ export class FileController {
                 async () => {
                     this.showProgress('Загрузка...');
                     // Snapshot для atomic rollback при ошибке во время импорта.
-                    // Если внутри try что-то упадёт, восстанавливаем criteriaManager,
-                    // nfs и store до состояния до импорта.
+                    // Если внутри try что-то упадёт, восстанавливаем nfs и store
+                    // до состояния до импорта.
                     const snapshot = createRuntimeSnapshot({
                         store: this.store,
-                        criteriaManager: this.criteriaManager,
                         nfs: this.nfs
                     });
                     try {
                         await new Promise(resolve => setTimeout(resolve, 100));
                         const { migratedState, numberFormatSaveResult } = applyImportedState(data, {
                             store: this.store,
-                            criteriaManager: this.criteriaManager,
                             nfs: this.nfs
                         });
                         if (numberFormatSaveResult && numberFormatSaveResult.ok === false) {
@@ -201,7 +198,6 @@ export class FileController {
                         try {
                             restoreRuntimeSnapshot(snapshot, {
                                 store: this.store,
-                                criteriaManager: this.criteriaManager,
                                 nfs: this.nfs
                             });
                         } catch { /* лучшее, что можем сделать после двойного сбоя */ }

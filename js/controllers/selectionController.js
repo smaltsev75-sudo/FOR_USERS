@@ -4,6 +4,7 @@ import { messageService } from '../services/message.js';
 import { calculateCapacityByRole, calculateRoleLoad } from '../domain/role.js';
 import { compareAlgorithms } from '../domain/selection/index.js';
 import { fixTaskOrder } from '../domain/task.js';
+import { getTotalWeight } from '../domain/criteriaOps.js';
 import {
     buildAlgorithmsCacheKey,
     buildCapacitySafeSelection,
@@ -32,9 +33,8 @@ import { showSnackbar } from '../ui/snackbar.js';
  * - Применение выбранного алгоритма к списку задач
  */
 export class SelectionController {
-    constructor(store, criteriaManager, numberFormatService) {
+    constructor(store, numberFormatService) {
         this.store = store;
-        this.criteriaManager = criteriaManager;
         this.nfs = numberFormatService;
         this.multiSelectionResults = null;
         this.algorithmsCache = new LruCache(5);
@@ -97,7 +97,8 @@ export class SelectionController {
      */
     runMultiSelection() {
         // Проверка суммы весов критериев — должна быть ровно 100%
-        const totalWeight = this.criteriaManager.getTotalWeight();
+        const criteria = this.store.getState().criteria || [];
+        const totalWeight = getTotalWeight(criteria);
         if (totalWeight !== 100) {
             const direction = totalWeight > 100 ? 'превышает' : 'не достигает';
             messageService.showMessage(
@@ -135,7 +136,7 @@ export class SelectionController {
 
         setSelectionLoadingState(loadingEl, autoSelectBtn, true);
 
-        const tasksWithPriority = buildTasksWithPriority(originalTasks, this.criteriaManager);
+        const tasksWithPriority = buildTasksWithPriority(originalTasks, criteria);
 
         try {
             const comparisonResult = this.getCachedAlgorithmResults(tasksWithPriority, capacityByRole);

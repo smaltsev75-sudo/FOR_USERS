@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.31.13-redesign-leftover-cleanup';
+const CACHE_VERSION = 'sp-v8.32.0-criteria-refactor-wave';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -79,6 +79,7 @@ const ASSETS_TO_CACHE = [
     './js/controllers/task/taskOrderingActions.js',
     './js/controllers/task/taskCacheService.js',
     './js/controllers/task/taskDragController.js',
+    './js/controllers/task/taskEventWiring.js',
     './js/controllers/task/taskFlowActions.js',
     './js/controllers/task/taskFormController.js',
     './js/controllers/task/taskForm/taskFormDomAdapter.js',
@@ -91,7 +92,7 @@ const ASSETS_TO_CACHE = [
     // JS — domain
     './js/domain/config.js',
     './js/domain/criteria.js',
-    './js/domain/criteriaManager.js',
+    './js/domain/criteriaOps.js',
     './js/domain/effortRisk.js',
     './js/domain/role.js',
     './js/domain/roleFieldContract.js',
@@ -138,20 +139,35 @@ const ASSETS_TO_CACHE = [
     './js/ui/blockedScreen.js',
     './js/ui/commandMetadata.js',
     './js/ui/criteriaList.js',
+    './js/ui/criteriaList/actions.js',
+    './js/ui/criteriaList/render.js',
+    './js/ui/criteriaList/row.js',
+    './js/ui/criteriaList/sumBar.js',
     './js/ui/header.js',
     './js/ui/importIssues.js',
     './js/ui/index.js',
     './js/ui/matrix.js',
     './js/ui/modalManager.js',
     './js/ui/teamCapacity.js',
+    './js/ui/teamCapacity/card.js',
+    './js/ui/teamCapacity/gauge.js',
+    './js/ui/teamCapacity/header.js',
+    './js/ui/teamCapacity/render.js',
     './js/ui/taskListGrouped.js',
     './js/ui/createTaskRowVM.js',
     './js/ui/selectionRecommendations.js',
+    './js/ui/selectionRecommendations/constants.js',
+    './js/ui/selectionRecommendations/render.js',
+    './js/ui/selectionRecommendations/sections.js',
     './js/ui/selectionReport.js',
     './js/ui/selectionReport/constants.js',
     './js/ui/selectionReport/format.js',
     './js/ui/selectionReport/interactions.js',
     './js/ui/selectionReport/sections.js',
+    './js/ui/selectionReport/sections/cards.js',
+    './js/ui/selectionReport/sections/descriptions.js',
+    './js/ui/selectionReport/sections/details.js',
+    './js/ui/selectionReport/sections/insight.js',
     './js/ui/snackbar.js',
     './js/ui/taskList/criteriaSection.js',
     './js/ui/taskList/estimatesSection.js',

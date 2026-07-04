@@ -1,6 +1,7 @@
 // js/controllers/selection/selectionHelpers.js
 
 import { calculateTaskTotal } from '../../domain/task.js';
+import { calculatePriorityScoreForTask } from '../../domain/criteriaOps.js';
 import { ROLES } from '../../utils/constants.js';
 export {
     areNearlyEqual,
@@ -18,7 +19,7 @@ export function setSelectionLoadingState(loadingEl, actionBtn, isLoading) {
     }
 }
 
-export function buildTasksWithPriority(tasks, criteriaManager) {
+export function buildTasksWithPriority(tasks, criteria = []) {
     return tasks.map((task) => {
         // Всегда пересчитываем priorityScore по актуальным весам критериев,
         // чтобы избежать использования устаревших значений из задачи.
@@ -27,7 +28,7 @@ export function buildTasksWithPriority(tasks, criteriaManager) {
         // пересчитывает их из task.est перед отбором, игнорируя входящие (est —
         // object из store → fallback на roleEffort не срабатывает; explicit effort
         // только при all-zero est, где calculateTaskTotal тоже даёт 0). Мёртвая работа.
-        const priorityScore = criteriaManager.calculatePriorityScore(task.criteriaEvaluations || {});
+        const priorityScore = calculatePriorityScoreForTask(criteria, task.criteriaEvaluations || {});
         return { ...task, priorityScore };
     });
 }

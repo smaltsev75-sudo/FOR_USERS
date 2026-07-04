@@ -12,6 +12,7 @@ export const DEFAULT_UI_STATE = {
     activeAlgorithm: 'matrix',
     density: 'comfortable',
     viewMode: 'list',
+    editCriteriaId: null,
     expandedQuadrants: [...VALID_QUADRANT_KEYS]
 };
 

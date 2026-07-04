@@ -3,7 +3,7 @@
 // v8.29 redesign:
 //   - input event на .criteria-weight-input → instant sum-bar update (без commit)
 //   - change event → commit в Store (фокус сохраняется снапшотом в render)
-//   - click на «Авто-баланс» → CriteriaManager.autoBalance()
+//   - click на «Авто-баланс» → Store.autoBalanceCriteria()
 //   - click на .criteria-item-toggle-btn → toggle expand/collapse (a11y: native button)
 //   - HTML5 DnD на .criteria-item через .criteria-item-grip → reorderCriteria
 //   - SVG-иконки edit/delete (через делегирование data-action — без изменений)
@@ -14,12 +14,12 @@ import { CriteriaFormController } from './criteria/criteriaFormController.js';
 import { updateSumBar } from '../ui/criteriaList.js';
 import { parseStrictIntegerInRange } from '../domain/strictInteger.js';
 import { initializeCriteriaEvaluations, removeCriterionEvaluation } from '../domain/criteria.js';
+import { getCriterionById, loadDefaultCriteria } from '../domain/criteriaOps.js';
 
 export class CriteriaController {
-    constructor(store, criteriaManager) {
+    constructor(store) {
         this.store = store;
-        this.criteriaManager = criteriaManager;
-        this._form = new CriteriaFormController(store, criteriaManager, null);
+        this._form = new CriteriaFormController(store, null);
 
         // Drag state — храним в инстансе, не в DOM, чтобы переживать re-render.
         this._dragSourceId = null;
@@ -180,17 +180,13 @@ export class CriteriaController {
         const parsed = parseStrictIntegerInRange(input.value, 0, 100);
         if (parsed === null) {
             // Откатываем к текущему значению из Store
-            const c = this.criteriaManager.getCriteriaById(id);
+            const c = getCriterionById(this.store.getState().criteria || [], id);
             if (c) input.value = String(c.weight);
             input.classList.remove('is-invalid');
             input.removeAttribute('aria-invalid');
             return;
         }
-        const cmgr = this.criteriaManager;
-        const updated = cmgr.updateCriteriaWeight(id, parsed);
-        if (updated) {
-            this.store.setCriteria(cmgr.getCriteria());
-        }
+        this.store.updateCriterionWeight(id, parsed);
         input.classList.remove('is-invalid');
         input.removeAttribute('aria-invalid');
     }
@@ -200,15 +196,12 @@ export class CriteriaController {
     // ──────────────────────────────────────────────────────────────────────────
 
     autoBalanceWeights() {
-        const cmgr = this.criteriaManager;
-        if (!cmgr) return;
-        if (cmgr.getCriteria().length === 0) return;
+        if ((this.store.getState().criteria || []).length === 0) return;
 
         messageService.showConfirm(
             'Распределить веса критериев так, чтобы их сумма была ровно 100%? Текущие пропорции сохранятся.',
             () => {
-                if (cmgr.autoBalance()) {
-                    this.store.setCriteria(cmgr.getCriteria());
+                if (this.store.autoBalanceCriteria()) {
                     messageService.showMessage('Веса распределены до 100%.');
                 }
             }
@@ -276,8 +269,7 @@ export class CriteriaController {
             return;
         }
 
-        const cmgr = this.criteriaManager;
-        const ids = cmgr.getCriteria().map(c => c.id);
+        const ids = (this.store.getState().criteria || []).map(c => c.id);
         const fromIdx = ids.indexOf(this._dragSourceId);
         const toIdx = ids.indexOf(targetId);
         if (fromIdx < 0 || toIdx < 0) {
@@ -287,9 +279,7 @@ export class CriteriaController {
         const [moved] = ids.splice(fromIdx, 1);
         ids.splice(toIdx, 0, moved);
 
-        if (cmgr.reorderCriteria(ids)) {
-            this.store.setCriteria(cmgr.getCriteria());
-        }
+        this.store.reorderCriteria(ids);
         this._resetDragState();
     }
 
@@ -319,15 +309,13 @@ export class CriteriaController {
     collectScaleFromEditor() { return this._form.collectScaleFromEditor(); }
 
     deleteCriteria(id) {
-        const cmgr = this.criteriaManager;
         const store = this.store;
-        if (!cmgr || !store) return;
+        if (!store) return;
 
         messageService.showConfirm(
             'Удалить критерий? Все оценки по этому критерию в задачах будут удалены.',
             () => {
-                if (cmgr.deleteCriteria(id)) {
-                    store.setCriteria(cmgr.getCriteria());
+                if (store.deleteCriterion(id)) {
                     store.setTasks(removeCriterionEvaluation(store.getState().tasks, id));
                     messageService.showMessage('Критерий удален');
                 }
@@ -336,16 +324,14 @@ export class CriteriaController {
     }
 
     resetCriteria() {
-        const cmgr = this.criteriaManager;
         const store = this.store;
-        if (!cmgr || !store) return;
+        if (!store) return;
 
         messageService.showConfirm(
             'Сбросить критерии к значениям по умолчанию? Все текущие критерии будут удалены.',
             () => {
-                cmgr.loadDefaultCriteria();
-                store.setCriteria(cmgr.getCriteria());
-                const criteria = cmgr.getCriteria();
+                const criteria = loadDefaultCriteria();
+                store.setCriteria(criteria);
                 const tasks = store.getState().tasks.map(task => ({
                     ...task,
                     criteriaEvaluations: initializeCriteriaEvaluations(criteria)

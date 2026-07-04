@@ -11,7 +11,6 @@ export class PersistenceCoordinator {
     /**
      * @param {object} deps
      * @param {import('../state/store.js').Store} deps.store
-     * @param {{ getCriteria: () => Array<object> }} deps.criteriaManager
      * @param {{ decimalSeparator: string, saveSettings: () => ({ ok?: boolean, error?: string }|undefined) }} deps.nfs
      * @param {{ save: (data: object) => ({ ok?: boolean, error?: string }|undefined) }} deps.storage
      * @param {(state: object, criteria: Array<object>, decimalSeparator: string) => object} deps.serializeState
@@ -21,7 +20,6 @@ export class PersistenceCoordinator {
      */
     constructor({
         store,
-        criteriaManager,
         nfs,
         storage,
         serializeState,
@@ -30,7 +28,6 @@ export class PersistenceCoordinator {
         runtime = globalThis
     }) {
         this._store = store;
-        this._criteriaManager = criteriaManager;
         this._nfs = nfs;
         this._storage = storage;
         this._serializeState = serializeState;
@@ -69,7 +66,7 @@ export class PersistenceCoordinator {
         const state = this._store.getState();
         const data = this._serializeState(
             state,
-            this._criteriaManager.getCriteria(),
+            state.criteria || [],
             this._nfs.decimalSeparator
         );
         const stateResult = this._storage.save(data);

@@ -8,6 +8,8 @@
  * Использует базовые токены из base.css — работает в обеих темах.
  */
 
+@layer components {
+
 .blocked-screen {
     position: fixed;
     inset: 0;
@@ -134,4 +136,6 @@
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
+}
+
 }

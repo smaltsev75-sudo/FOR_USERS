@@ -1,10 +1,10 @@
 /* ---------- base.css ---------- */
 
-/* Декларация порядка слоёв каскада. Файлы пока не обёрнуты в @layer
-   (они unlayered и получают высший приоритет), но декларация задаёт
+/* Декларация порядка слоёв каскада. Большинство файлов пока остаются
+   unlayered и получают высший приоритет; v8.32.0 включает только
+   безопасный pilot для animations/snackbar/blocked-screen. Manifest задаёт
    порядок на будущее: reset → tokens → layout → components →
-   utilities → a11y → overrides. Это позволяет постепенно мигрировать
-   CSS-модули, не ломая существующий каскад. */
+   utilities → a11y → overrides. */
 @layer reset, tokens, layout, components, utilities, a11y, overrides;
 
 /* ===== ТЁМНАЯ ТЕМА (по умолчанию) ===== */

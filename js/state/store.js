@@ -2,6 +2,15 @@
 // js/state/store.js
 import { ROLES } from '../utils/constants.js';
 import { APP_CONFIG } from '../utils/appConfig.js';
+import {
+    addCriterion as addCriterionOp,
+    autoBalanceCriteria as autoBalanceCriteriaOp,
+    cloneCriteria,
+    deleteCriterion as deleteCriterionOp,
+    reorderCriteria as reorderCriteriaOp,
+    updateCriterion as updateCriterionOp,
+    updateCriterionWeight as updateCriterionWeightOp
+} from '../domain/criteriaOps.js';
 /** @typedef {import('../types/contracts.js').AppState} AppState */
 
 const VALID_VIEW_MODES = ['list', 'quadrants'];
@@ -50,6 +59,7 @@ export class Store {
                 activeAlgorithm: 'matrix',
                 density: 'comfortable',
                 viewMode: 'list',
+                editCriteriaId: null,
                 expandedQuadrants: [...DEFAULT_EXPANDED_QUADRANTS]
             },
             // STORE-2 (DEEP-REFAC 2026-06-21): runtime-поле объявлено в default,
@@ -208,8 +218,50 @@ export class Store {
     setCriteria(criteria) {
         this.update(state => ({
             ...state,
-            criteria: criteria.map(c => ({ ...c, scale: { ...c.scale } }))
+            criteria: cloneCriteria(criteria)
         }));
+    }
+
+    addCriterion(criteriaData) {
+        const next = addCriterionOp(this.state.criteria, criteriaData);
+        const added = next[next.length - 1] || null;
+        this.update(state => ({ ...state, criteria: next }));
+        return added;
+    }
+
+    updateCriterion(id, updatedData) {
+        const next = updateCriterionOp(this.state.criteria, id, updatedData);
+        if (next === this.state.criteria) return false;
+        this.update(state => ({ ...state, criteria: next }));
+        return true;
+    }
+
+    updateCriterionWeight(id, weight) {
+        const next = updateCriterionWeightOp(this.state.criteria, id, weight);
+        if (next === this.state.criteria) return false;
+        this.update(state => ({ ...state, criteria: next }));
+        return true;
+    }
+
+    deleteCriterion(id) {
+        const next = deleteCriterionOp(this.state.criteria, id);
+        if (next === this.state.criteria) return false;
+        this.update(state => ({ ...state, criteria: next }));
+        return true;
+    }
+
+    autoBalanceCriteria() {
+        const next = autoBalanceCriteriaOp(this.state.criteria);
+        if (next === this.state.criteria) return false;
+        this.update(state => ({ ...state, criteria: next }));
+        return true;
+    }
+
+    reorderCriteria(orderedIds) {
+        const next = reorderCriteriaOp(this.state.criteria, orderedIds);
+        if (next === this.state.criteria) return false;
+        this.update(state => ({ ...state, criteria: next }));
+        return true;
     }
 
     /**
@@ -303,6 +355,10 @@ export class Store {
             ...state,
             ui: { ...(state.ui || {}), ...partial }
         }));
+    }
+
+    setEditCriteriaId(id) {
+        this.setUiState({ editCriteriaId: id ?? null });
     }
 
     /**

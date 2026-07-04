@@ -3,7 +3,6 @@
 import { Store } from './state/store.js';
 import { NumberFormatService } from './services/numberFormat.js';
 import { storageService } from './services/storage.js';
-import { CriteriaManager } from './domain/criteriaManager.js';
 import { ConfigController } from './controllers/configController.js';
 import { RoleController } from './controllers/roleController.js';
 import { CapacityStripController } from './controllers/capacityStripController.js';
@@ -14,6 +13,7 @@ import { FileController } from './controllers/fileController.js';
 import { ViewModeController } from './controllers/viewModeController.js';
 import { renderApp } from './ui/index.js';
 import { calculatePriorityScore } from './domain/criteria.js';
+import { loadDefaultCriteria, loadCriteria } from './domain/criteriaOps.js';
 import { createDefaultConfig } from './domain/config.js';
 import { createDefaultRoles } from './domain/role.js';
 import { HelpController } from './controllers/helpController.js';
@@ -42,22 +42,19 @@ export class App {
 
         const savedState = storageService.load();
         const initialState = savedState ? migratePersistedState(savedState) : this.createInitialState();
-        this.store = new Store(initialState);
-
-        this.criteriaManager = new CriteriaManager();
-        if (initialState.criteria && initialState.criteria.length > 0) {
-            this.criteriaManager.loadCriteria(initialState.criteria);
-        }
-        this.store.setCriteria(this.criteriaManager.getCriteria());
+        const criteria = initialState.criteria && initialState.criteria.length > 0
+            ? loadCriteria(initialState.criteria)
+            : loadDefaultCriteria();
+        this.store = new Store({ ...initialState, criteria });
         this.nfs.decimalSeparator = initialState.numberFormatSettings?.decimalSeparator || this.nfs.decimalSeparator;
 
         this.configController = new ConfigController(this.store, this.nfs);
         this.roleController = new RoleController(this.store, this.nfs);
         this.capacityStripController = new CapacityStripController(this.store, this.nfs);
         this.taskController = new TaskController(this.store, this.nfs);
-        this.criteriaController = new CriteriaController(this.store, this.criteriaManager);
-        this.selectionController = new SelectionController(this.store, this.criteriaManager, this.nfs);
-        this.fileController = new FileController(this.store, this.nfs, this.criteriaManager);
+        this.criteriaController = new CriteriaController(this.store);
+        this.selectionController = new SelectionController(this.store, this.nfs);
+        this.fileController = new FileController(this.store, this.nfs);
         this.viewModeController = new ViewModeController(this.store);
         this.helpController = new HelpController();
         this.printController = new PrintController();
@@ -68,7 +65,6 @@ export class App {
         this.renderScheduler = new RenderScheduler(() => this.render());
         this.persistenceCoordinator = new PersistenceCoordinator({
             store: this.store,
-            criteriaManager: this.criteriaManager,
             nfs: this.nfs,
             storage: storageService,
             serializeState: serializeStateForStorage,
@@ -81,7 +77,7 @@ export class App {
         this.saveToLS = this.persistenceCoordinator.saveNow.bind(this.persistenceCoordinator);
 
         this.taskController.setPriorityScoreCalculator((task) => {
-            return calculatePriorityScore(this.criteriaManager.getCriteria(), task.criteriaEvaluations);
+            return calculatePriorityScore(this.store.getState().criteria || [], task.criteriaEvaluations);
         });
 
         this.init();

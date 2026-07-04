@@ -6,6 +6,7 @@ import { generateScaleEditorHTML } from '../../ui/criteriaList.js';
 import { showModal, hideModal } from '../../ui/modalManager.js';
 import { parseStrictIntegerInRange } from '../../domain/strictInteger.js';
 import { fillMissingCriteriaEvaluations } from '../../domain/criteria.js';
+import { getCriterionById, getTotalWeight } from '../../domain/criteriaOps.js';
 
 /**
  * CriteriaFormController — контроллер модального окна добавления/редактирования критерия.
@@ -20,12 +21,10 @@ import { fillMissingCriteriaEvaluations } from '../../domain/criteria.js';
 export class CriteriaFormController {
     /**
      * @param {Object} store
-     * @param {Object} criteriaManager
      * @param {Function} onSaved - callback() called after successful save
      */
-    constructor(store, criteriaManager, onSaved) {
+    constructor(store, onSaved) {
         this.store = store;
-        this.criteriaManager = criteriaManager;
         this._onSaved = onSaved;
     }
 
@@ -51,8 +50,8 @@ export class CriteriaFormController {
     // ── Open / close ───────────────────────────────────────────────────────────
 
     openEditCriteria(id = null) {
-        const cmgr = this.criteriaManager;
-        if (!cmgr) return;
+        const store = this.store;
+        if (!store) return;
 
         const modalTitle = document.getElementById('editCriteriaModalTitle');
         const nameInput = document.getElementById('editCriteriaName');
@@ -67,11 +66,11 @@ export class CriteriaFormController {
             return;
         }
 
-        cmgr.editCriteriaId = id;
+        store.setEditCriteriaId(id);
 
         if (id) {
             modalTitle.textContent = 'Редактировать критерий';
-            const criteria = cmgr.getCriteriaById(id);
+            const criteria = getCriterionById(store.getState().criteria || [], id);
             if (criteria) {
                 nameInput.value = criteria.name;
                 abbreviationInput.value = criteria.abbreviation;
@@ -98,14 +97,14 @@ export class CriteriaFormController {
     closeEditCriteria() {
         const modal = document.getElementById('editCriteriaModal');
         if (modal) hideModal(modal);
+        this.store?.setEditCriteriaId?.(null);
     }
 
     // ── Save ───────────────────────────────────────────────────────────────────
 
     saveCriteria() {
-        const cmgr = this.criteriaManager;
         const store = this.store;
-        if (!cmgr || !store) return;
+        if (!store) return;
 
         const name = document.getElementById('editCriteriaName').value.trim();
         const abbreviation = document.getElementById('editCriteriaAbbreviation').value.trim().toUpperCase();
@@ -135,7 +134,9 @@ export class CriteriaFormController {
             return;
         }
 
-        if (!isAbbreviationUnique(cmgr.getCriteria(), abbreviation, cmgr.editCriteriaId)) {
+        const state = store.getState();
+        const editCriteriaId = state.ui?.editCriteriaId ?? null;
+        if (!isAbbreviationUnique(state.criteria || [], abbreviation, editCriteriaId)) {
             messageService.showMessage('Аббревиатура должна быть уникальной для каждого критерия');
             return;
         }
@@ -153,21 +154,22 @@ export class CriteriaFormController {
         const criteriaData = { name, abbreviation, weight, rationale, scale };
         let success;
         let message;
+        const isNewCriterion = editCriteriaId === null;
 
-        if (cmgr.editCriteriaId) {
-            success = cmgr.updateCriteria(cmgr.editCriteriaId, criteriaData);
+        if (!isNewCriterion) {
+            success = store.updateCriterion(editCriteriaId, criteriaData);
             message = success ? 'Критерий успешно обновлен!' : 'Ошибка обновления критерия';
         } else {
-            cmgr.addCriteria(criteriaData);
+            store.addCriterion(criteriaData);
             success = true;
             message = 'Критерий успешно добавлен!';
         }
 
         if (success) {
-            store.setCriteria(cmgr.getCriteria());
             this.closeEditCriteria();
 
-            const totalWeight = cmgr.getTotalWeight();
+            const criteria = store.getState().criteria || [];
+            const totalWeight = getTotalWeight(criteria);
             if (totalWeight !== 100) {
                 messageService.showMessage(`Критерий сохранен. Обратите внимание: сумма весов всех критериев (${totalWeight}%) не равна 100%. Рекомендуется скорректировать веса.`);
             } else {
@@ -176,8 +178,7 @@ export class CriteriaFormController {
 
             // Fill evaluations for all tasks when a new criterion is added
             // (existing values preserved, orphans kept — CTRL-2 domain helper).
-            if (!cmgr.editCriteriaId) {
-                const criteria = cmgr.getCriteria();
+            if (isNewCriterion) {
                 store.setTasks(fillMissingCriteriaEvaluations(store.getState().tasks, criteria));
             }
 
