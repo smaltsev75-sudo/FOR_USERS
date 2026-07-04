@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.3-criteria-controller-facade-split';
+const CACHE_VERSION = 'sp-v8.32.4-blocked-screen-facade-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -143,6 +143,10 @@ const ASSETS_TO_CACHE = [
     './js/types/contracts.js',
     // JS — ui
     './js/ui/appVersionBadge.js',
+    './js/ui/blockedScreen/actions.js',
+    './js/ui/blockedScreen/constants.js',
+    './js/ui/blockedScreen/content.js',
+    './js/ui/blockedScreen/shell.js',
     './js/ui/blockedScreen.js',
     './js/ui/commandMetadata.js',
     './js/ui/criteriaList.js',
