@@ -5,6 +5,13 @@
 import { messageService } from '../services/message.js';
 import { showModal, hideModal } from '../ui/modalManager.js';
 import { sanitizeHtml } from '../utils/sanitize.js';
+import {
+    HELP_MANUAL_PATHS,
+    renderHelpError,
+    renderHelpLoading,
+    renderHelpMarkdown
+} from './help/helpContent.js';
+import { setupHelpTocLinks } from './help/helpTocLinks.js';
 
 /**
  * HelpController — управляет модальным окном справки.
@@ -52,7 +59,7 @@ export class HelpController {
         if (!this.modal || !this.content) return;
 
         // Показываем индикатор загрузки (v8.30.2: inline-styles → .help-loading-state)
-        this.content.innerHTML = '<div class="help-loading-state"><div class="loading-spinner"></div><span>Загрузка руководства...</span></div>';
+        renderHelpLoading(this.content);
         showModal(this.modal);
 
         try {
@@ -61,7 +68,7 @@ export class HelpController {
 
             // Ищем файл по нескольким путям (для совместимости)
             let response = null;
-            for (const path of ['docs/UserManual.md', './docs/UserManual.md']) {
+            for (const path of HELP_MANUAL_PATHS) {
                 try {
                     response = await fetch(path);
                     if (response.ok) break;
@@ -70,56 +77,17 @@ export class HelpController {
             if (!response || !response.ok) throw new Error('Файл не найден');
 
             const markdown = await response.text();
-            // Парсим Markdown в HTML
-            let html = this.globalApi.marked.parse(markdown);
-
-            // Санитизация: удаляем опасные теги (script, iframe, onerror и т.д.)
-            html = this._sanitize(html);
-
-            // Временный контейнер для обработки DOM (генерация якорей заголовков)
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
-
-            // Присваиваем уникальные ID всем заголовкам для навигации по оглавлению
-            const headers = temp.querySelectorAll('h1, h2, h3, h4');
-            headers.forEach(header => {
-                const text = header.textContent.trim();
-                let id = this._slugify(text);
-                // Обеспечиваем уникальность ID (дубли получают суффикс -1, -2, ...)
-                if (temp.querySelector(`#${id}`)) {
-                    let counter = 1;
-                    while (temp.querySelector(`#${id}-${counter}`)) counter++;
-                    id = `${id}-${counter}`;
-                }
-                header.id = id;
+            renderHelpMarkdown(this.content, markdown, {
+                marked: this.globalApi.marked,
+                sanitize: (html) => this._sanitize(html)
             });
-
-            html = temp.innerHTML;
-
-            // Оборачиваем в стилизованный контейнер (стили в css/components.css → .help-content)
-            this.content.innerHTML = `<div class="help-content">${html}</div>`;
 
             // Навешиваем обработчики на ссылки оглавления для плавной прокрутки
             this.setupTocLinks();
 
         } catch (error) {
             messageService.showMessage('Ошибка загрузки справки: ' + error.message);
-            // v8.30.2: inline-styles → .help-error-state. Эмодзи ❌ убран
-            // (правило проекта «эмодзи в UI запрещены»). Текст ошибки
-            // эскейпируется через textContent после insertHtml — но безопаснее
-            // через template-литерал + escapeHtml. Здесь error.message —
-            // строка от error.constructor, в основном internal — но всё равно
-            // escape для безопасности.
-            const safeMessage = String(error.message || '').replace(/[<>&"]/g, s => (
-                { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]
-            ));
-            this.content.innerHTML = `
-                <div class="help-error-state">
-                    <p class="help-error-state__title">Не удалось загрузить руководство пользователя.</p>
-                    <p class="help-error-state__detail">${safeMessage}</p>
-                    <p>Убедитесь, что файл <strong>docs/UserManual.md</strong> существует в проекте.</p>
-                </div>
-            `;
+            renderHelpError(this.content, error);
         }
     }
 
@@ -137,40 +105,11 @@ export class HelpController {
     }
 
     /**
-     * Генерирует slug из текста заголовка (сохраняет кириллицу).
-     * @param {string} text — текст заголовка
-     * @returns {string} — slug для использования как HTML id
-     */
-    _slugify(text) {
-        return text
-            .toLowerCase()
-            .replace(/[^\w\sа-яё-]/gi, '') // разрешаем русские буквы и дефисы
-            .replace(/\s+/g, '-')
-            .replace(/--+/g, '-')
-            .replace(/^-|-$/g, '');
-    }
-
-    /**
      * Настраивает плавную прокрутку для ссылок оглавления.
      * Декодирует URL-encoded символы для поддержки кириллических якорей.
      */
     setupTocLinks() {
-        const links = this.content.querySelectorAll('a[href^="#"]');
-        links.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const rawTargetId = link.getAttribute('href').substring(1);
-                const targetId = decodeURIComponent(rawTargetId);
-                const target = this.content.querySelector(`#${targetId}`);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    target.classList.add('toc-highlight');
-                    setTimeout(() => target.classList.remove('toc-highlight'), 1000);
-                } else {
-                    messageService.showMessage(`Якорь #${targetId} не найден`);
-                }
-            });
-        });
+        setupHelpTocLinks(this.content);
     }
 
     /** Закрывает модальное окно справки. */
