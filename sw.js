@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.4-blocked-screen-facade-split';
+const CACHE_VERSION = 'sp-v8.32.5-modal-manager-facade-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -158,6 +158,10 @@ const ASSETS_TO_CACHE = [
     './js/ui/importIssues.js',
     './js/ui/index.js',
     './js/ui/matrix.js',
+    './js/ui/modalManager/focusable.js',
+    './js/ui/modalManager/focusTrap.js',
+    './js/ui/modalManager/stack.js',
+    './js/ui/modalManager/statusOverlay.js',
     './js/ui/modalManager.js',
     './js/ui/teamCapacity.js',
     './js/ui/teamCapacity/card.js',

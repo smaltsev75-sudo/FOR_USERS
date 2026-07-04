@@ -31,4 +31,4 @@
 // Тест tests/unit/scripts/bumpVersion.test.js проверяет, что эта шапка
 // упоминает корректное N regex-мест (9) — синхронно с шапкой bump-version.mjs.
 
-export const APP_VERSION = 'v8.32.4';
+export const APP_VERSION = 'v8.32.5';
