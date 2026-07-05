@@ -1,0 +1,88 @@
+/* ---------- toolbar-actions.css (v8.32.25) ----------
+   Right-side toolbar action buttons.
+*/
+
+.toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.toolbar__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar__btn:hover {
+    background: var(--overlay-medium);
+    color: var(--text);
+}
+
+.toolbar__btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.toolbar__btn--ghost { }
+
+.toolbar__btn--primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    padding: 0 14px;
+}
+
+.toolbar__btn--primary:hover {
+    background: var(--accent-hover);
+    color: var(--accent-text);
+}
+
+.toolbar__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.toolbar__icon-btn:hover {
+    background: var(--overlay-medium);
+    color: var(--text);
+}
+
+.toolbar__icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.toolbar__icon-btn--danger:hover {
+    background: var(--danger-bg-subtle);
+    color: var(--danger);
+}
+
+.toolbar .export-btn {
+    box-shadow: none;
+}

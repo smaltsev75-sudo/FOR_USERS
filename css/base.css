@@ -236,7 +236,7 @@
    доказал на Chromium и WebKit. Решение: убрать body/html overflow,
    точечно зафиксить КАЖДЫЙ источник horizontal overflow:
    - `.panel--matrix` уже имеет overflow-x: auto (table-scroll inside).
-   - `.toolbar__actions` теперь flex-wrap на mobile (см. css/toolbar.css).
+   - `.toolbar__actions` теперь flex-wrap на mobile (см. css/toolbar-states.css).
    - Длинные строки в карточках задач — overflow-wrap: anywhere
      (css/task-card.css).
    Sticky `.criteria-sum-bar`/`.quadrant-group-header` теперь честно

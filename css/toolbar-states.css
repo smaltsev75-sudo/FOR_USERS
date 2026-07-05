@@ -1,0 +1,56 @@
+/* ---------- toolbar-states.css (v8.32.25) ----------
+   Responsive, touch and reduced-motion toolbar states.
+*/
+
+@media (pointer: coarse), (max-width: 720px) {
+    .toolbar {
+        min-height: 48px;
+    }
+    .toolbar__btn,
+    .toolbar__icon-btn,
+    .toolbar__seg-btn,
+    .toolbar__search-input,
+    .toolbar__filter {
+        min-height: 44px;
+        height: 44px;
+    }
+    .toolbar__density .density-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+}
+
+@media (max-width: 900px) {
+    .toolbar {
+        flex-wrap: wrap;
+        position: sticky;
+        top: 4px;
+        z-index: 30;
+        box-shadow: 0 2px 6px var(--shadow-sm);
+    }
+    .toolbar__center {
+        order: 2;
+        flex: 1 1 100%;
+    }
+    .toolbar__divider {
+        display: none;
+    }
+    .toolbar__actions {
+        flex-wrap: wrap;
+        margin-left: 0;
+        flex: 1 1 100%;
+        order: 3;
+        justify-content: flex-start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toolbar__btn,
+    .toolbar__icon-btn,
+    .toolbar__seg-btn,
+    .toolbar__search-input,
+    .toolbar__filter {
+        transition: none;
+    }
+}
