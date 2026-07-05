@@ -178,11 +178,6 @@ a:focus-visible,
 /* v8.27.1: legacy .role-total-numbers-row / .role-total-numbers--bold /
    .progress-bg--spaced удалены — не использовались в живом коде. */
 
-.progress-fill--success {
-    background: var(--success);
-    width: 0;
-}
-
 .section-description {
     font-size: 0.75rem;
     color: var(--text-muted);
@@ -194,11 +189,6 @@ a:focus-visible,
     float: right;
     font-size: 0.75rem;
     color: var(--text-muted);
-}
-
-.modal-buttons-center--create {
-    margin-top: 20px;
-    padding-bottom: 20px;
 }
 
 .hours-block {
@@ -219,73 +209,6 @@ a:focus-visible,
 /* Раскладка .scale-editor (2-колоночная сетка) живёт в criteria.css —
    единственный источник. Раньше здесь дублировался flex-column и перебивал
    criteria.css за счёт более позднего порядка загрузки (owner redesign). */
-
-.selection-loading-indicator {
-    display: none;
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-}
-
-.loading-spinner--inline {
-    vertical-align: middle;
-}
-
-.loading-spinner--md {
-    width: 20px;
-    height: 20px;
-}
-
-.loading-text {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.selection-report-content {
-    padding: 15px 0;
-    font-size: 0.8rem;
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1;
-}
-
-.modal-buttons-center--report {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-    border-top: 1px solid var(--border);
-    padding-top: 15px;
-    margin-top: 10px;
-}
-
-.modal-text-block {
-    padding: 15px 0;
-    font-size: 0.85rem;
-    min-height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.global-progress {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 15px;
-    z-index: 9999;
-    box-shadow: 0 4px 12px var(--shadow-lg);
-    display: none;
-    align-items: center;
-    gap: 10px;
-}
-
-.global-progress__text {
-    color: var(--text);
-}
 
 /* ===== Адаптивные правила (clamp / @container) ===== */
 .header-title {

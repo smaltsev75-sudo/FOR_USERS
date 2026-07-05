@@ -17,7 +17,22 @@
     }
 }
 
-#globalProgress {
+.loading-spinner--inline {
+    vertical-align: middle;
+}
+
+.loading-spinner--md {
+    width: 20px;
+    height: 20px;
+}
+
+.loading-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+#globalProgress,
+.global-progress {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -30,4 +45,8 @@
     display: none;
     align-items: center;
     gap: 10px;
+}
+
+.global-progress__text {
+    color: var(--text);
 }

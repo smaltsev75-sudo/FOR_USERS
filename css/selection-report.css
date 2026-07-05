@@ -38,8 +38,28 @@
 }
 
 .selection-report-content {
-   font-size: 0.85rem;
-   padding: 0 4px;
+   padding: 15px 0;
+   font-size: 0.8rem;
+   overflow-y: auto;
+   overflow-x: hidden;
+   flex: 1;
+}
+
+.selection-loading-indicator {
+   display: none;
+   padding: 20px;
+   text-align: center;
+   border-bottom: 1px solid var(--border);
+}
+
+.modal-buttons-center--report {
+   display: flex;
+   gap: 10px;
+   justify-content: center;
+   flex-wrap: wrap;
+   border-top: 1px solid var(--border);
+   padding-top: 15px;
+   margin-top: 10px;
 }
 
 .report-section-title {

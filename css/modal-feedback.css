@@ -117,3 +117,11 @@
    text-align: center;
 }
 
+.modal-text-block {
+   padding: 15px 0;
+   font-size: 0.85rem;
+   min-height: 50px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
