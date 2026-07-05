@@ -1,0 +1,21 @@
+/* ---------- modal-print.css (v8.32.27) ----------
+   Print options modal controls.
+*/
+
+.print-option {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   cursor: pointer;
+   font-size: 0.85rem;
+   color: var(--text);
+}
+
+.print-option input[type="checkbox"] {
+   width: 18px;
+   height: 18px;
+   flex-shrink: 0;
+   cursor: pointer;
+   accent-color: var(--accent);
+}
+

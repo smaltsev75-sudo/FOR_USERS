@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.26-config-panel-css-split';
+const CACHE_VERSION = 'sp-v8.32.27-modal-css-narrow-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -23,6 +23,8 @@ const ASSETS_TO_CACHE = [
     './css/buttons.css',
     './css/forms.css',
     './css/modals.css',
+    './css/modal-feedback.css',
+    './css/modal-print.css',
     './css/components.css',
     './css/matrix.css',
     './css/animations.css',

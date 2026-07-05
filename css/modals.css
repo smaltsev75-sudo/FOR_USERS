@@ -78,113 +78,6 @@
    margin-top: 25px;
 }
 
-.confirm-buttons {
-   display: flex;
-   justify-content: center;
-   gap: 20px;
-   margin-top: 25px;
-}
-
-.confirm-content {
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-}
-
-.confirm-content__body,
-.confirm-content__footer {
-   margin: 0;
-}
-
-.confirm-content__footer {
-   color: var(--text-muted-strong);
-   font-size: 0.82rem;
-}
-
-.confirm-content__notice {
-   border: 1px solid var(--border);
-   border-radius: 8px;
-   padding: 10px 12px;
-   background: var(--overlay-faint);
-   line-height: 1.45;
-}
-
-.confirm-content__notice--warning {
-   color: var(--warning);
-   background: var(--warning-bg-subtle);
-   border-color: var(--warning);
-}
-
-.confirm-details {
-   border: 1px solid var(--border);
-   border-radius: 8px;
-   background: var(--bg-main);
-   overflow: hidden;
-}
-
-.confirm-details__summary {
-   cursor: pointer;
-   padding: 10px 12px;
-   color: var(--accent);
-   font-weight: 700;
-}
-
-.confirm-details__summary:focus-visible {
-   outline: 2px solid var(--accent);
-   outline-offset: -2px;
-}
-
-.confirm-details__list {
-   display: flex;
-   flex-direction: column;
-   gap: 6px;
-   max-height: 240px;
-   overflow-y: auto;
-   margin: 0;
-   padding: 0 12px 12px 28px;
-   color: var(--text);
-   line-height: 1.45;
-}
-
-.confirm-details__overflow {
-   margin: 0;
-   padding: 0 12px 12px 12px;
-   color: var(--text-muted-strong);
-   font-size: 0.82rem;
-}
-
-.confirm-btn {
-   padding: 10px 25px;
-   border: none;
-   border-radius: 6px;
-   cursor: pointer;
-   font-size: 0.85rem;
-   font-weight: bold;
-   transition: all 0.2s;
-}
-
-.confirm-yes {
-   background: var(--danger);
-   color: white;
-}
-
-.confirm-yes:hover {
-   background: var(--danger-hover);
-   transform: translateY(-1px);
-   box-shadow: 0 4px 8px var(--danger-shadow);
-}
-
-.confirm-no {
-   background: var(--button-bg);
-   color: var(--text);
-   border: 1px solid var(--border);
-}
-
-.confirm-no:hover {
-   background: var(--button-hover);
-   transform: translateY(-1px);
-}
-
 .error {
    border-color: var(--danger) !important;
    box-shadow: 0 0 0 2px var(--danger-bg-light) !important;
@@ -201,13 +94,6 @@
 
 .modal-content--narrow {
    max-width: 800px;
-}
-
-/* Окно справки (owner, 2026-06-11): ~50-60% экрана по горизонтали на desktop;
-   clamp удерживает читабельную строку на узких и сверхшироких мониторах. */
-.modal-content--help {
-   width: clamp(680px, 58vw, 1240px);
-   max-width: 95vw;
 }
 
 .modal-content--column {
@@ -277,13 +163,6 @@
    flex: 1;
 }
 
-/* Owner (2026-06-11): крупный читабельный текст справки; горизонтальный
-   скролл исключён (overflow-x: hidden на .modal-body--padded). */
-.modal-body--help {
-   font-size: 1rem;
-   line-height: 1.7;
-}
-
 .modal-buttons-center--padded {
    padding: 10px 20px;
 }
@@ -317,14 +196,6 @@
    min-width: 80px;
 }
 
-#okMessageBtn {
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   line-height: 1;
-   text-align: center;
-}
-
 /* ----- Иконка inline-SVG в кнопках/заголовках ----- */
 .icon {
    width: 1em;
@@ -333,20 +204,3 @@
    flex-shrink: 0;
 }
 
-/* Чек-бокс параметров печати (#printOptionsModal). */
-.print-option {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   cursor: pointer;
-   font-size: 0.85rem;
-   color: var(--text);
-}
-
-.print-option input[type="checkbox"] {
-   width: 18px;
-   height: 18px;
-   flex-shrink: 0;
-   cursor: pointer;
-   accent-color: var(--accent);
-}
