@@ -52,28 +52,6 @@
    правила, которые конфликтовали (flex-direction:column, max-width:75px)
    и не позволяли компактировать карточку. */
 
-.modal-content {
-    width: 90%;
-    max-width: 520px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal-buttons-center,
-.form-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 25px;
-}
-
-.confirm-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 25px;
-}
-
 /* Адаптивность */
 @media (max-width: 1200px) {
     .dash-grid {
