@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.23-create-task-modal-css-split';
+const CACHE_VERSION = 'sp-v8.32.24-matrix-css-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -24,6 +24,7 @@ const ASSETS_TO_CACHE = [
     './css/forms.css',
     './css/modals.css',
     './css/components.css',
+    './css/matrix.css',
     './css/animations.css',
     './css/progress.css',
     './css/accordion.css',
