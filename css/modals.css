@@ -112,11 +112,11 @@
 
 .modal-title {
    margin: 0;
-   font-size: 0.95rem;
+   font-size: clamp(0.9rem, 1.4vw, 1rem);
 }
 
 .modal-title--lg {
-   font-size: 1rem;
+   font-size: clamp(0.9rem, 1.4vw, 1rem);
 }
 
 .modal-title--icon {

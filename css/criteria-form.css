@@ -11,6 +11,15 @@
    margin-bottom: 0;
 }
 
+.required-marker {
+   color: var(--danger);
+   margin-left: 2px;
+}
+
+.input-uppercase {
+   text-transform: uppercase;
+}
+
 .cf-col--abbr {
    flex: 0 0 110px;
 }

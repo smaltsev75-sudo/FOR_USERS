@@ -8,6 +8,13 @@
    margin-bottom: 12px;
 }
 
+.section-description {
+   font-size: clamp(0.7rem, 1vw, 0.78rem);
+   color: var(--text-muted);
+   margin-bottom: 18px;
+   line-height: 1.4;
+}
+
 .criteria-header-buttons {
    display: flex;
    gap: 10px;

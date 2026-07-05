@@ -121,23 +121,6 @@ a:focus-visible,
     border: 0;
 }
 
-/* ===== Заголовок секции критериев ===== */
-.criteria-section-title {
-    margin: 0;
-    font-size: 0.95rem;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* ===== Theme toggle кнопка с inline-SVG ===== */
-.theme-toggle-icon {
-    display: inline-flex;
-    align-items: center;
-    line-height: 1;
-}
-
 /* ===== Tabular-nums для числовых колонок ===== */
 .table-dash td,
 .table-dash th,
@@ -164,66 +147,11 @@ a:focus-visible,
     top: 0;
 }
 
-/* ===== Утилитарные классы (вынесены из inline style в HTML) ===== */
-.required-marker {
-    color: var(--danger);
-    margin-left: 2px;
-}
-
-.panel-title-sm {
-    margin: 0 0 8px 0;
-    font-size: 0.85rem;
-}
-
-/* v8.27.1: legacy .role-total-numbers-row / .role-total-numbers--bold /
-   .progress-bg--spaced удалены — не использовались в живом коде. */
-
-.section-description {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: 18px;
-    line-height: 1.4;
-}
-
-.char-counter {
-    float: right;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-}
-
-.hours-block {
-    margin-top: 15px;
-}
-
-.input-uppercase {
-    text-transform: uppercase;
-}
-
-.form-help {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 4px;
-    line-height: 1.4;
-}
-
 /* Раскладка .scale-editor (2-колоночная сетка) живёт в criteria.css —
    единственный источник. Раньше здесь дублировался flex-column и перебивал
    criteria.css за счёт более позднего порядка загрузки (owner redesign). */
 
 /* ===== Адаптивные правила (clamp / @container) ===== */
-.header-title {
-    font-size: clamp(1rem, 2vw, 1.4rem);
-}
-
-.modal-title {
-    font-size: clamp(0.9rem, 1.4vw, 1rem);
-}
-
-.section-description,
-.form-help {
-    font-size: clamp(0.7rem, 1vw, 0.78rem);
-}
-
 /* @container для карточек задач — контейнерные queries вместо @media */
 #taskList {
     container-type: inline-size;

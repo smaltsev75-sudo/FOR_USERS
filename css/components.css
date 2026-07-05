@@ -26,9 +26,13 @@
     margin-bottom: 0;
 }
 
+.panel-title-sm {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+}
+
 /* Заголовок секции внутри dash-grid panel прижат к телу единым ритмом:
-   panel-title-sm base (a11y.css) даёт font-size/типографику, здесь только
-   снимаем нижний margin — расстояние задаёт panel gap, одинаковое в обеих. */
+   расстояние задаёт panel gap, одинаковое в обеих панелях. */
 .dash-grid > .panel > .panel-title-sm {
     margin-bottom: 0;
     flex: 0 0 auto;
@@ -36,7 +40,7 @@
 
 .header-title {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 2vw, 1.4rem);
     display: flex;
     align-items: center;
     gap: 10px;
