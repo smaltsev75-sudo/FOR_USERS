@@ -24,3 +24,8 @@
    box-shadow: 0 0 0 2px var(--accent-bg-strong), inset 0 2px 4px var(--inset-shadow);
    outline: none;
 }
+
+.number-input,
+.date-input {
+   font-variant-numeric: tabular-nums;
+}

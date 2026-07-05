@@ -1,6 +1,35 @@
 /* ---------- task-card-states.css ---------- */
 /* Task card responsive states and drag feedback. Split from task-card.css; keep stylesheet order in index.html. */
 
+/* @container для карточек задач — контейнерные queries вместо позднего a11y.css. */
+#taskList {
+    container-type: inline-size;
+    container-name: tasks;
+}
+
+@supports (container-type: inline-size) {
+    @container tasks (max-width: 720px) {
+        .task-row {
+            flex-wrap: wrap;
+        }
+
+        .task-estimates {
+            order: 1;
+            width: 100%;
+            margin-top: 8px;
+        }
+    }
+}
+
+/* Фолбэк для браузеров без @container */
+@supports not (container-type: inline-size) {
+    @media (max-width: 720px) {
+        .task-row {
+            flex-wrap: wrap;
+        }
+    }
+}
+
 /* Мобильная адаптация */
 @media (max-width: 900px) {
     .task-row--header {

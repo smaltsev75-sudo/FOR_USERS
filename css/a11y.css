@@ -121,15 +121,6 @@ a:focus-visible,
     border: 0;
 }
 
-/* ===== Tabular-nums для числовых колонок ===== */
-.table-dash td,
-.table-dash th,
-.est-input-container input,
-.number-input,
-.date-input {
-    font-variant-numeric: tabular-nums;
-}
-
 /* ===== Ссылка на пропустить контент (опционально, скрыта по умолчанию) ===== */
 .skip-link {
     position: absolute;
@@ -150,39 +141,3 @@ a:focus-visible,
 /* Раскладка .scale-editor (2-колоночная сетка) живёт в criteria.css —
    единственный источник. Раньше здесь дублировался flex-column и перебивал
    criteria.css за счёт более позднего порядка загрузки (owner redesign). */
-
-/* ===== Адаптивные правила (clamp / @container) ===== */
-/* @container для карточек задач — контейнерные queries вместо @media */
-#taskList {
-    container-type: inline-size;
-    container-name: tasks;
-}
-
-@supports (container-type: inline-size) {
-    @container tasks (max-width: 720px) {
-        .task-row {
-            flex-wrap: wrap;
-        }
-
-        .task-estimates {
-            order: 1;
-            width: 100%;
-            margin-top: 8px;
-        }
-    }
-}
-
-/* Фолбэк для браузеров без @container */
-@supports not (container-type: inline-size) {
-    @media (max-width: 720px) {
-        .task-row {
-            flex-wrap: wrap;
-        }
-    }
-}
-
-/* ===== Перекрытие hardcoded hex (через токены) ===== */
-.criteria-abbreviation {
-    background: var(--tech) !important;
-    color: var(--accent-text);
-}
