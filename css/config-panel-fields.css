@@ -1,0 +1,83 @@
+/* ---------- config-panel-fields.css (v8.32.26) ----------
+   Sections, field layout and date range layout for sprint config.
+*/
+
+/* Тот же inset, что и .panel (14px 16px) → cfg-panel и dash-grid panels
+   делят единый внутренний отступ. */
+.cfg-section {
+    padding: 14px 16px;
+}
+
+.cfg-section-title {
+    margin: 0 0 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.cfg-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px 18px;
+}
+
+/* Redesign v2: все 7 полей в ОДНУ горизонтальную строку. На широком десктопе
+   (≥1280px) ряд не переносится; на более узких — gracefully wrap'ится через
+   базовый flex-wrap выше. */
+.cfg-fields--single-row {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
+@media (min-width: 1280px) {
+    .cfg-fields--single-row {
+        flex-wrap: nowrap;
+    }
+}
+
+.cfg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 80px;
+}
+
+.cfg-field--product {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.cfg-field--narrow {
+    flex: 0 0 96px;
+    min-width: 84px;
+}
+
+.cfg-field--medium {
+    flex: 0 0 150px;
+    min-width: 130px;
+}
+
+.cfg-daterange {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    flex: 1 1 240px;
+    min-width: 220px;
+}
+
+.cfg-daterange .cfg-field {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.cfg-daterange__sep {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    padding: 0 8px 6px;
+    flex: 0 0 auto;
+    align-self: flex-end;
+}

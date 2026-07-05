@@ -1,0 +1,104 @@
+/* ---------- config-panel-controls.css (v8.32.26) ----------
+   Labels, help buttons and underline inputs for sprint config.
+*/
+
+.cfg-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.cfg-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: help;
+    transition: color 0.15s ease, background 0.15s ease;
+    flex: 0 0 auto;
+}
+
+.cfg-info-btn:hover {
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+}
+
+.cfg-info-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    color: var(--accent);
+}
+
+.cfg-info-btn svg {
+    display: block;
+}
+
+.cfg-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    background: transparent;
+    color: var(--text);
+    border: none;
+    border-bottom: 1.5px solid var(--border-light);
+    border-radius: 4px 4px 0 0;
+    font-family: inherit;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-bottom-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cfg-input:hover {
+    background: var(--overlay-light);
+}
+
+.cfg-input:focus,
+.cfg-input:focus-visible {
+    border-bottom-color: var(--accent);
+    background: var(--overlay-light);
+    box-shadow: 0 1px 0 0 var(--accent);
+}
+
+.cfg-input--product {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding-bottom: 4px;
+}
+
+.cfg-input--number {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.cfg-input--date {
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* Ремонт глобального forms.css: .number-input навешивает inset shadow и
+   центральное выравнивание поверх .cfg-input. */
+.cfg-panel .cfg-input.number-input,
+.cfg-panel .cfg-input.date-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--border-light);
+    border-radius: 4px 4px 0 0;
+    box-shadow: none;
+}
+
+.cfg-panel .cfg-input.number-input:focus,
+.cfg-panel .cfg-input.date-input:focus {
+    border-bottom-color: var(--accent);
+    box-shadow: 0 1px 0 0 var(--accent);
+}

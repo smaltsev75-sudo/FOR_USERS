@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.25-toolbar-css-split';
+const CACHE_VERSION = 'sp-v8.32.26-config-panel-css-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -67,6 +67,9 @@ const ASSETS_TO_CACHE = [
     './css/toolbar-actions.css',
     './css/toolbar-states.css',
     './css/config-panel.css',
+    './css/config-panel-fields.css',
+    './css/config-panel-controls.css',
+    './css/config-panel-states.css',
     './css/a11y.css',
     './css/blocked-screen.css',
     './css/app-rail.css',

@@ -1,0 +1,54 @@
+/* ---------- config-panel-states.css (v8.32.26) ----------
+   Touch, responsive, reduced-motion and print states for sprint config.
+*/
+
+@media (pointer: coarse), (max-width: 720px) {
+    .cfg-input {
+        min-height: 44px;
+        padding: 10px 8px;
+    }
+    .cfg-info-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+    }
+    .cfg-info-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 720px) {
+    .cfg-field--product,
+    .cfg-daterange {
+        flex: 1 1 100%;
+    }
+    .cfg-fields {
+        gap: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cfg-panel,
+    .cfg-input,
+    .cfg-info-btn {
+        transition: none;
+    }
+}
+
+@media print {
+    .cfg-panel {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        border-radius: 4px !important;
+    }
+    .cfg-info-btn {
+        display: none !important;
+    }
+    .cfg-input {
+        border-bottom-color: #ccc !important;
+        background: transparent !important;
+        color: #000 !important;
+    }
+}
