@@ -1,0 +1,61 @@
+/* ---------- Task type segmented control ---------- */
+
+.cf-segmented {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 3px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.cf-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cf-seg-btn:hover {
+    color: var(--text);
+}
+
+.cf-seg-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.cf-seg-btn[data-active="true"],
+.cf-seg-btn[aria-checked="true"] {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.cf-seg-btn[data-active="true"] .cf-seg-dot,
+.cf-seg-btn[aria-checked="true"] .cf-seg-dot {
+    box-shadow: 0 0 0 1px var(--accent-text);
+}
+
+.cf-seg-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.cf-seg-dot--us { background: var(--us-color); }
+.cf-seg-dot--bug { background: var(--bug-color); }
+.cf-seg-dot--tech { background: var(--tech-color); }

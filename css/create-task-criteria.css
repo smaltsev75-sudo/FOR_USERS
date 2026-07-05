@@ -1,0 +1,106 @@
+/* ---------- Task priority criteria scales ---------- */
+
+.cf-criteria {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#createCriteriaContainer {
+    font-variant-numeric: tabular-nums;
+}
+
+.create-criteria-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 8px;
+}
+
+.cf-criteria-scales {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.cf-criteria-row {
+    display: grid;
+    grid-template-columns: 92px auto 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.cf-criteria-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.cf-criteria-weight {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+    border: 1px solid var(--accent-border-faint);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+}
+
+.cf-scale__end {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.cf-scale {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 4px 2px;
+}
+
+.cf-scale:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.cf-scale__track {
+    display: flex;
+    flex: 1;
+    gap: 3px;
+    align-items: center;
+}
+
+.cf-scale__tick {
+    flex: 1;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--overlay-medium);
+    border: 1px solid var(--border-light);
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.cf-scale:hover .cf-scale__tick {
+    border-color: var(--border-light);
+}
+
+.cf-scale__tick:hover {
+    border-color: var(--accent);
+}
+
+.cf-scale__tick--on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.cf-scale__value {
+    min-width: 20px;
+    text-align: right;
+    font-weight: 800;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}

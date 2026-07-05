@@ -1,0 +1,140 @@
+/* ---------- Task form fields, labels, inputs, counters, and row layout ---------- */
+
+.cf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cf-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+
+.cf-required {
+    color: var(--danger);
+    margin-left: 2px;
+    font-weight: 700;
+}
+
+.cf-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: none;
+}
+
+.cf-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.cf-input:hover {
+    border-color: var(--border-light);
+}
+
+.cf-input:focus,
+.cf-input:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg-strong);
+    background: var(--bg-card);
+}
+
+.cf-input.error,
+.cf-input[aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-bg-subtle);
+}
+
+.cf-input--title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.cf-input--secondary {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.cf-input--secondary:focus,
+.cf-input--secondary:focus-visible {
+    color: var(--text);
+}
+
+.cf-input-wrap {
+    position: relative;
+}
+
+.cf-input-wrap--with-icon .cf-input-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.cf-input--with-icon {
+    padding-left: 32px;
+}
+
+.cf-textarea {
+    min-height: 64px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.cf-counter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 6px;
+}
+
+.cf-counter__bar {
+    width: 100%;
+    height: 3px;
+    background: var(--overlay-medium);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cf-counter__bar-fill {
+    --fill: 0%;
+    --color: var(--success);
+    display: block;
+    width: var(--fill);
+    height: 100%;
+    background: var(--color);
+    border-radius: 2px;
+    transition: width 0.18s ease, background 0.18s ease;
+}
+
+.cf-counter__text {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    align-self: flex-end;
+}
+
+.cf-row {
+    display: grid;
+    gap: 12px;
+    align-items: start;
+}
+
+.cf-row--type-jira {
+    grid-template-columns: minmax(220px, auto) 1fr;
+}

@@ -1,0 +1,37 @@
+/* ---------- Task form responsive, touch, and reduced-motion states ---------- */
+
+@media (max-width: 540px) {
+    .cf-row--type-jira {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .cf-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+    .cf-seg-btn {
+        min-height: 44px;
+        height: 44px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cf-counter__bar-fill,
+    .cf-input,
+    .cf-seg-btn,
+    .cf-btn {
+        transition: none;
+    }
+
+    .cf-btn:active {
+        transform: none;
+    }
+}

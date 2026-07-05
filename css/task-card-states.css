@@ -115,3 +115,11 @@
     transition: all 0.2s ease;
 }
 
+.task-item.selected-task {
+    border: 3px solid var(--accent);
+    background-color: var(--accent-bg-highlight);
+    box-shadow: 0 0 20px var(--accent-glow);
+    border-radius: 8px;
+    position: relative;
+    z-index: 10;
+}

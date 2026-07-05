@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.22-ci-webkit-smoke-serial';
+const CACHE_VERSION = 'sp-v8.32.23-create-task-modal-css-split';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -30,6 +30,11 @@ const ASSETS_TO_CACHE = [
     './css/help.css',
     './css/snackbar.css',
     './css/create-task-modal.css',
+    './css/create-task-form-fields.css',
+    './css/create-task-type.css',
+    './css/create-task-criteria.css',
+    './css/create-task-actions.css',
+    './css/create-task-states.css',
     './css/criteria.css',
     './css/criteria-sumbar.css',
     './css/criteria-list.css',
