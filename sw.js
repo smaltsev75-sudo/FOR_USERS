@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.32-task-card-layout-guard-cleanup';
+const CACHE_VERSION = 'sp-v8.32.33-task-list-reconcile';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -56,7 +56,6 @@ const ASSETS_TO_CACHE = [
     './css/task-card-states.css',
     './css/task-card-quadrants.css',
     './css/density.css',
-    './css/capacity-strip.css',
     './css/team-capacity.css',
     './css/team-capacity-header.css',
     './css/team-capacity-card.css',
@@ -236,6 +235,7 @@ const ASSETS_TO_CACHE = [
     './js/ui/taskList/estimatesSection.js',
     './js/ui/taskList/focus.js',
     './js/ui/taskList/overloadIndicators.js',
+    './js/ui/taskList/reconcile.js',
     './js/ui/taskList/render.js',
     './js/ui/taskList/taskCard.js',
     './js/ui/taskList/viewState.js',

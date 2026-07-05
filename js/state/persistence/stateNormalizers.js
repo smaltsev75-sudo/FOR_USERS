@@ -101,6 +101,13 @@ export function normalizeUi(ui) {
         activeAlgorithm: VALID_ALGORITHMS.includes(algorithm) ? algorithm : DEFAULT_UI_STATE.activeAlgorithm,
         density: VALID_DENSITIES.includes(density) ? density : DEFAULT_UI_STATE.density,
         viewMode: VALID_VIEW_MODES.includes(viewMode) ? viewMode : DEFAULT_UI_STATE.viewMode,
+        selectedTaskId: null,
         expandedQuadrants
     };
+}
+
+export function normalizeUiForStorage(ui) {
+    const persistedUi = normalizeUi(ui);
+    delete persistedUi.selectedTaskId;
+    return persistedUi;
 }

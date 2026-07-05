@@ -2,7 +2,7 @@
 //
 // LEGACY file name: the live UI since v8.21 is the **Team Capacity Dashboard**
 // (js/ui/teamCapacity.js). This controller drives drag-preview only and is
-// re-used as-is by the new dashboard via dual-class hooks (cap-segment*).
+// re-used as-is by the Team Capacity Dashboard.
 //
 // Drives the live preview of the Team Capacity Dashboard during a DRAG only:
 // - dragstart on .task-item → preview adding/removing that task

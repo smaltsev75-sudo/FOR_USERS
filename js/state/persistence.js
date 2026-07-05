@@ -10,7 +10,8 @@ import {
     normalizeRoles,
     normalizeTaskFilter,
     normalizeTaskSort,
-    normalizeUi
+    normalizeUi,
+    normalizeUiForStorage
 } from './persistence/stateNormalizers.js';
 
 export { analyzeImportIssues } from './persistence/importDiagnostics.js';
@@ -75,6 +76,6 @@ export function serializeStateForStorage(state, criteria, decimalSeparator) {
         activeTab: state.activeTab === 'criteria' ? 'criteria' : 'planning',
         taskFilter: normalizeTaskFilter(state.taskFilter),
         taskSort: normalizeTaskSort(state.taskSort),
-        ui: normalizeUi(state.ui)
+        ui: normalizeUiForStorage(state.ui)
     };
 }

@@ -83,6 +83,16 @@
  */
 
 /**
+ * @typedef {Object} UiState
+ * @property {'matrix'|'value-density'|'hybrid'} activeAlgorithm
+ * @property {'compact'|'comfortable'} density
+ * @property {'list'|'quadrants'} viewMode
+ * @property {number|null} editCriteriaId
+ * @property {number|null} selectedTaskId
+ * @property {string[]} expandedQuadrants
+ */
+
+/**
  * @typedef {Object} AppState
  * @property {SprintConfig} config
  * @property {Role[]} roles
@@ -92,6 +102,7 @@
  * @property {'planning'|'criteria'} activeTab
  * @property {TaskFilter} taskFilter
  * @property {TaskSort} taskSort
+ * @property {UiState} ui
  * @property {number|null} [lastAddedTaskId]
  */
 

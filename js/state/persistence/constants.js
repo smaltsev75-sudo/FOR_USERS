@@ -13,6 +13,7 @@ export const DEFAULT_UI_STATE = {
     density: 'comfortable',
     viewMode: 'list',
     editCriteriaId: null,
+    selectedTaskId: null,
     expandedQuadrants: [...VALID_QUADRANT_KEYS]
 };
 

@@ -68,6 +68,7 @@ export class Store {
             lastAddedTaskId: null,
             ...initialState
         };
+        this.state.ui = { ...(this.state.ui || {}), selectedTaskId: null };
         this.listeners = [];
     }
 
@@ -308,7 +309,7 @@ export class Store {
             activeTab: newState.activeTab || 'planning',
             taskFilter: newState.taskFilter || { search: '', type: '' },
             taskSort: newState.taskSort || { by: 'priority', order: 'desc' },
-            ui: newState.ui || this.state.ui || {}
+            ui: { ...(newState.ui || this.state.ui || {}), selectedTaskId: null }
         }));
     }
 
@@ -359,6 +360,10 @@ export class Store {
 
     setEditCriteriaId(id) {
         this.setUiState({ editCriteriaId: id ?? null });
+    }
+
+    setSelectedTaskId(id) {
+        this.setUiState({ selectedTaskId: id ?? null });
     }
 
     /**

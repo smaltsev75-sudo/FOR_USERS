@@ -164,8 +164,9 @@ export class NumberFormatService {
     }
 
     /**
-     * Live-input handler: убирает запрещённые символы, нормализует разделитель
-     * к точке и ограничивает дробную часть MAX_DECIMALS знаками.
+     * Live-input handler: убирает запрещённые символы, принимает `.` и `,`,
+     * ограничивает дробную часть MAX_DECIMALS знаками и возвращает значение с
+     * настроенным UI-разделителем.
      *
      * v8.30.22: добавлен truncate дробной части.
      * v8.30.23: locale-aware — если ОБА `.` И `,`, alt-separator стрипается
@@ -196,7 +197,7 @@ export class NumberFormatService {
                 value = intPart + '.' + fracPart.slice(0, MAX_DECIMALS);
             }
         }
-        element.value = value;
+        element.value = value.replace('.', this.decimalSeparator);
     }
 
     formatInputOnBlur(element) {

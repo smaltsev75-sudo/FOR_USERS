@@ -17,7 +17,7 @@ import { wireTaskControllerEvents } from './task/taskEventWiring.js';
  * - Проксирование вызовов к TaskDragController (drag & drop)
  * - Кэширование priority-score через TaskCacheService
  * - Обновление трудозатрат, критериев, исключение/удаление задач
- * - Выделение задачи в списке (selectedTaskId)
+ * - Выделение задачи в списке (state.ui.selectedTaskId)
  * - Сортировку по приоритету
  */
 export class TaskController {
@@ -28,7 +28,6 @@ export class TaskController {
     constructor(store, numberFormatService) {
         this.store = store;
         this.nfs = numberFormatService;
-        this.selectedTaskId = null;
         this._cache = new TaskCacheService();
 
         this._form = new TaskFormController(
@@ -52,8 +51,26 @@ export class TaskController {
         this._list = new TaskListHandler(
             store, numberFormatService, this._cache,
             () => this.selectedTaskId,
-            (id) => { this.selectedTaskId = id; }
+            (id) => this.setSelectedTaskId(id)
         );
+    }
+
+    get selectedTaskId() {
+        return this.store.getState().ui?.selectedTaskId ?? null;
+    }
+
+    set selectedTaskId(id) {
+        this.setSelectedTaskId(id);
+    }
+
+    setSelectedTaskId(id) {
+        if (typeof this.store.setSelectedTaskId === 'function') {
+            this.store.setSelectedTaskId(id);
+            return;
+        }
+        if (typeof this.store.setUiState === 'function') {
+            this.store.setUiState({ selectedTaskId: id ?? null });
+        }
     }
 
     init() {
@@ -200,7 +217,7 @@ export class TaskController {
 
         // При включении: ставим selectedTaskId ДО ре-рендера
         if (wasExcluded) {
-            this.selectedTaskId = taskId;
+            this.setSelectedTaskId(taskId);
         }
 
         this._list.handleToggleExclude(taskId);
@@ -240,7 +257,7 @@ export class TaskController {
         const state = this.store.getState();
         const taskExists = state.tasks.some((task) => task.id === taskId);
         if (!taskExists) return;
-        this.selectedTaskId = taskId;
+        this.setSelectedTaskId(taskId);
         const allTaskItems = document.querySelectorAll('.task-item');
         allTaskItems.forEach((item) => {
             const itemId = Number(item.dataset.id);
@@ -260,7 +277,7 @@ export class TaskController {
 
     /** Снимает выделение со всех задач. */
     deselectTask() {
-        this.selectedTaskId = null;
+        this.setSelectedTaskId(null);
         document.querySelectorAll('.task-item.selected-task').forEach((item) => {
             item.classList.remove('selected-task');
         });

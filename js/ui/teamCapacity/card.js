@@ -35,12 +35,11 @@ function createTeamCapacityCard(role, roleData, options) {
     const overload = data.currentOverload || (previewTask && data.nextOverload);
 
     const card = document.createElement('article');
-    card.className = `team-cap__card team-cap__card--${level} cap-segment cap-segment--${level}`;
-    if (overload) card.classList.add('team-cap__card--overload', 'cap-segment--overload');
+    card.className = `team-cap__card team-cap__card--${level}`;
+    if (overload) card.classList.add('team-cap__card--overload');
     if (previewTask && data.delta !== 0) {
-        card.classList.add('team-cap__card--preview', 'cap-segment--preview');
+        card.classList.add('team-cap__card--preview');
         card.classList.add(data.delta > 0 ? 'team-cap__card--preview-up' : 'team-cap__card--preview-down');
-        card.classList.add(data.delta > 0 ? 'cap-segment--preview-up' : 'cap-segment--preview-down');
     }
     card.dataset.role = role.id;
     card.dataset.percent = formatUiPercent(displayPercent);
@@ -75,11 +74,11 @@ function createCardHeader(role, displayPercent, data, previewTask) {
     iconWrap.innerHTML = ICONS[iconKey] || '';
 
     const nameEl = document.createElement('span');
-    nameEl.className = 'team-cap__card-name cap-segment__label';
+    nameEl.className = 'team-cap__card-name';
     nameEl.textContent = role.name;
 
     const pctWrap = document.createElement('span');
-    pctWrap.className = 'team-cap__card-percent cap-segment__percent';
+    pctWrap.className = 'team-cap__card-percent';
     const pctNum = document.createElement('span');
     pctNum.className = 'team-cap__card-percent-num';
     pctNum.textContent = formatUiPercent(displayPercent);
@@ -90,7 +89,7 @@ function createCardHeader(role, displayPercent, data, previewTask) {
 
     if (previewTask && data.delta !== 0) {
         const deltaEl = document.createElement('span');
-        deltaEl.className = 'team-cap__card-delta cap-segment__delta';
+        deltaEl.className = 'team-cap__card-delta';
         deltaEl.textContent = formatSignedUiPercent(data.deltaPercent);
         pctWrap.appendChild(deltaEl);
     }
@@ -102,10 +101,10 @@ function createCardHeader(role, displayPercent, data, previewTask) {
 
 function createCardBar(displayPercent, data, overload, previewTask) {
     const barWrap = document.createElement('div');
-    barWrap.className = 'team-cap__card-bar cap-segment__track';
+    barWrap.className = 'team-cap__card-bar';
 
     const fill = document.createElement('div');
-    fill.className = 'team-cap__card-bar-fill cap-segment__fill';
+    fill.className = 'team-cap__card-bar-fill';
     fill.style.width = `${clampPercentWidth(displayPercent)}%`;
     barWrap.appendChild(fill);
 
@@ -117,7 +116,7 @@ function createCardBar(displayPercent, data, overload, previewTask) {
 
     if (previewTask && data.delta !== 0) {
         const previewFill = document.createElement('div');
-        previewFill.className = 'team-cap__card-bar-preview cap-segment__preview-fill';
+        previewFill.className = 'team-cap__card-bar-preview';
         previewFill.style.width = `${clampPercentWidth(data.nextPercent)}%`;
         barWrap.appendChild(previewFill);
     }
