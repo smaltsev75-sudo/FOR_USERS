@@ -59,20 +59,4 @@
     }
 }
 
-@media (max-width: 900px) {
-    .task-order-number {
-        min-width: 34px;
-        height: 24px;
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 600px) {
-    .task-order-number {
-        min-width: 30px;
-        height: 22px;
-        font-size: 0.75rem;
-    }
-}
-
 /* Мобильное меню (бургер) удалено: redesign v2 — desktop-only, табов нет. */
