@@ -34,7 +34,7 @@ function buildPriorityBadgeHtml(level, label) {
  * @param {string} effortText — уже отформатированный суммарный Effort (часы)
  * @returns {string}
  */
-function buildTaskMetricsHtml(priorityScoreText, effortText) {
+function buildTaskMetricsHtml(priorityScoreText, effortText, task) {
     return `
         <div class="task-metrics">
             <span class="task-metric-row task-metric--priority" title="Уровень приоритета по текущим критериям">
@@ -45,6 +45,7 @@ function buildTaskMetricsHtml(priorityScoreText, effortText) {
                 <span class="task-metric-label">Effort</span>
                 <span class="task-metric-value task-metric-value--effort">${effortText} ч</span>
             </span>
+            ${buildDeliveryFlagsPrintHtml(task)}
         </div>
     `;
 }
@@ -103,7 +104,7 @@ export function createTaskElement(
     const priorityBadgeHtml = buildPriorityBadgeHtml(priorityLevel, priorityLabel);
     const priorityScoreText = nfs.formatNumber(priorityScore);
     const effortText = nfs.formatNumber(taskTotal);
-    const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText);
+    const taskMetricsHtml = buildTaskMetricsHtml(priorityScoreText, effortText, task);
     const workProfileHtml = buildWorkProfileHtml(vm.effortRisk);
 
     // SM-комментарий: иконка в строке (filled-стиль если коммент есть), редактирование
@@ -147,7 +148,6 @@ export function createTaskElement(
             ${taskMetricsHtml}
         </div>
         <div class="task-estimates">${estimatesHtml}</div>
-        ${buildDeliveryFlagsPrintHtml(task)}
         ${notePrintHtml}
     `;
 

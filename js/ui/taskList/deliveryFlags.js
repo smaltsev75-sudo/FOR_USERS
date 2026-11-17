@@ -10,7 +10,7 @@ export function buildDeliveryFlagsHtml(task) {
 }
 
 export function buildDeliveryFlagsPrintHtml(task) {
-    return `<div class="task-flags-print">${TASK_FLAGS.map(flag => `${flag.label}: ${task[flag.field] === true ? 'да' : 'нет'}`).join(' · ')}</div>`;
+    return `<div class="task-flags-print">${TASK_FLAGS.map(flag => `<span>${flag.label}: <strong>${task[flag.field] === true ? 'да' : 'нет'}</strong></span>`).join(' ')}</div>`;
 }
 
 export function syncTaskFilterControls(filter = {}, doc = document) {
