@@ -11,6 +11,7 @@
     .export-btn,
     .task-action-btn,
     .task-btn-group,
+    .task-delivery-flags,
     .toolbar__actions,
     .toolbar__center,
     .toolbar__divider,
@@ -70,6 +71,8 @@
 
     /* ---------- Общие настройки ---------- */
     * {
+        transition: none !important;
+        animation: none !important;
         background: white !important;
         color: black !important;
         border-color: #ccc !important;
@@ -80,6 +83,7 @@
     body {
         margin: 0.5in;
         padding: 0;
+        min-height: 0;
     }
 
     /* В печати app-rail скрыт (см. app-rail.css) — снимаем зарезервированный под
@@ -214,6 +218,12 @@
     }
 
     /* ---------- КАРТОЧКА ЗАДАЧИ ---------- */
+    .task-flags-print {
+        display: block;
+        font-size: 9pt;
+        margin-top: 4px;
+    }
+
     .task-item {
         page-break-inside: avoid;
         border: 1px solid #000;

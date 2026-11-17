@@ -6,10 +6,12 @@ import { renderMatrix } from './matrix.js';
 import { renderTaskList } from './taskList.js';
 import { renderGroupedTasks } from './taskListGrouped.js';
 import { renderCriteriaList } from './criteriaList.js';
+import { syncTaskFilterControls } from './taskList/deliveryFlags.js';
 
 export function renderApp(state, deps = {}) {
     const nfs = getNFS(deps.nfs);
     renderHeader(state);
+    syncTaskFilterControls(state.taskFilter);
     // Team Capacity Dashboard (v8.21) — premium-карточки, объединяющие
     // gauge + 5 cards (иконка+bar+inputs). Заменяет capacityStrip + roleList.
     renderTeamCapacity(state, nfs, deps.capacityPreview || {});

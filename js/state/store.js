@@ -49,7 +49,9 @@ export class Store {
             activeTab: 'planning',
             taskFilter: {
                 search: '',
-                type: ''
+                type: '',
+                demo: '',
+                release: ''
             },
             taskSort: {
                 by: 'priority',
@@ -307,7 +309,7 @@ export class Store {
             config: newState.config || this.state.config,
             numberFormatSettings: newState.numberFormatSettings || this.state.numberFormatSettings,
             activeTab: newState.activeTab || 'planning',
-            taskFilter: newState.taskFilter || { search: '', type: '' },
+            taskFilter: { search: '', type: '', demo: '', release: '', ...newState.taskFilter },
             taskSort: newState.taskSort || { by: 'priority', order: 'desc' },
             ui: { ...(newState.ui || this.state.ui || {}), selectedTaskId: null }
         }));
@@ -330,7 +332,7 @@ export class Store {
     clearTaskFilter() {
         this.update(state => ({
             ...state,
-            taskFilter: { search: '', type: '' }
+            taskFilter: { search: '', type: '', demo: '', release: '' }
         }));
     }
 

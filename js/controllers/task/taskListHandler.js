@@ -3,6 +3,7 @@
 
 import { buildCriteriaEvaluationUpdate } from './criteriaScoreMutations.js';
 import { buildEstimateUpdate } from './taskEstimateMutations.js';
+import { buildTaskFlagUpdate } from '../../domain/taskFlags.js';
 import {
     handleDeleteAllTasksAction,
     handleDeleteTaskAction
@@ -69,6 +70,12 @@ export class TaskListHandler {
         if (!update) return;
         this.store.updateTask(taskId, update);
         this._cache.invalidate();
+    }
+
+    handleToggleFlag(taskId, field) {
+        const task = this.store.getState().tasks.find(item => item.id === taskId);
+        const update = buildTaskFlagUpdate(task, field);
+        if (update) this.store.updateTask(taskId, update);
     }
 
     /**

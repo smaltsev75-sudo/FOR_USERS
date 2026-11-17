@@ -52,6 +52,8 @@ export function normalizeTasks(tasks, opts = {}) {
             comment: String(task.comment ?? '').trim(),
             note: String(task.note ?? '').slice(0, 500),
             excluded: task.excluded ? 1 : 0,
+            demoPlanned: task.demoPlanned === true,
+            releasePlanned: task.releasePlanned === true,
             est: normalizeTaskEst(task.est),
             exclusionReason: String(task.exclusionReason ?? ''),
             criteriaEvaluations: normalizeCriteriaEvaluations(task.criteriaEvaluations, validCriterionIds),

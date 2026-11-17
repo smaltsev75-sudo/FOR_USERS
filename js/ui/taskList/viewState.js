@@ -1,6 +1,7 @@
 // js/ui/taskList/viewState.js
 
 const VALID_DENSITIES = ['compact', 'comfortable'];
+import { TASK_FLAGS } from '../../domain/taskFlags.js';
 
 export function filterTasks(tasks, taskFilter) {
     let filtered = [...tasks];
@@ -13,6 +14,12 @@ export function filterTasks(tasks, taskFilter) {
     const typeFilter = taskFilter?.type || '';
     if (typeFilter) {
         filtered = filtered.filter(task => task.type === typeFilter);
+    }
+    for (const flag of TASK_FLAGS) {
+        const value = taskFilter?.[flag.filter];
+        if (value === 'yes' || value === 'no') {
+            filtered = filtered.filter(task => (task[flag.field] === true) === (value === 'yes'));
+        }
     }
     return filtered;
 }

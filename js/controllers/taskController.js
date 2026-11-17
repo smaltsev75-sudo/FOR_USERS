@@ -160,6 +160,8 @@ export class TaskController {
      */
     handleUpdateEst(e) { this._list.handleUpdateEst(e); }
 
+    handleToggleFlag(id, field) { this._list.handleToggleFlag(id, field); }
+
     /**
      * Открывает модалку комментария SM (#noteModal) для задачи id, заполняя
      * текущим значением task.note. Сохранение — _saveNote (кнопка «Сохранить»).

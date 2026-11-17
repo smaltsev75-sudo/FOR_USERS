@@ -2,7 +2,7 @@
 // Стратегия: Cache-First с fallback на сеть.
 // При обновлении версии старый кэш удаляется.
 
-const CACHE_VERSION = 'sp-v8.32.33-task-list-reconcile';
+const CACHE_VERSION = 'sp-v8.33.0-demo-release-flags';
 
 // Относительные пути ('./...') критичны для развёртывания в подпапке
 // GitHub Pages (например /<repo>/) и одновременной работы в корне домена
@@ -158,6 +158,7 @@ const ASSETS_TO_CACHE = [
     './js/domain/selection/quadrants.js',
     './js/domain/selection/valueDensity.js',
     './js/domain/task.js',
+    './js/domain/taskFlags.js',
     './js/domain/validation.js',
     // JS — services
     './js/services/diagnostics.js',
@@ -238,6 +239,7 @@ const ASSETS_TO_CACHE = [
     './js/ui/taskList/reconcile.js',
     './js/ui/taskList/render.js',
     './js/ui/taskList/taskCard.js',
+    './js/ui/taskList/deliveryFlags.js',
     './js/ui/taskList/viewState.js',
     './js/ui/taskList.js',
     './js/ui/utils.js',

@@ -70,6 +70,8 @@ function restoreScrollPosition(focusInfo) {
 export function captureTaskListFocus(taskListEl, active = document.activeElement) {
     if (!active || !taskListEl.contains(active)) return null;
     const scrollPosition = readScrollPosition();
+    const flagButton = active.closest?.('.task-flag-btn');
+    if (flagButton) return { type: 'flag', taskId: flagButton.dataset.id, action: flagButton.dataset.action, ...scrollPosition };
 
     const estimateInput = active.closest?.('input[data-action="updateEst"]');
     if (estimateInput && taskListEl.contains(estimateInput)) {
@@ -99,6 +101,12 @@ export function captureTaskListFocus(taskListEl, active = document.activeElement
  */
 export function restoreTaskListFocus(taskListEl, focusInfo) {
     if (!focusInfo) return;
+    if (focusInfo.type === 'flag') {
+        const button = taskListEl.querySelector(`.task-flag-btn[data-id="${escapeSelectorValue(focusInfo.taskId)}"][data-action="${escapeSelectorValue(focusInfo.action)}"]`);
+        button?.focus({ preventScroll: true });
+        restoreScrollPosition(focusInfo);
+        return;
+    }
     if (focusInfo.type === 'estimate') {
         const input = taskListEl.querySelector(
             `input[data-action="updateEst"][data-id="${escapeSelectorValue(focusInfo.taskId)}"][data-role="${escapeSelectorValue(focusInfo.roleId)}"]`

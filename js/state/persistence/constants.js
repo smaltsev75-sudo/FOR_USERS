@@ -1,7 +1,7 @@
 // Shared persistence defaults and allow-lists.
 
 export const DEFAULT_NUMBER_FORMAT_SETTINGS = { decimalSeparator: ',' };
-export const DEFAULT_TASK_FILTER = { search: '', type: '' };
+export const DEFAULT_TASK_FILTER = { search: '', type: '', demo: '', release: '' };
 export const DEFAULT_TASK_SORT = { by: 'priority', order: 'desc' };
 
 // v8.29.1: + 'excluded' — для persist состояния 5-й секции (см. store.js).

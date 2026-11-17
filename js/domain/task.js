@@ -42,6 +42,8 @@ export function createTask({ title, jira, type, comment, estimates }) {
     return {
         id: ++_nextTaskId,
         title: title.trim(),
+        demoPlanned: false,
+        releasePlanned: false,
         jira: jira.trim(),
         type,
         comment: comment.trim(),

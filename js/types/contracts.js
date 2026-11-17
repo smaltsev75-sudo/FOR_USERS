@@ -31,6 +31,8 @@
  * @property {TaskType} type
  * @property {string} comment
  * @property {0|1|boolean} excluded
+ * @property {boolean} demoPlanned
+ * @property {boolean} releasePlanned
  * @property {TaskEstimates} est
  * @property {string} exclusionReason
  * @property {CriteriaEvaluationMap} criteriaEvaluations
@@ -74,6 +76,8 @@
  * @typedef {Object} TaskFilter
  * @property {string} search
  * @property {''|'us'|'bug'|'tech'} type
+ * @property {''|'yes'|'no'} demo
+ * @property {''|'yes'|'no'} release
  */
 
 /**

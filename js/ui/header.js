@@ -1,5 +1,6 @@
 // js/ui/header.js
 import { getTaskStats } from '../domain/task.js';
+import { getIncludedTaskFlagCounts } from '../domain/taskFlags.js';
 
 const ICON_ALERT_TRIANGLE =
     '<svg class="toolbar-status__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
@@ -49,6 +50,7 @@ function renderRow(el, iconHtml, mainLabel, counts) {
 
 export function renderHeader(state) {
     const { included, excluded } = getTaskStats(state.tasks);
+    const flags = getIncludedTaskFlagCounts(state.tasks);
 
     const excludedEl = document.getElementById('excludedTasksHeader');
     if (excludedEl) {
@@ -67,7 +69,7 @@ export function renderHeader(state) {
         renderRow(
             includedEl,
             ICON_CHECK_CIRCLE,
-            `Задач в спринте: ${included.total}`,
+            `Задач в спринте/ДЕМО/Релиз: ${included.total}/${flags.demo}/${flags.release}`,
             included
         );
     }

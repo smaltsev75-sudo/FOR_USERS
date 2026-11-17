@@ -2,6 +2,7 @@ import { createTaskRowVM, getPriorityLabel, getPriorityLevel } from '../createTa
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { icon } from '../../utils/icons.js';
 import { buildEstimatesHtml } from './estimatesSection.js';
+import { buildDeliveryFlagsHtml, buildDeliveryFlagsPrintHtml } from './deliveryFlags.js';
 
 function buildTypeBadgeHtml(vm) {
     const typeIconMap = { us: 'bookOpen', bug: 'alertCircle', tech: 'roleCode' };
@@ -135,6 +136,7 @@ export function createTaskElement(
             </div>
             ${workProfileHtml}
             ${noteBtnHtml}
+            ${buildDeliveryFlagsHtml(task)}
             <div class="task-btn-group">
                 <button class="task-action-btn btn-move-up" title="Переместить задачу выше" data-action="moveUp" data-id="${vm.id}" aria-label="Переместить выше"${moveUpDisabled}>${moveUpIconHtml}</button>
                 <button class="task-action-btn btn-move-down" title="Переместить задачу ниже" data-action="moveDown" data-id="${vm.id}" aria-label="Переместить ниже"${moveDownDisabled}>${moveDownIconHtml}</button>
@@ -145,6 +147,7 @@ export function createTaskElement(
             ${taskMetricsHtml}
         </div>
         <div class="task-estimates">${estimatesHtml}</div>
+        ${buildDeliveryFlagsPrintHtml(task)}
         ${notePrintHtml}
     `;
 

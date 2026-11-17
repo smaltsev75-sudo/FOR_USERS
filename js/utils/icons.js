@@ -35,6 +35,8 @@ export const ICONS = {
     alertCircle: `<svg class="icon" ${COMMON_ATTRS}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
 
     // Task-row actions
+    presentation: `<svg class="icon" ${COMMON_ATTRS}><path d="M2 3h20M4 3v13h16V3M12 16v5M8 21l4-3 4 3"/></svg>`,
+    package: `<svg class="icon" ${COMMON_ATTRS}><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Zm-9 5 9 5 9-5M12 13v9M7.5 5.5l9 5V15"/></svg>`,
     pencil: `<svg class="icon" ${COMMON_ATTRS}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
     eye: `<svg class="icon" ${COMMON_ATTRS}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
     eyeOff: `<svg class="icon" ${COMMON_ATTRS}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,

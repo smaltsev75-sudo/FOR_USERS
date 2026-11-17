@@ -1,6 +1,7 @@
 import { calculateAvailability } from '../../domain/role.js';
 import { calculatePriorityScore } from '../../domain/criteria.js';
 import { calculateTaskTotal } from '../../domain/task.js';
+import { hasTaskFilters } from '../../domain/taskFlags.js';
 import { captureTaskListFocus, restoreTaskListFocus } from './focus.js';
 import { createTaskElement } from './taskCard.js';
 import { filterTasks } from './viewState.js';
@@ -92,7 +93,7 @@ export function renderTaskList(state, nfs, taskController = null) {
             // v8.30.0: было inline `style.cssText` — перенесено в `.task-list-empty`.
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'task-list-empty';
-            emptyMessage.textContent = (state.taskFilter?.search || state.taskFilter?.type)
+            emptyMessage.textContent = hasTaskFilters(state.taskFilter)
                 ? 'Нет задач, соответствующих поиску/фильтру'
                 : 'В спринте нет задач. Добавьте первую задачу';
             taskListEl.replaceChildren(emptyMessage);

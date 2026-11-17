@@ -135,6 +135,7 @@ function wireTaskListDelegation(controller, doc) {
         else if (action === 'toggleExclude') controller.handleToggleExclude(id);
         else if (action === 'delete') controller.handleDeleteTask(id);
         else if (action === 'openNote') controller.handleOpenNote(id);
+        else if (action === 'demoPlanned' || action === 'releasePlanned') controller.handleToggleFlag(id, action);
     });
 }
 
@@ -182,6 +183,10 @@ function wireCommentAndShortcuts(controller, doc) {
 }
 
 function wireFilters(controller, doc) {
+    for (const [id, field] of [['taskDemoFilter', 'demo'], ['taskReleaseFilter', 'release']]) {
+        const filter = byId(doc, id);
+        filter?.addEventListener('change', () => controller.store.setTaskFilter({ [field]: filter.value }));
+    }
     const searchInput = byId(doc, 'taskSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', () => {

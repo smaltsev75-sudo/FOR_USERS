@@ -5,10 +5,13 @@ import { QUADRANT_KEYS_WITH_EXCLUDED } from '../../domain/selection/quadrants.js
 import { resolveDensity, updateOverloadIndicators } from '../taskList.js';
 import { createQuadrantGroupSection } from './groupSection.js';
 import { buildGroupedTaskModel, getTasksForQuadrant } from './model.js';
+import { hasTaskFilters } from '../../domain/taskFlags.js';
+import { captureTaskListFocus, restoreTaskListFocus } from '../taskList/focus.js';
 
 export function renderGroupedTasks(state, nfs, taskController = null) {
     const taskListEl = document.getElementById('taskList');
     if (!taskListEl) return;
+    const focus = captureTaskListFocus(taskListEl);
     taskListEl.replaceChildren();
     taskListEl.dataset.density = resolveDensity(state.ui);
 
@@ -32,12 +35,13 @@ export function renderGroupedTasks(state, nfs, taskController = null) {
 
     taskListEl.appendChild(fragment);
     updateOverloadIndicators(state, nfs);
+    restoreTaskListFocus(taskListEl, focus);
 }
 
 function createGroupedEmptyState(state) {
     const emptyMessage = document.createElement('div');
     emptyMessage.className = 'task-list-empty';
-    emptyMessage.textContent = (state.taskFilter?.search || state.taskFilter?.type)
+    emptyMessage.textContent = hasTaskFilters(state.taskFilter)
         ? 'Нет задач, соответствующих поиску/фильтру'
         : 'В спринте нет задач. Добавьте первую задачу';
     return emptyMessage;

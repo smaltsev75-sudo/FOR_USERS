@@ -72,7 +72,9 @@ export function normalizeTaskFilter(filter) {
     return {
         ...DEFAULT_TASK_FILTER,
         search: String(safe.search ?? ''),
-        type: ['us', 'bug', 'tech', ''].includes(safe.type) ? safe.type : ''
+        type: ['us', 'bug', 'tech', ''].includes(safe.type) ? safe.type : '',
+        demo: ['yes', 'no'].includes(safe.demo) ? safe.demo : '',
+        release: ['yes', 'no'].includes(safe.release) ? safe.release : ''
     };
 }
 

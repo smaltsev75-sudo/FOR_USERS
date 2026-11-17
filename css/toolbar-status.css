@@ -6,7 +6,7 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-width: 160px;
     line-height: 1.25;
 }
@@ -29,6 +29,7 @@
 
 .toolbar-status--main .toolbar-status__label {
     color: var(--text);
+    white-space: normal;
 }
 
 .toolbar-status__icon-wrap {

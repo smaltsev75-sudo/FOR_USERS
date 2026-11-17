@@ -26,7 +26,9 @@ function taskIdOf(task) {
 function buildFilterSignature(taskFilter = {}) {
     return signature({
         search: taskFilter.search || '',
-        type: taskFilter.type || ''
+        type: taskFilter.type || '',
+        demo: taskFilter.demo || '',
+        release: taskFilter.release || ''
     });
 }
 
