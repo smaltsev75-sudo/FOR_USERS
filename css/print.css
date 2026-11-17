@@ -14,7 +14,6 @@
     .task-delivery-flags,
     .toolbar__actions,
     .toolbar__center,
-    .toolbar__divider,
     .modal-overlay,
     .drag-handle,
     .btn-edit,
@@ -48,6 +47,10 @@
     .quadrant-group-header,
     .toolbar {
         position: static;
+    }
+
+    .toolbar {
+        display: block;
     }
 
     /* Исключённые из спринта задачи печатаются только если в диалоге печати

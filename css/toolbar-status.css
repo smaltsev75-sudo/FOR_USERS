@@ -3,6 +3,7 @@
 */
 
 .toolbar__status-group {
+    grid-area: status;
     display: flex;
     flex-direction: column;
     gap: 1px;

@@ -3,19 +3,19 @@
 */
 
 .toolbar__center {
-    display: flex;
-    flex-wrap: wrap;
+    grid-area: filters;
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) minmax(110px, 0.25fr) minmax(170px, 0.3fr) minmax(170px, 0.3fr);
     align-items: center;
-    gap: 6px;
-    flex: 1 1 auto;
+    gap: var(--space-2, 8px);
+    padding-top: var(--space-3, 12px);
+    border-top: 1px solid var(--border);
     min-width: 0;
 }
 
 .toolbar__search {
     position: relative;
-    flex: 1 1 240px;
-    min-width: 160px;
-    max-width: 480px;
+    min-width: 0;
 }
 
 .toolbar__search-icon {
@@ -61,7 +61,8 @@
 }
 
 .toolbar__filter {
-    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
     height: 32px;
     padding: 0 28px 0 10px;
     background: var(--bg-card);

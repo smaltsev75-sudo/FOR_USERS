@@ -3,11 +3,11 @@
 */
 
 .toolbar__actions {
+    grid-area: actions;
     display: flex;
     align-items: center;
-    gap: 4px;
-    flex: 0 0 auto;
-    margin-left: auto;
+    gap: var(--space-2, 8px);
+    min-width: 0;
 }
 
 .toolbar__btn {
@@ -81,6 +81,10 @@
 .toolbar__icon-btn--danger:hover {
     background: var(--danger-bg-subtle);
     color: var(--danger);
+}
+
+.toolbar__icon-btn--danger {
+    margin-left: var(--space-1, 4px);
 }
 
 .toolbar .export-btn {

@@ -4,22 +4,15 @@
 */
 
 .toolbar {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "status actions" "filters filters";
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3, 12px);
     margin-bottom: 12px;
-    padding: 6px 12px;
+    padding: var(--space-3, 12px);
     min-height: 44px;
     background: var(--overlay-faint);
     border-radius: 10px;
     border: 1px solid var(--border);
-}
-
-.toolbar__divider {
-    align-self: stretch;
-    width: 1px;
-    margin: 4px 0;
-    background: var(--border);
-    flex: 0 0 auto;
 }
